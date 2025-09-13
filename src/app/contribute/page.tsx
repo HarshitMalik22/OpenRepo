@@ -1,36 +1,37 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Search, 
   Sparkles, 
-  TrendingUp, 
+  Trophy, 
   Users, 
-  Trophy,
-  Zap,
-  Activity,
   Target,
-  Filter
+  ArrowRight,
+  ExternalLink,
+  BookOpen
 } from 'lucide-react';
-import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
 import EnhancedRepoCard from '@/components/enhanced-repo-card';
+import GuidedContributionWorkflow from '@/components/guided-contribution-workflow';
+import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
 import { getPopularRepos, getRecommendedRepos, getFilteredRepos } from '@/lib/github';
 import { getUserPreferences } from '@/lib/user-preferences';
-import { communityStats, testimonials } from '@/lib/mock-data';
+import { communityStats } from '@/lib/mock-data';
 import type { Repository, RepositoryFilters, UserPreferences } from '@/lib/types';
 
-export default function ReposPage() {
+export default function ContributePage() {
   const [allRepos, setAllRepos] = useState<Repository[]>([]);
   const [filteredRepos, setFilteredRepos] = useState<Repository[]>([]);
   const [recommendedRepos, setRecommendedRepos] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
-  const [activeTab, setActiveTab] = useState('recommended');
+  const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
+  const [activeTab, setActiveTab] = useState('find');
   
   const [filters, setFilters] = useState<RepositoryFilters>({
     searchQuery: '',
@@ -87,7 +88,6 @@ export default function ReposPage() {
 
   const handleFiltersChange = (newFilters: RepositoryFilters) => {
     setFilters(newFilters);
-    setActiveTab('all');
   };
 
   const handleClearFilters = () => {
@@ -101,14 +101,22 @@ export default function ReposPage() {
     });
   };
 
+  const handleStartContribution = (repo: Repository) => {
+    setSelectedRepo(repo);
+    setActiveTab('workflow');
+  };
+
   const handleViewAnalysis = (repo: Repository) => {
-    // Navigate to repository analysis page
     window.open(`/repos/${repo.full_name}`, '_blank');
   };
 
   const handleContribute = (repo: Repository) => {
-    // Navigate to repository contribution page
-    window.open(repo.html_url, '_blank');
+    handleStartContribution(repo);
+  };
+
+  const handleWorkflowComplete = () => {
+    setSelectedRepo(null);
+    setActiveTab('find');
   };
 
   if (loading) {
@@ -116,7 +124,7 @@ export default function ReposPage() {
       <div className="container mx-auto py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading repositories...</p>
+          <p className="text-muted-foreground">Loading contribution opportunities...</p>
         </div>
       </div>
     );
@@ -128,71 +136,53 @@ export default function ReposPage() {
     <div className="container mx-auto py-12">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold font-headline mb-4">Find Your Next Project</h1>
+        <h1 className="text-4xl font-bold font-headline mb-4">Start Contributing</h1>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          Discover personalized open source opportunities tailored to your skills and goals.
-          Our AI-powered recommendations help you find the perfect projects to contribute to.
+          Find the perfect open source project to contribute to and follow our guided workflow 
+          to make your first contribution with confidence.
         </p>
       </div>
 
-      {/* Community Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardContent className="p-4 text-center">
             <Trophy className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-            <div className="text-2xl font-bold">{communityStats.totalQueries.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Total Queries</div>
+            <div className="text-2xl font-bold">{communityStats.successfulContributions.toLocaleString()}</div>
+            <div className="text-xs text-muted-foreground">Contributions Made</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <Users className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-            <div className="text-2xl font-bold">{communityStats.totalUsers.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Active Users</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
             <div className="text-2xl font-bold">{communityStats.activeRepositories.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Active Repos</div>
+            <div className="text-xs text-muted-foreground">Active Projects</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <Sparkles className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-            <div className="text-2xl font-bold">{communityStats.successfulContributions.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Contributions</div>
+            <Target className="w-8 h-8 mx-auto mb-2 text-green-500" />
+            <div className="text-2xl font-bold">
+              {allRepos.reduce((sum, repo) => sum + repo.contribution_difficulty.goodFirstIssues, 0)}
+            </div>
+            <div className="text-xs text-muted-foreground">Beginner Issues</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold mb-1">⭐ {communityStats.averageSatisfaction}</div>
-            <div className="text-xs text-muted-foreground">Avg Rating</div>
+            <div className="text-xs text-muted-foreground">Contributor Rating</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Advanced Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EnhancedRepoFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onClearFilters={handleClearFilters}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="find" className="flex items-center gap-2">
+            <Search className="w-4 h-4" />
+            Find Projects
+          </TabsTrigger>
           <TabsTrigger value="recommended" className="flex items-center gap-2" disabled={!userPreferences || userPreferences.techStack.length === 0}>
             <Sparkles className="w-4 h-4" />
             For You
@@ -202,28 +192,61 @@ export default function ReposPage() {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="all" className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            All Repos
-            <Badge variant="secondary" className="ml-1">
-              {filteredRepos.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="trending" className="flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            Trending
+          <TabsTrigger value="workflow" className="flex items-center gap-2" disabled={!selectedRepo}>
+            <BookOpen className="w-4 h-4" />
+            Contribution Guide
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="find" className="mt-6">
+          <div className="space-y-6">
+            {/* Search and Filters */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Find Your Perfect Project</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <EnhancedRepoFilters
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  onClearFilters={handleClearFilters}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Repository Grid */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Available Projects</h2>
+                <Badge variant="outline">
+                  {filteredRepos.length} projects
+                </Badge>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {displayRepos.map(repo => (
+                  <EnhancedRepoCard
+                    key={repo.id}
+                    repository={repo}
+                    onViewAnalysis={handleViewAnalysis}
+                    onContribute={handleContribute}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
         <TabsContent value="recommended" className="mt-6">
           {userPreferences && userPreferences.techStack.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold mb-2">Personalized Recommendations</h2>
+                <h2 className="text-2xl font-semibold mb-2">Recommended for You</h2>
                 <p className="text-muted-foreground">
                   Based on your preferences: {userPreferences.techStack.join(', ')} • {userPreferences.experienceLevel} • {userPreferences.goal}
                 </p>
               </div>
+              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {recommendedRepos.map(repo => (
                   <EnhancedRepoCard
@@ -249,49 +272,25 @@ export default function ReposPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="all" className="mt-6">
-          <div className="space-y-4">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-semibold mb-2">All Repositories</h2>
-              <p className="text-muted-foreground">
-                Browse through our curated collection of open source projects
+        <TabsContent value="workflow" className="mt-6">
+          {selectedRepo ? (
+            <GuidedContributionWorkflow
+              repository={selectedRepo}
+              onComplete={handleWorkflowComplete}
+            />
+          ) : (
+            <div className="text-center py-12">
+              <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-xl font-semibold mb-2">Select a Project</h3>
+              <p className="text-muted-foreground mb-4">
+                Choose a project from the "Find Projects" or "For You" tabs to start the contribution workflow.
               </p>
+              <Button onClick={() => setActiveTab('find')}>
+                Browse Projects
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {displayRepos.map(repo => (
-                <EnhancedRepoCard
-                  key={repo.id}
-                  repository={repo}
-                  onViewAnalysis={handleViewAnalysis}
-                  onContribute={handleContribute}
-                />
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="trending" className="mt-6">
-          <div className="space-y-4">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-semibold mb-2">Trending Projects</h2>
-              <p className="text-muted-foreground">
-                Most popular repositories this week
-              </p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {allRepos
-                .sort((a, b) => b.stargazers_count - a.stargazers_count)
-                .slice(0, 10)
-                .map(repo => (
-                  <EnhancedRepoCard
-                    key={repo.id}
-                    repository={repo}
-                    onViewAnalysis={handleViewAnalysis}
-                    onContribute={handleContribute}
-                  />
-                ))}
-            </div>
-          </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

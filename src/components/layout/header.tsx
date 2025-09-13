@@ -13,7 +13,10 @@ export default function Header() {
         </Link>
         <nav className="hidden md:flex items-center gap-6">
           <Link href="/repos" className="text-muted-foreground hover:text-foreground transition-colors">
-            Repositories
+            Discover
+          </Link>
+          <Link href="/contribute" className="text-muted-foreground hover:text-foreground transition-colors">
+            Contribute
           </Link>
           <Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
             Profile
@@ -23,7 +26,9 @@ export default function Header() {
           </Link>
         </nav>
         <div className="hidden md:flex items-center gap-4">
-          <Button variant="ghost">Log In</Button>
+          <Button variant="ghost" asChild>
+            <Link href="/contribute">Start Contributing</Link>
+          </Button>
           <Button asChild>
             <Link href="/onboarding">Get Started</Link>
           </Button>
