@@ -8,7 +8,8 @@ import { getRepo } from '@/lib/github';
 export default async function RepoDetailPage({ params }: { params: { slug: string } }) {
   // The slug is expected to be in the format "owner--repo".
   // We need to decode and replace '--' with '/' to get "owner/repo".
-  const repoFullName = decodeURIComponent(params.slug).replace('--', '/');
+  const decodedSlug = decodeURIComponent(params.slug);
+  const repoFullName = decodedSlug.replace('--', '/');
   const repo = await getRepo(repoFullName);
 
   if (!repo) {
