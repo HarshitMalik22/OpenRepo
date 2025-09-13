@@ -8,6 +8,7 @@ import { ArrowRight, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import placeholderImages from '@/lib/placeholder-images.json';
 import { getPopularRepos } from '@/lib/github';
+import GithubRepoSearch from '@/components/github-repo-search';
 import type { Repository } from '@/lib/types';
 
 export default async function Home() {
@@ -26,13 +27,14 @@ export default async function Home() {
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mt-4">
           Discover and understand open-source projects with AI-powered explanations, interactive flowcharts, and curated learning paths.
         </p>
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex flex-col items-center gap-6">
           <Button asChild size="lg" className="gap-2">
             <Link href="/onboarding">
               Get Started
               <ArrowRight className="h-5 w-5" />
             </Link>
           </Button>
+          <GithubRepoSearch />
         </div>
       </section>
 
