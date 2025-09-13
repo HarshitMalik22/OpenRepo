@@ -48,16 +48,22 @@ export default function ReposPage() {
       try {
         // Load user preferences
         const preferences = getUserPreferences();
+        console.log('Loaded preferences:', preferences);
         setUserPreferences(preferences);
         
         // Load repositories
         const repos = await getPopularRepos();
+        console.log('Loaded repositories:', repos.length);
         setAllRepos(repos);
         
         // Get personalized recommendations if user has preferences
         if (preferences && preferences.techStack.length > 0) {
+          console.log('Getting recommendations for preferences:', preferences);
           const recommended = await getRecommendedRepos(preferences);
+          console.log('Recommended repositories:', recommended.length);
           setRecommendedRepos(recommended);
+        } else {
+          console.log('No preferences found or empty tech stack');
         }
         
         // Load community statistics
@@ -113,7 +119,9 @@ export default function ReposPage() {
 
   const handleViewAnalysis = (repo: Repository) => {
     // Navigate to repository analysis page
-    window.open(`/repos/${repo.full_name}`, '_blank');
+    // Encode the full_name by replacing '/' with '--' for the dynamic route
+    const encodedSlug = repo.full_name.replace('/', '--');
+    window.open(`/repos/${encodedSlug}`, '_blank');
   };
 
   const handleContribute = (repo: Repository) => {

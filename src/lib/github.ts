@@ -73,23 +73,30 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
     const responses = await Promise.all(promises);
     const allRepos: any[] = [];
     const seenIds = new Set();
+    console.log(`Processing ${responses.length} API responses...`);
 
-    for (const response of responses) {
+    for (let i = 0; i < responses.length; i++) {
+      const response = responses[i];
       if (!response.ok) {
-        console.error('GitHub API response not OK:', await response.text());
+        const errorText = await response.text();
+        console.error(`GitHub API response not OK for query ${i}:`, errorText);
+        console.error(`Query was: ${queries[i]}`);
         continue;
       }
       
       const data = await response.json();
+      console.log(`Query ${i} returned ${data.items?.length || 0} repositories`);
       
       // Deduplicate repositories
-      data.items.forEach((repo: any) => {
+      data.items?.forEach((repo: any) => {
         if (!seenIds.has(repo.id)) {
           seenIds.add(repo.id);
           allRepos.push(repo);
         }
       });
     }
+    
+    console.log(`Total unique repositories found: ${allRepos.length}`);
 
     // Enhance repositories with additional metadata
     const enhancedRepos = allRepos.map((repo: any) => enhanceRepository(repo));

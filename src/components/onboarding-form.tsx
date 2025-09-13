@@ -9,6 +9,7 @@ import { techStacks, goals, experienceLevels } from '@/lib/filter-data';
 import type { UserPreferences } from '@/lib/types';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { saveUserPreferences } from '@/lib/user-preferences';
 
 const steps = [
   { id: 1, title: 'Select Your Tech Stack', description: 'Choose the technologies you are interested in. You can select multiple.' },
@@ -27,9 +28,15 @@ export default function OnboardingForm() {
     if (step < steps.length) {
       setStep(step + 1);
     } else {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('userPreferences', JSON.stringify(preferences));
-      }
+      // Mark preferences as completed and save
+      const completedPreferences: UserPreferences = {
+        techStack: preferences.techStack || [],
+        goal: preferences.goal || 'learn',
+        experienceLevel: preferences.experienceLevel || 'beginner',
+        completed: true,
+      };
+      
+      saveUserPreferences(completedPreferences);
       router.push('/repos');
     }
   };
