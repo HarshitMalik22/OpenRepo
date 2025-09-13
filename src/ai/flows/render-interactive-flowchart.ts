@@ -22,7 +22,12 @@ export type RenderInteractiveFlowchartInput = z.infer<typeof RenderInteractiveFl
 const RenderInteractiveFlowchartOutputSchema = z.object({
   flowchartMermaid: z.string().describe('The Mermaid.js flowchart diagram.'),
   explanation: z
-    .record(z.string(), z.object({description: z.string()}))
+    .array(
+      z.object({
+        component: z.string().describe('The name of the component from the flowchart.'),
+        description: z.string().describe('A detailed explanation of this component.'),
+      })
+    )
     .describe('Explanation of the different components in the flowchart.'),
   resources: z.array(
     z.object({
@@ -50,16 +55,17 @@ Learning Goal: {{{goal}}}
 
 Ensure the flowchart and explanation are tailored to the specified tech stack and learning goal.
 
-Output the flowchart as a Mermaid.js diagram and the explanation as a JSON object where keys are the component name in the flowchart, and values are a short explanation of each.
+Output the flowchart as a Mermaid.js diagram.
+For the explanation, provide an array of objects, where each object contains a "component" name from the flowchart and a "description" explaining it.
 Also include a list of relevant learning resources (videos, documentation, tutorials) related to the repository's tech stack.
 
 Example output:
 {
-  "flowchart_mermaid": "graph TD; A[App Start] --> B[Auth]; B --> C[API];",
-  "explanation": {
-    "Auth": { "description": "Handles user login with Firebase Auth." },
-    "API": { "description": "Logic handled in app/api/... using Route Handlers." }
-  },
+  "flowchartMermaid": "graph TD; A[App Start] --> B[Auth]; B --> C[API];",
+  "explanation": [
+    { "component": "Auth", "description": "Handles user login with Firebase Auth." },
+    { "component": "API", "description": "Logic handled in app/api/... using Route Handlers." }
+  ],
   "resources": [
     { "type": "video", "title": "Next.js Auth", "url": "..." },
     { "type": "docs", "title": "Firebase Basics", "url": "..." }

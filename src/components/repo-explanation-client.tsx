@@ -115,12 +115,12 @@ export default function RepoExplanationClient({ repo }: RepoExplanationClientPro
                     </CardHeader>
                     <CardContent>
                         <FlowchartRenderer chart={aiData.flowchartMermaid} />
-                        {aiData.explanation && Object.keys(aiData.explanation).length > 0 && (
+                        {aiData.explanation && aiData.explanation.length > 0 && (
                              <Accordion type="single" collapsible className="w-full mt-4">
-                                {Object.entries(aiData.explanation).map(([key, value]) => (
-                                    <AccordionItem value={key} key={key}>
-                                        <AccordionTrigger>{key}</AccordionTrigger>
-                                        <AccordionContent>{value.description}</AccordionContent>
+                                {aiData.explanation.map((item) => (
+                                    <AccordionItem value={item.component} key={item.component}>
+                                        <AccordionTrigger>{item.component}</AccordionTrigger>
+                                        <AccordionContent>{item.description}</AccordionContent>
                                     </AccordionItem>
                                 ))}
                             </Accordion>
