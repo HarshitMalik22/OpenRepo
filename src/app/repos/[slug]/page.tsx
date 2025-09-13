@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, GitBranch, ExternalLink, Bookmark } from 'lucide-react';
+import { Star, GitBranch, ExternalLink, BrainCircuit } from 'lucide-react';
 import RepoExplanationClient from '@/components/repo-explanation-client';
 import { getRepo } from '@/lib/github';
 
@@ -35,23 +35,6 @@ export default async function RepoDetailPage({ params }: { params: { slug: strin
               <Badge key={tag} variant="secondary">{tag}</Badge>
             ))}
           </div>
-        </div>
-        <div className="flex flex-wrap gap-4 mt-6">
-          <Button>
-            <Star className="mr-2 h-4 w-4" /> Star
-          </Button>
-          <Button variant="secondary">
-            <GitBranch className="mr-2 h-4 w-4" /> Fork
-          </Button>
-          <Button variant="outline">
-            <Bookmark className="mr-2 h-4 w-4" />
-            Save for later
-          </Button>
-          <Button variant="ghost" asChild>
-            <a href={repo.html_url} target="_blank" rel="noopener noreferrer">
-              View on GitHub <ExternalLink className="ml-2 h-4 w-4" />
-            </a>
-          </Button>
         </div>
       </header>
 

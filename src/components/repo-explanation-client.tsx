@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Repository } from '@/lib/types';
 import { renderInteractiveFlowchart, type RenderInteractiveFlowchartOutput } from '@/ai/flows/render-interactive-flowchart';
-
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Video, BookOpen, FileCode, AlertTriangle } from 'lucide-react';
+import { Video, BookOpen, FileCode, AlertTriangle, BrainCircuit, ExternalLink } from 'lucide-react';
 import FlowchartRenderer from '@/components/flowchart-renderer';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,47 +29,66 @@ const getResourceIcon = (type: string) => {
 
 export default function RepoExplanationClient({ repo }: RepoExplanationClientProps) {
     const [aiData, setAiData] = useState<RenderInteractiveFlowchartOutput | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isExplanationVisible, setIsExplanationVisible] = useState(false);
     const { toast } = useToast();
 
-    useEffect(() => {
-        const generateExplanation = async () => {
-            setIsLoading(true);
-            setError(null);
-            
-            try {
-                // Get user goal from local storage
-                const storedPrefs = localStorage.getItem('userPreferences');
-                const userGoal = storedPrefs ? JSON.parse(storedPrefs).goal || 'Understand Architecture' : 'Understand Architecture';
+    const generateExplanation = async () => {
+        setIsLoading(true);
+        setError(null);
+        setIsExplanationVisible(true);
+        
+        try {
+            // Get user goal from local storage
+            const storedPrefs = localStorage.getItem('userPreferences');
+            const userGoal = storedPrefs ? JSON.parse(storedPrefs).goal || 'Understand Architecture' : 'Understand Architecture';
 
-                const data = await renderInteractiveFlowchart({
-                    repoUrl: repo.html_url,
-                    techStack: repo.topics,
-                    goal: userGoal,
-                });
+            const data = await renderInteractiveFlowchart({
+                repoUrl: repo.html_url,
+                techStack: repo.topics,
+                goal: userGoal,
+            });
 
-                if (!data || !data.flowchartMermaid) {
-                    throw new Error("AI failed to generate a valid explanation.");
-                }
-
-                setAiData(data);
-            } catch (e: any) {
-                console.error("Failed to generate AI explanation:", e);
-                const errorMessage = e.message || 'An unknown error occurred while generating the AI explanation.';
-                setError(errorMessage);
-                toast({
-                    variant: "destructive",
-                    title: "AI Explanation Failed",
-                    description: errorMessage,
-                });
-            } finally {
-                setIsLoading(false);
+            if (!data || !data.flowchartMermaid) {
+                throw new Error("AI failed to generate a valid explanation.");
             }
-        };
 
-        generateExplanation();
-    }, [repo, toast]);
+            setAiData(data);
+        } catch (e: any) {
+            console.error("Failed to generate AI explanation:", e);
+            const errorMessage = e.message || 'An unknown error occurred while generating the AI explanation.';
+            setError(errorMessage);
+            toast({
+                variant: "destructive",
+                title: "AI Explanation Failed",
+                description: errorMessage,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    if (!isExplanationVisible) {
+        return (
+            <div className="space-y-8">
+                <div className="flex flex-wrap gap-4">
+                    <Button onClick={generateExplanation} size="lg">
+                        <BrainCircuit className="mr-2 h-5 w-5" />
+                        Understand with OpenSource
+                    </Button>
+                    <Button variant="outline" size="lg" asChild>
+                        <a href={repo.html_url} target="_blank" rel="noopener noreferrer">
+                            View on GitHub <ExternalLink className="ml-2 h-4 w-4" />
+                        </a>
+                    </Button>
+                </div>
+                <div className="border-t border-dashed border-border pt-8">
+                    <p className="text-center text-muted-foreground">Click the button above to generate an AI-powered explanation of this repository.</p>
+                </div>
+            </div>
+        )
+    }
 
     if (isLoading) {
         return (
@@ -145,6 +164,7 @@ export default function RepoExplanationClient({ repo }: RepoExplanationClientPro
                                 </AccordionItem>
                             ))}
                         </Accordion>
+                        {!repo.modules && <p className="text-muted-foreground">Key modules not available for this repository.</p>}
                     </CardContent>
                 </Card>
             </TabsContent>
