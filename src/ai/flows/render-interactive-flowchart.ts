@@ -47,7 +47,7 @@ const renderInteractiveFlowchartPrompt = ai.definePrompt({
   name: 'renderInteractiveFlowchartPrompt',
   input: {schema: RenderInteractiveFlowchartInputSchema},
   output: {schema: RenderInteractiveFlowchartOutputSchema},
-  prompt: `You are an AI expert in explaining open-source repositories using flowcharts.  Given the following repository URL, tech stack, and learning goal, generate a Mermaid.js flowchart diagram and explanation of the repository's architecture.
+  prompt: `You are an AI expert in explaining open-source repositories using flowcharts. Given the following repository URL, tech stack, and learning goal, generate a Mermaid.js flowchart diagram and explanation of the repository's architecture.
 
 Repository URL: {{{repoUrl}}}
 Tech Stack: {{#each techStack}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
@@ -55,16 +55,28 @@ Learning Goal: {{{goal}}}
 
 Ensure the flowchart and explanation are tailored to the specified tech stack and learning goal.
 
-Output the flowchart as a Mermaid.js diagram.
+Output the flowchart as a Mermaid.js diagram with the following requirements:
+- Use "graph TD" (top-down) as the diagram type
+- Use proper syntax: node shapes like [text] for rectangles, (text) for circles, {text} for diamonds
+- Use --> for arrows between nodes
+- Each node should have a clear, descriptive label
+- Avoid complex subgraph syntax unless absolutely necessary
+- Keep the structure simple and readable
+- Use proper indentation and line breaks
+- Do not use special characters that might break parsing
+- Ensure all opening brackets have corresponding closing brackets
+- Use simple node IDs like A, B, C or descriptive short names
+
 For the explanation, provide an array of objects, where each object contains a "component" name from the flowchart and a "description" explaining it.
 Also include a list of relevant learning resources (videos, documentation, tutorials) related to the repository's tech stack.
 
 Example output:
 {
-  "flowchartMermaid": "graph TD; A[App Start] --> B[Auth]; B --> C[API];",
+  "flowchartMermaid": "graph TD\n    A[App Start] --> B[Auth]\n    B --> C[API]\n    C --> D[Database]",
   "explanation": [
     { "component": "Auth", "description": "Handles user login with Firebase Auth." },
-    { "component": "API", "description": "Logic handled in app/api/... using Route Handlers." }
+    { "component": "API", "description": "Logic handled in app/api/... using Route Handlers." },
+    { "component": "Database", "description": "Stores application data and user information." }
   ],
   "resources": [
     { "type": "video", "title": "Next.js Auth", "url": "..." },

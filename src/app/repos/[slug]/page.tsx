@@ -31,14 +31,14 @@ export default async function RepoDetailPage({ params }: { params: { slug: strin
             <span className="font-medium">{repo.language}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {repo.topics.map(tag => (
+            {repo.topics.map((tag: string) => (
               <Badge key={tag} variant="secondary">{tag}</Badge>
             ))}
           </div>
         </div>
       </header>
 
-      <RepoExplanationClient repo={repo} />
+      <RepoExplanationClient repository={repo} />
     </div>
   );
 }
