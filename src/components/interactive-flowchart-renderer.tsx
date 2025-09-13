@@ -106,6 +106,7 @@ export default function InteractiveFlowchartRenderer({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [highlightedNodes, setHighlightedNodes] = useState<string[]>([]);
+  const [filteredNodes, setFilteredNodes] = useState<string[]>([]);
   const [naturalLanguageQuery, setNaturalLanguageQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -638,12 +639,12 @@ export default function InteractiveFlowchartRenderer({
       const lines = mermaidCode.split('\n').filter(line => line.trim());
       console.log('Parsing Mermaid lines:', lines);
       
-      // First pass: collect all nodes
+      // First pass: collect all nodes with improved pattern matching
       for (const line of lines) {
         const trimmed = line.trim();
         
         // Skip flowchart declaration and subgraph lines
-        if (trimmed.startsWith('flowchart') || trimmed.startsWith('subgraph') || trimmed.startsWith('end')) {
+        if (trimmed.startsWith('flowchart') || trimmed.startsWith('subgraph') || trimmed.startsWith('end') || trimmed.startsWith('classDef')) {
           continue;
         }
         
@@ -665,6 +666,9 @@ export default function InteractiveFlowchartRenderer({
           /([A-Za-z0-9_]+)\[\(([^\)]+)\)\](?:::\w+)?/g, // [(text)] - external service
           /([A-Za-z0-9_]+)\[\/([^\]]+)\/\](?:::\w+)?/g, // [/text/] - configuration
           /([A-Za-z0-9_]+)\[\\([^\]]+)\\\](?:::\w+)?/g, // [\text\] - test
+          // Also handle simple node definitions
+          /([A-Za-z0-9_]+)\[([^\]]+)\]/g,                // Simple [text]
+          /([A-Za-z0-9_]+)\(([^\)]+)\)/g,                // Simple (text)
         ];
         
         for (const pattern of nodePatterns) {
@@ -690,7 +694,7 @@ export default function InteractiveFlowchartRenderer({
         }
       }
       
-      // Second pass: collect all edges
+      // Second pass: collect all edges with improved pattern matching
       for (const line of lines) {
         const trimmed = line.trim();
         
@@ -700,15 +704,18 @@ export default function InteractiveFlowchartRenderer({
         // A -.-> B
         // A ==> B
         // A -- B
+        // A->B (compact format)
         const edgePatterns = [
           /^\s*([A-Za-z0-9_]+)\s*-->\s*([A-Za-z0-9_]+)/,      // A --> B
           /^\s*([A-Za-z0-9_]+)\s*-\.->\s*([A-Za-z0-9_]+)/,   // A -.-> B
           /^\s*([A-Za-z0-9_]+)\s*==>\s*([A-Za-z0-9_]+)/,     // A ==> B
           /^\s*([A-Za-z0-9_]+)\s*--\s*([A-Za-z0-9_]+)/,      // A -- B
+          /^\s*([A-Za-z0-9_]+)->([A-Za-z0-9_]+)/,             // A->B (compact)
+          /^\s*([A-Za-z0-9_]+)\s*--\s*[^-]+-->\s*([A-Za-z0-9_]+)/, // A -- text --> B
         ];
         
         for (const pattern of edgePatterns) {
-          const edgeMatch = line.match(pattern); // Use original line, not trimmed
+          const edgeMatch = line.match(pattern);
           if (edgeMatch) {
             const [, from, to] = edgeMatch;
             if (nodeMap.has(from) && nodeMap.has(to)) {
@@ -721,6 +728,8 @@ export default function InteractiveFlowchartRenderer({
               if (fromNode && toNode) {
                 fromNode.dependencies.push(to);
               }
+            } else {
+              console.warn('Edge references non-existent node:', from, '->', to);
             }
             break;
           }
@@ -779,6 +788,8 @@ export default function InteractiveFlowchartRenderer({
   const layoutNodes = (nodes: FlowchartNode[], edges: FlowchartEdge[]) => {
     if (nodes.length === 0) return;
 
+    console.log('Layout nodes called with:', { nodes: nodes.length, edges: edges.length });
+
     // Simple hierarchical layout
     const levels = new Map<string, number>();
     const nodesInLevel = new Map<number, FlowchartNode[]>();
@@ -789,12 +800,24 @@ export default function InteractiveFlowchartRenderer({
       hasIncomingEdge.add(edge.to);
     });
     
-    const rootNodes = nodes.filter(node => !hasIncomingEdge.has(node.id));
+    let rootNodes = nodes.filter(node => !hasIncomingEdge.has(node.id));
     
-    // If no clear root nodes, use the first node as root
+    // If no clear root nodes, use nodes with specific types as roots
+    if (rootNodes.length === 0) {
+      rootNodes = nodes.filter(node => 
+        node.type === 'entry' || 
+        node.label.toLowerCase().includes('main') ||
+        node.label.toLowerCase().includes('app') ||
+        node.label.toLowerCase().includes('index')
+      );
+    }
+    
+    // If still no root nodes, use the first node as root
     if (rootNodes.length === 0 && nodes.length > 0) {
       rootNodes.push(nodes[0]);
     }
+    
+    console.log('Root nodes found:', rootNodes.map(n => n.id));
     
     // Assign levels using BFS
     const queue: { node: FlowchartNode; level: number }[] = rootNodes.map(node => ({ node, level: 0 }));
@@ -826,22 +849,25 @@ export default function InteractiveFlowchartRenderer({
     const levelHeight = 150;
     const nodeWidth = 140;
     const nodeSpacing = 20;
+    const canvasWidth = 800; // Default canvas width
     
     nodesInLevel.forEach((nodesInThisLevel, level) => {
       const totalWidth = nodesInThisLevel.length * nodeWidth + (nodesInThisLevel.length - 1) * nodeSpacing;
-      const startX = (800 - totalWidth) / 2; // Center horizontally
+      const startX = (canvasWidth - totalWidth) / 2; // Center horizontally
       
       nodesInThisLevel.forEach((node, index) => {
         node.x = startX + index * (nodeWidth + nodeSpacing) + nodeWidth / 2;
         node.y = 100 + level * levelHeight;
+        console.log(`Positioned node ${node.id} at (${node.x}, ${node.y})`);
       });
     });
     
     // Position any remaining nodes that weren't reached in BFS
     nodes.forEach(node => {
       if (!levels.has(node.id)) {
-        node.x = Math.random() * 600 + 100;
+        node.x = Math.random() * (canvasWidth - 200) + 100;
         node.y = Math.random() * 400 + 100;
+        console.log(`Positioned unconnected node ${node.id} at (${node.x}, ${node.y})`);
       }
     });
   };
@@ -880,15 +906,30 @@ export default function InteractiveFlowchartRenderer({
     return icons[type] || icons.component;
   };
 
-  // Initialize flowchart data
+  // Initialize flowchart data with better error handling
   useEffect(() => {
     console.log('InteractiveFlowchartRenderer received chart:', chart);
-    const data = parseMermaidChart(chart);
-    console.log('Parsed flowchart data:', data);
-    setFlowchartData(data);
+    if (!chart || chart.trim() === '') {
+      console.error('Empty or invalid chart data received');
+      return;
+    }
+    
+    try {
+      const data = parseMermaidChart(chart);
+      console.log('Parsed flowchart data:', data);
+      
+      if (data.nodes.length === 0) {
+        console.error('No nodes found in parsed chart data');
+        return;
+      }
+      
+      setFlowchartData(data);
+    } catch (error) {
+      console.error('Error initializing flowchart:', error);
+    }
   }, [chart, parseMermaidChart]);
 
-  // Canvas rendering
+  // Canvas rendering with improved error handling
   const drawFlowchart = useCallback(() => {
     console.log('drawFlowchart called');
     const canvas = canvasRef.current;
@@ -906,6 +947,12 @@ export default function InteractiveFlowchartRenderer({
     console.log('Canvas dimensions:', canvas.width, canvas.height);
     console.log('Flowchart data:', flowchartData);
 
+    // Check if we have valid data
+    if (!flowchartData.nodes || flowchartData.nodes.length === 0) {
+      console.log('No nodes to render');
+      return;
+    }
+
     const { width, height } = canvas;
     ctx.clearRect(0, 0, width, height);
 
@@ -915,6 +962,12 @@ export default function InteractiveFlowchartRenderer({
     ctx.scale(scale, scale);
 
     const filteredNodes = getFilteredNodes();
+    
+    if (filteredNodes.length === 0) {
+      console.log('No filtered nodes to render');
+      ctx.restore();
+      return;
+    }
     
     // Draw edges (only for visible nodes)
     ctx.strokeStyle = '#6b7280';
@@ -1018,22 +1071,48 @@ export default function InteractiveFlowchartRenderer({
     drawFlowchart();
   }, [drawFlowchart]);
 
-  // Handle canvas resize
+  // Handle canvas resize with improved initialization
   useEffect(() => {
     const resizeCanvas = () => {
       const canvas = canvasRef.current;
       const container = containerRef.current;
       if (canvas && container) {
         console.log('Resizing canvas to container:', container.clientWidth, container.clientHeight);
+        
+        // Set canvas dimensions
         canvas.width = container.clientWidth;
         canvas.height = container.clientHeight;
-        drawFlowchart();
+        
+        // Ensure minimum dimensions
+        if (canvas.width < 400) canvas.width = 400;
+        if (canvas.height < 300) canvas.height = 300;
+        
+        console.log('Final canvas dimensions:', canvas.width, canvas.height);
+        
+        // Redraw after resize
+        setTimeout(() => {
+          drawFlowchart();
+        }, 100); // Small delay to ensure canvas is ready
       }
     };
 
+    // Initial resize
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
+    
+    // Add resize listener with debouncing
+    let resizeTimeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(resizeCanvas, 250);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimeout);
+    };
   }, [drawFlowchart]);
 
   // Mouse handlers
@@ -1057,7 +1136,7 @@ export default function InteractiveFlowchartRenderer({
   };
 
   const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
+    // Remove preventDefault to avoid passive event listener warning
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     const newScale = Math.max(0.1, Math.min(3, scale * delta));
     setScale(newScale);
