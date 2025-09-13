@@ -249,10 +249,13 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                 
                 // Call AI service with timeout
                 const timeoutPromise = new Promise((_, reject) => {
-                  setTimeout(() => reject(new Error('AI service timeout')), 10000); // 10 second timeout
+                  setTimeout(() => reject(new Error('AI service timeout')), 30000); // 30 second timeout
                 });
                 
                 try {
+                  console.log('Starting AI service call...');
+                  const startTime = Date.now();
+                  
                   const aiPromise = renderInteractiveFlowchart({
                     repoUrl: repository.html_url,
                     techStack,
@@ -261,7 +264,8 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                   
                   const data = await Promise.race([aiPromise, timeoutPromise]) as RenderInteractiveFlowchartOutput;
                   
-                  console.log('AI analysis generated successfully:', data);
+                  const endTime = Date.now();
+                  console.log(`AI analysis generated successfully in ${endTime - startTime}ms:`, data);
                   
                   // Validate the AI response
                   if (!data || !data.flowchartMermaid || !data.explanation) {
@@ -270,7 +274,9 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                   
                   setAiData(data);
                 } catch (aiError) {
-                  console.warn('AI service failed, using fallback data:', aiError);
+                  const endTime = Date.now();
+                  const startTime = endTime - 30000; // Approximate start time for logging
+                  console.warn(`AI service failed, using fallback data:`, aiError);
                   
                   // Use fallback data immediately
                   const fallback = getFallbackData(repository, 'Understand the repository structure and key components');
@@ -280,7 +286,7 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                   // Show a toast notification that we're using fallback data
                   toast({
                     title: "AI Service Unavailable",
-                    description: "Using enhanced fallback analysis. Some features may be limited.",
+                    description: `Using enhanced fallback analysis. Error: ${aiError instanceof Error ? aiError.message : 'Unknown error'}`,
                     variant: "default",
                   });
                 }

@@ -7,7 +7,7 @@
  * - ExplainRepositoryOutput - The return type for the ExplainRepository function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, isAIConfigured} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExplainRepositoryInputSchema = z.object({
@@ -31,6 +31,11 @@ const ExplainRepositoryOutputSchema = z.object({
 export type ExplainRepositoryOutput = z.infer<typeof ExplainRepositoryOutputSchema>;
 
 export async function explainRepository(input: ExplainRepositoryInput): Promise<ExplainRepositoryOutput> {
+  // Check if AI is properly configured
+  if (!isAIConfigured()) {
+    throw new Error('AI service is not configured. Please set GEMINI_API_KEY environment variable.');
+  }
+  
   return explainRepositoryFlow(input);
 }
 

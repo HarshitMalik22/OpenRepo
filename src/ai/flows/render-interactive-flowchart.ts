@@ -9,7 +9,7 @@
  * - RenderInteractiveFlowchartOutput - The return type for the renderInteractiveFlowchart function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, isAIConfigured} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const RenderInteractiveFlowchartInputSchema = z.object({
@@ -94,6 +94,22 @@ const RenderInteractiveFlowchartOutputSchema = z.object({
 export type RenderInteractiveFlowchartOutput = z.infer<typeof RenderInteractiveFlowchartOutputSchema>;
 
 export async function renderInteractiveFlowchart(input: RenderInteractiveFlowchartInput): Promise<RenderInteractiveFlowchartOutput> {
+  // Debug environment variables
+  console.log('=== AI Flow Debug ===');
+  console.log('GEMINI_API_KEY in flow:', process.env.GEMINI_API_KEY ? 'Set' : 'Not set');
+  console.log('GEMINI_API_KEY length:', process.env.GEMINI_API_KEY?.length || 0);
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  
+  // Check if AI is properly configured
+  const configured = isAIConfigured();
+  console.log('isAIConfigured() result:', configured);
+  
+  if (!configured) {
+    console.error('AI service is not configured. GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Set but invalid' : 'Not set');
+    throw new Error('AI service is not configured. Please set GEMINI_API_KEY environment variable.');
+  }
+  
+  console.log('AI is configured, proceeding with flow execution...');
   return renderInteractiveFlowchartFlow(input);
 }
 
@@ -200,7 +216,19 @@ const renderInteractiveFlowchartFlow = ai.defineFlow(
     outputSchema: RenderInteractiveFlowchartOutputSchema,
   },
   async input => {
-    const {output} = await renderInteractiveFlowchartPrompt(input);
-    return output!;
+    console.log('Executing AI flow with input:', input);
+    try {
+      const {output} = await renderInteractiveFlowchartPrompt(input);
+      console.log('AI flow output received:', output);
+      
+      if (!output) {
+        throw new Error('AI flow returned no output');
+      }
+      
+      return output;
+    } catch (error) {
+      console.error('AI flow execution failed:', error);
+      throw new Error(`AI flow execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 );

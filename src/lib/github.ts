@@ -6,6 +6,29 @@ let communityStatsCache: any | null = null;
 import { enhanceRepository, getPersonalizedRecommendations, filterRepositories } from './recommendation-engine';
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats } from './types';
 
+// Validate GitHub API configuration
+function isGitHubConfigured(): boolean {
+  return !!process.env.GITHUB_TOKEN;
+}
+
+// Get GitHub API headers with authentication if available
+function getGitHubHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Accept': 'application/vnd.github.v3+json',
+  };
+  
+  if (isGitHubConfigured()) {
+    headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+  }
+  
+  return headers;
+}
+
+// Log configuration status
+if (!isGitHubConfigured()) {
+  console.warn('GITHUB_TOKEN environment variable is not set. GitHub API requests will be unauthenticated and rate-limited.');
+}
+
 // Fetches a list of popular repositories from the GitHub API
 export async function getPopularRepos(useCache = true): Promise<Repository[]> {
   if (useCache && repoCache) {
@@ -58,12 +81,7 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
 
     const promises = queries.map(query => 
       fetch(`https://api.github.com/search/repositories?q=${query}`, {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          ...(process.env.GITHUB_TOKEN && {
-            'Authorization': `token ${process.env.GITHUB_TOKEN}`
-          })
-        },
+        headers: getGitHubHeaders(),
         next: {
           revalidate: 3600,
         }
@@ -130,36 +148,16 @@ export async function getRepo(fullName: string, useCache = true): Promise<Reposi
     // Fetch repository details
     const [repoResponse, issuesResponse, contributorsResponse, commitsResponse] = await Promise.all([
       fetch(`https://api.github.com/repos/${fullName}`, {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          ...(process.env.GITHUB_TOKEN && {
-            'Authorization': `token ${process.env.GITHUB_TOKEN}`
-          })
-        }
+        headers: getGitHubHeaders()
       }),
       fetch(`https://api.github.com/repos/${fullName}/issues?state=open&labels=good%20first%20issue&per_page=1`, {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          ...(process.env.GITHUB_TOKEN && {
-            'Authorization': `token ${process.env.GITHUB_TOKEN}`
-          })
-        }
+        headers: getGitHubHeaders()
       }),
       fetch(`https://api.github.com/repos/${fullName}/contributors?per_page=100`, {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          ...(process.env.GITHUB_TOKEN && {
-            'Authorization': `token ${process.env.GITHUB_TOKEN}`
-          })
-        }
+        headers: getGitHubHeaders()
       }),
       fetch(`https://api.github.com/repos/${fullName}/commits?per_page=30&since=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}`, {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          ...(process.env.GITHUB_TOKEN && {
-            'Authorization': `token ${process.env.GITHUB_TOKEN}`
-          })
-        }
+        headers: getGitHubHeaders()
       })
     ]);
 
@@ -199,30 +197,15 @@ export async function getCommunityStats(useCache = true): Promise<CommunityStats
     const [reposResponse, usersResponse, commitsResponse] = await Promise.all([
       // Get total repositories with good first issues
       fetch('https://api.github.com/search/repositories?q=good-first-issues:>1&stars:>100', {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          ...(process.env.GITHUB_TOKEN && {
-            'Authorization': `token ${process.env.GITHUB_TOKEN}`
-          })
-        }
+        headers: getGitHubHeaders()
       }),
       // Get active contributors (this is an approximation)
       fetch('https://api.github.com/search/users?q=repos:>1&followers:>10', {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          ...(process.env.GITHUB_TOKEN && {
-            'Authorization': `token ${process.env.GITHUB_TOKEN}`
-          })
-        }
+        headers: getGitHubHeaders()
       }),
       // Get recent commits across popular repos
       fetch('https://api.github.com/search/commits?q=committer-date:>=2024-01-01&sort=committer-date&order=desc', {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          ...(process.env.GITHUB_TOKEN && {
-            'Authorization': `token ${process.env.GITHUB_TOKEN}`
-          })
-        }
+        headers: getGitHubHeaders()
       })
     ]);
 
