@@ -22,7 +22,7 @@ export default function MobileNav() {
           <div className="border-b pb-4">
             <Link href="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
               <BrainCircuit className="w-8 h-8 text-primary" />
-              <span className="text-xl font-bold font-headline text-foreground">OpenSource Sage</span>
+              <span className="text-xl font-bold font-headline text-foreground">OpenSauce</span>
             </Link>
           </div>
           <nav className="flex flex-col gap-4 py-6">

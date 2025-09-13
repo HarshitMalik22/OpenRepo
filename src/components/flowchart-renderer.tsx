@@ -31,7 +31,7 @@ export default function FlowchartRenderer({ chart }: FlowchartRendererProps) {
     let isMounted = true;
     const renderChart = async () => {
       try {
-        const { svg: renderedSvg } = await mermaid.render(`mermaid-${Date.now()}`, chart);
+        const { svg: renderedSvg } = await mermaid.render('mermaid-chart', chart);
         if (isMounted) {
           setSvg(renderedSvg);
           setError(null);

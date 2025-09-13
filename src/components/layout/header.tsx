@@ -9,7 +9,7 @@ export default function Header() {
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2">
           <BrainCircuit className="w-8 h-8 text-primary" />
-          <h1 className="text-2xl font-bold font-headline text-foreground">OpenSource Sage</h1>
+          <h1 className="text-2xl font-bold font-headline text-foreground">OpenSauce</h1>
         </Link>
         <nav className="hidden md:flex items-center gap-6">
           <Link href="/repos" className="text-muted-foreground hover:text-foreground transition-colors">
