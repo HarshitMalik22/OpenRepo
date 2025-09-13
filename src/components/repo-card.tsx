@@ -10,8 +10,8 @@ interface RepoCardProps {
 }
 
 export default function RepoCard({ repo }: RepoCardProps) {
-  // Slugs for URLs can't have '/', so we replace it with a hyphen.
-  const slug = repo.full_name.replace('/', '-');
+  // Slugs for URLs can't have '/', so we replace it with a unique separator.
+  const slug = repo.full_name.replace('/', '--');
 
   return (
     <Card className="h-full flex flex-col hover:border-primary transition-colors">
