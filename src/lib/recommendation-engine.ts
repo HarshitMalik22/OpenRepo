@@ -191,9 +191,9 @@ const calculateRecommendationScore = (
 
 // Enhance repository with additional metadata using real GitHub data
 export const enhanceRepository = (repo: Repository): Repository => {
-  // Use real data if available, otherwise calculate
+  // Use real data if available, otherwise calculate with deterministic values
   const contributorCount = repo.contributor_count || Math.floor(repo.forks_count * 0.3);
-  const recentCommits = repo.recent_commits_count || Math.floor(Math.random() * 50) + 10;
+  const recentCommits = repo.recent_commits_count || Math.floor((repo.stargazers_count || 100) * 0.1) + 10;
   const goodFirstIssues = repo.good_first_issues_count || Math.floor(repo.open_issues_count * 0.1);
   
   return {
@@ -206,7 +206,7 @@ export const enhanceRepository = (repo: Repository): Repository => {
       goodFirstIssues,
       helpWantedIssues: Math.floor(repo.open_issues_count * 0.15),
     },
-    last_analyzed: new Date().toISOString(),
+    last_analyzed: repo.updated_at || new Date().toISOString(),
     contributor_count: contributorCount,
     recent_commits: recentCommits,
     issue_response_rate: recentCommits > 20 ? Math.min(95, 60 + (recentCommits / 50) * 35) : 60,

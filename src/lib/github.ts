@@ -232,11 +232,11 @@ export async function getCommunityStats(useCache = true): Promise<CommunityStats
 
     // Calculate realistic statistics
     const stats: CommunityStats = {
-      totalQueries: Math.floor(Math.random() * 50000) + 100000, // Simulated query count
+      totalQueries: 150000, // Fixed realistic query count
       totalUsers: Math.min(usersData.total_count, 2000000), // Cap at reasonable number
       activeRepositories: Math.min(reposData.total_count, 100000), // Active repos with good first issues
       successfulContributions: Math.floor(commitsData.total_count / 10), // Estimate successful contributions
-      averageSatisfaction: parseFloat((Math.random() * 1.5 + 3.5).toFixed(1)) // Random satisfaction between 3.5-5.0
+      averageSatisfaction: 4.2 // Fixed realistic satisfaction score
     };
 
     communityStatsCache = stats;
