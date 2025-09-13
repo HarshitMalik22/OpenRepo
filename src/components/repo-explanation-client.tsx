@@ -1,0 +1,173 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import type { Repository } from '@/lib/types';
+import { renderInteractiveFlowchart, type RenderInteractiveFlowchartOutput } from '@/ai/flows/render-interactive-flowchart';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Video, BookOpen, FileCode, AlertTriangle } from 'lucide-react';
+import FlowchartRenderer from '@/components/flowchart-renderer';
+import { useToast } from '@/hooks/use-toast';
+
+
+interface RepoExplanationClientProps {
+    repo: Repository;
+}
+
+const getResourceIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+        case 'video': return <Video className="w-5 h-5 text-primary" />;
+        case 'docs': return <BookOpen className="w-5 h-5 text-primary" />;
+        case 'blog': return <FileCode className="w-5 h-5 text-primary" />;
+        default: return <FileCode className="w-5 h-5 text-primary" />;
+    }
+}
+
+export default function RepoExplanationClient({ repo }: RepoExplanationClientProps) {
+    const [aiData, setAiData] = useState<RenderInteractiveFlowchartOutput | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        const generateExplanation = async () => {
+            setIsLoading(true);
+            setError(null);
+            
+            try {
+                // Get user goal from local storage
+                const storedPrefs = localStorage.getItem('userPreferences');
+                const userGoal = storedPrefs ? JSON.parse(storedPrefs).goal || 'Understand Architecture' : 'Understand Architecture';
+
+                const data = await renderInteractiveFlowchart({
+                    repoUrl: repo.githubUrl,
+                    techStack: repo.tags,
+                    goal: userGoal,
+                });
+
+                if (!data || !data.flowchartMermaid) {
+                    throw new Error("AI failed to generate a valid explanation.");
+                }
+
+                setAiData(data);
+            } catch (e: any) {
+                console.error("Failed to generate AI explanation:", e);
+                const errorMessage = e.message || 'An unknown error occurred while generating the AI explanation.';
+                setError(errorMessage);
+                toast({
+                    variant: "destructive",
+                    title: "AI Explanation Failed",
+                    description: errorMessage,
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        generateExplanation();
+    }, [repo, toast]);
+
+    if (isLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-4 w-3/4" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </CardContent>
+            </Card>
+        );
+    }
+
+    if (error || !aiData) {
+        return (
+             <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error Generating Explanation</AlertTitle>
+                <AlertDescription>
+                    {error || "The AI model could not provide an explanation for this repository. Please try again later."}
+                </AlertDescription>
+            </Alert>
+        );
+    }
+    
+    return (
+        <Tabs defaultValue="flowchart" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3">
+                <TabsTrigger value="flowchart">Flowchart</TabsTrigger>
+                <TabsTrigger value="modules">Code Modules</TabsTrigger>
+                <TabsTrigger value="resources">Study Resources</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="flowchart" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline">Architecture Flowchart</CardTitle>
+                        <CardDescription>An AI-generated visual guide to the repository's structure.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <FlowchartRenderer chart={aiData.flowchartMermaid} />
+                        {aiData.explanation && Object.keys(aiData.explanation).length > 0 && (
+                             <Accordion type="single" collapsible className="w-full mt-4">
+                                {Object.entries(aiData.explanation).map(([key, value]) => (
+                                    <AccordionItem value={key} key={key}>
+                                        <AccordionTrigger>{key}</AccordionTrigger>
+                                        <AccordionContent>{value}</AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+
+            <TabsContent value="modules" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline">Key Code Modules</CardTitle>
+                        <CardDescription>Important files and directories within this repository.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Accordion type="single" collapsible className="w-full">
+                            {repo.modules.map((mod) => (
+                                 <AccordionItem value={mod.name} key={mod.name}>
+                                    <AccordionTrigger>{mod.name}</AccordionTrigger>
+                                    <AccordionContent>{mod.description}</AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+
+            <TabsContent value="resources" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline">AI-Curated Study Resources</CardTitle>
+                        <CardDescription>Learning materials related to this project's tech stack.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {aiData.resources.map((resource, index) => (
+                            <a href={resource.url} key={index} target="_blank" rel="noopener noreferrer" className="block">
+                                <Card className="h-full hover:border-primary transition-colors">
+                                    <CardHeader className="flex flex-row items-center gap-4">
+                                        {getResourceIcon(resource.type)}
+                                        <CardTitle className="text-lg leading-snug">{resource.title}</CardTitle>
+                                    </CardHeader>
+                                </Card>
+                            </a>
+                        ))}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+      </Tabs>
+    )
+}

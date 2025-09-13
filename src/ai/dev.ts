@@ -1,1 +1,5 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/explain-repository-with-gemini.ts';
+import '@/ai/flows/render-interactive-flowchart.ts';
