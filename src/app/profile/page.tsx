@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { mockRepositories } from '@/lib/mock-data';
 import RepoCard from '@/components/repo-card';
+import { getPopularRepos } from '@/lib/github';
+import type { Repository } from '@/lib/types';
 
-export default function ProfilePage() {
-  const savedRepos = mockRepositories.slice(0, 1); // Mocking saved repos
+export default async function ProfilePage() {
+  const allRepos = await getPopularRepos();
+  const savedRepos = allRepos.slice(0, 1); // Mocking saved repos
 
   return (
     <div className="container mx-auto py-12">

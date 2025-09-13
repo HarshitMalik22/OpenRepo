@@ -10,6 +10,9 @@ interface RepoCardProps {
 }
 
 export default function RepoCard({ repo }: RepoCardProps) {
+  // Slugs for URLs can't have '/', so we replace it with a hyphen.
+  const slug = repo.full_name.replace('/', '-');
+
   return (
     <Card className="h-full flex flex-col hover:border-primary transition-colors">
       <CardHeader>
@@ -18,7 +21,7 @@ export default function RepoCard({ repo }: RepoCardProps) {
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
         <div className="flex flex-wrap gap-2">
-          {repo.tags.slice(0, 4).map(tag => (
+          {repo.topics.slice(0, 4).map(tag => (
             <Badge key={tag} variant="secondary">{tag}</Badge>
           ))}
         </div>
@@ -27,7 +30,7 @@ export default function RepoCard({ repo }: RepoCardProps) {
         <div className="flex items-center gap-4 text-muted-foreground">
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            <span>{(repo.stars / 1000).toFixed(1)}k</span>
+            <span>{(repo.stargazers_count / 1000).toFixed(1)}k</span>
           </div>
           <div className="flex items-center gap-1">
             <GitBranch className="w-4 h-4" />
@@ -35,7 +38,7 @@ export default function RepoCard({ repo }: RepoCardProps) {
           </div>
         </div>
         <Button asChild>
-          <Link href={`/repos/${repo.slug}`}>Explain with AI</Link>
+          <Link href={`/repos/${slug}`}>Explain with AI</Link>
         </Button>
       </CardFooter>
     </Card>

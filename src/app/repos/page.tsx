@@ -3,9 +3,12 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Search, ChevronDown } from 'lucide-react';
 import RepoCard from '@/components/repo-card';
-import { mockRepositories } from '@/lib/mock-data';
+import { getPopularRepos } from '@/lib/github';
+import type { Repository } from '@/lib/types';
 
-export default function ReposPage() {
+export default async function ReposPage() {
+  const repos: Repository[] = await getPopularRepos();
+
   return (
     <div className="container mx-auto py-12">
       <div className="text-center mb-12">
@@ -47,7 +50,7 @@ export default function ReposPage() {
       
       {/* Repo List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {mockRepositories.map(repo => (
+        {repos.map(repo => (
           <RepoCard key={repo.id} repo={repo} />
         ))}
       </div>
