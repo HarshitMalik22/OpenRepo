@@ -70,7 +70,7 @@ export default function OnboardingForm() {
                 className="h-auto py-4 flex flex-col gap-2"
                 onClick={() => toggleTechStack(tech.id)}
               >
-                <tech.icon className="w-8 h-8" />
+                <span className="text-2xl">{tech.icon}</span>
                 <span>{tech.name}</span>
               </Button>
             ))}
@@ -86,7 +86,7 @@ export default function OnboardingForm() {
                 className="h-auto py-4 flex items-center justify-start gap-4 text-left"
                 onClick={() => selectGoal(goal.id)}
               >
-                <goal.icon className="w-8 h-8 flex-shrink-0" />
+                <span className="text-2xl flex-shrink-0">{goal.icon}</span>
                 <span>{goal.name}</span>
               </Button>
             ))}
