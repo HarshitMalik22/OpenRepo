@@ -120,8 +120,24 @@ export default function ReposPage() {
   const handleViewAnalysis = (repo: Repository) => {
     // Navigate to repository analysis page
     // Encode the full_name by replacing '/' with '--' for the dynamic route
+    if (!repo.full_name || !repo.full_name.includes('/')) {
+      console.error('Invalid repository full_name:', repo.full_name);
+      return;
+    }
+    
     const encodedSlug = repo.full_name.replace('/', '--');
-    window.open(`/repos/${encodedSlug}`, '_blank');
+    const url = `/repos/${encodedSlug}`;
+    console.log('handleViewAnalysis - repo.full_name:', repo.full_name);
+    console.log('handleViewAnalysis - encodedSlug:', encodedSlug);
+    console.log('handleViewAnalysis - final URL:', url);
+    
+    // Validate the URL before opening
+    if (!url || url === '/repos/') {
+      console.error('Invalid URL generated:', url);
+      return;
+    }
+    
+    window.open(url, '_blank');
   };
 
   const handleContribute = (repo: Repository) => {

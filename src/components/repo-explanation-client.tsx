@@ -48,9 +48,12 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
             setError(null);
             
             try {
-                // Get user goal from local storage
-                const storedPrefs = localStorage.getItem('userPreferences');
-                const userGoal = storedPrefs ? JSON.parse(storedPrefs).goal || 'Understand Architecture' : 'Understand Architecture';
+                // Get user goal from local storage (client-side only)
+                let userGoal = 'Understand Architecture';
+                if (typeof window !== 'undefined') {
+                    const storedPrefs = localStorage.getItem('userPreferences');
+                    userGoal = storedPrefs ? JSON.parse(storedPrefs).goal || 'Understand Architecture' : 'Understand Architecture';
+                }
 
                 const data = await renderInteractiveFlowchart({
                     repoUrl: repository.html_url,
