@@ -21,7 +21,9 @@ export type RenderInteractiveFlowchartInput = z.infer<typeof RenderInteractiveFl
 
 const RenderInteractiveFlowchartOutputSchema = z.object({
   flowchartMermaid: z.string().describe('The Mermaid.js flowchart diagram.'),
-  explanation: z.record(z.string(), z.string()).describe('Explanation of the different components in the flowchart.'),
+  explanation: z
+    .record(z.string(), z.object({description: z.string()}))
+    .describe('Explanation of the different components in the flowchart.'),
   resources: z.array(
     z.object({
       type: z.string(),
@@ -55,8 +57,8 @@ Example output:
 {
   "flowchart_mermaid": "graph TD; A[App Start] --> B[Auth]; B --> C[API];",
   "explanation": {
-    "Auth": "Handles user login with Firebase Auth.",
-    "API": "Logic handled in app/api/... using Route Handlers."
+    "Auth": { "description": "Handles user login with Firebase Auth." },
+    "API": { "description": "Logic handled in app/api/... using Route Handlers." }
   },
   "resources": [
     { "type": "video", "title": "Next.js Auth", "url": "..." },

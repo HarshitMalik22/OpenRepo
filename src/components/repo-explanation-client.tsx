@@ -44,8 +44,8 @@ export default function RepoExplanationClient({ repo }: RepoExplanationClientPro
                 const userGoal = storedPrefs ? JSON.parse(storedPrefs).goal || 'Understand Architecture' : 'Understand Architecture';
 
                 const data = await renderInteractiveFlowchart({
-                    repoUrl: repo.githubUrl,
-                    techStack: repo.tags,
+                    repoUrl: repo.html_url,
+                    techStack: repo.topics,
                     goal: userGoal,
                 });
 
@@ -120,7 +120,7 @@ export default function RepoExplanationClient({ repo }: RepoExplanationClientPro
                                 {Object.entries(aiData.explanation).map(([key, value]) => (
                                     <AccordionItem value={key} key={key}>
                                         <AccordionTrigger>{key}</AccordionTrigger>
-                                        <AccordionContent>{value}</AccordionContent>
+                                        <AccordionContent>{value.description}</AccordionContent>
                                     </AccordionItem>
                                 ))}
                             </Accordion>
@@ -137,7 +137,8 @@ export default function RepoExplanationClient({ repo }: RepoExplanationClientPro
                     </CardHeader>
                     <CardContent>
                         <Accordion type="single" collapsible className="w-full">
-                            {repo.modules.map((mod) => (
+                            {/* This section appears to be using mock data, which should be addressed if it's not intended. */}
+                            {repo.modules?.map((mod: any) => (
                                  <AccordionItem value={mod.name} key={mod.name}>
                                     <AccordionTrigger>{mod.name}</AccordionTrigger>
                                     <AccordionContent>{mod.description}</AccordionContent>

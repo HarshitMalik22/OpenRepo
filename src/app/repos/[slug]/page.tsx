@@ -15,30 +15,6 @@ export default async function RepoDetailPage({ params }: { params: { slug: strin
     notFound();
   }
   
-  // Create a simplified repo object for the explanation component.
-  // The AI flow expects a simpler structure.
-  const explanationRepo = {
-    id: repo.id.toString(),
-    slug: params.slug,
-    name: repo.full_name,
-    description: repo.description || '',
-    stars: repo.stargazers_count,
-    language: repo.language || 'N/A',
-    githubUrl: repo.html_url,
-    tags: repo.topics || [],
-    // These fields are no longer available from the GitHub API directly
-    // and are expected by the AI flow. We provide mock/empty data for now.
-    explanation: {
-      why: '',
-      what: '',
-      how: '',
-      flowchartMermaid: '',
-      explanation: {},
-    },
-    resources: [],
-    modules: [],
-  };
-
   return (
     <div className="container mx-auto py-12">
       {/* Header */}
@@ -79,7 +55,7 @@ export default async function RepoDetailPage({ params }: { params: { slug: strin
         </div>
       </header>
 
-      <RepoExplanationClient repo={explanationRepo} />
+      <RepoExplanationClient repo={repo} />
     </div>
   );
 }
