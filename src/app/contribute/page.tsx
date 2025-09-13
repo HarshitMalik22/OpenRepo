@@ -19,10 +19,9 @@ import {
 import EnhancedRepoCard from '@/components/enhanced-repo-card';
 import GuidedContributionWorkflow from '@/components/guided-contribution-workflow';
 import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
-import { getPopularRepos, getRecommendedRepos, getFilteredRepos } from '@/lib/github';
+import { getPopularRepos, getRecommendedRepos, getFilteredRepos, getCommunityStats } from '@/lib/github';
 import { getUserPreferences } from '@/lib/user-preferences';
-import { communityStats } from '@/lib/mock-data';
-import type { Repository, RepositoryFilters, UserPreferences } from '@/lib/types';
+import type { Repository, RepositoryFilters, UserPreferences, CommunityStats } from '@/lib/types';
 
 export default function ContributePage() {
   const [allRepos, setAllRepos] = useState<Repository[]>([]);
@@ -32,6 +31,7 @@ export default function ContributePage() {
   const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
   const [activeTab, setActiveTab] = useState('find');
+  const [communityStats, setCommunityStats] = useState<CommunityStats | null>(null);
   
   const [filters, setFilters] = useState<RepositoryFilters>({
     searchQuery: '',
@@ -58,6 +58,10 @@ export default function ContributePage() {
           const recommended = await getRecommendedRepos(preferences);
           setRecommendedRepos(recommended);
         }
+        
+        // Load real community statistics
+        const stats = await getCommunityStats();
+        setCommunityStats(stats);
         
         setFilteredRepos(repos);
       } catch (error) {
@@ -121,7 +125,7 @@ export default function ContributePage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-12">
+      <div className="container mx-auto py-24">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading contribution opportunities...</p>
@@ -135,31 +139,35 @@ export default function ContributePage() {
   return (
     <div className="container mx-auto py-12">
       {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold font-headline mb-4">Start Contributing</h1>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+      <div className="text-center mb-16">
+        <h1 className="text-5xl font-bold font-headline mb-6">Start Contributing</h1>
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
           Find the perfect open source project to contribute to and follow our guided workflow 
           to make your first contribution with confidence.
         </p>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
           <CardContent className="p-4 text-center">
             <Trophy className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-            <div className="text-2xl font-bold">{communityStats.successfulContributions.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {communityStats?.successfulContributions?.toLocaleString() || '0'}
+            </div>
             <div className="text-xs text-muted-foreground">Contributions Made</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
           <CardContent className="p-4 text-center">
             <Users className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-            <div className="text-2xl font-bold">{communityStats.activeRepositories.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {communityStats?.activeRepositories?.toLocaleString() || '0'}
+            </div>
             <div className="text-xs text-muted-foreground">Active Projects</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
           <CardContent className="p-4 text-center">
             <Target className="w-8 h-8 mx-auto mb-2 text-green-500" />
             <div className="text-2xl font-bold">
@@ -168,9 +176,11 @@ export default function ContributePage() {
             <div className="text-xs text-muted-foreground">Beginner Issues</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold mb-1">⭐ {communityStats.averageSatisfaction}</div>
+            <div className="text-2xl font-bold mb-1">
+              ⭐ {communityStats?.averageSatisfaction || '0.0'}
+            </div>
             <div className="text-xs text-muted-foreground">Contributor Rating</div>
           </CardContent>
         </Card>
@@ -187,7 +197,7 @@ export default function ContributePage() {
             <Sparkles className="w-4 h-4" />
             For You
             {recommendedRepos.length > 0 && (
-              <Badge variant="secondary" className="ml-1">
+              <Badge variant="glass" className="ml-1">
                 {recommendedRepos.length}
               </Badge>
             )}
@@ -201,7 +211,7 @@ export default function ContributePage() {
         <TabsContent value="find" className="mt-6">
           <div className="space-y-6">
             {/* Search and Filters */}
-            <Card>
+            <Card className="bg-glass/90 backdrop-blur-md border-glass-border shadow-glass hover:shadow-glass-lg transition-all duration-300">
               <CardHeader>
                 <CardTitle>Find Your Perfect Project</CardTitle>
               </CardHeader>
@@ -218,7 +228,7 @@ export default function ContributePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold">Available Projects</h2>
-                <Badge variant="outline">
+                <Badge variant="glass">
                   {filteredRepos.length} projects
                 </Badge>
               </div>
@@ -265,7 +275,7 @@ export default function ContributePage() {
               <p className="text-muted-foreground mb-4">
                 Set up your preferences to get personalized recommendations tailored to your skills and goals.
               </p>
-              <Button onClick={() => window.location.href = '/onboarding'}>
+              <Button variant="glass" onClick={() => window.location.href = '/onboarding'}>
                 Complete Onboarding
               </Button>
             </div>
@@ -285,7 +295,7 @@ export default function ContributePage() {
               <p className="text-muted-foreground mb-4">
                 Choose a project from the "Find Projects" or "For You" tabs to start the contribution workflow.
               </p>
-              <Button onClick={() => setActiveTab('find')}>
+              <Button variant="glass" onClick={() => setActiveTab('find')}>
                 Browse Projects
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

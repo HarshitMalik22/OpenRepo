@@ -27,7 +27,7 @@ import {
   activityLevels, 
   aiDomains, 
   popularLanguages 
-} from '@/lib/mock-data';
+} from '@/lib/filter-data';
 import type { RepositoryFilters, CompetitionLevel, ActivityLevel, AIDomain } from '@/lib/types';
 
 interface EnhancedRepoFiltersProps {

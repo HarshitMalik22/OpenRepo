@@ -99,6 +99,10 @@ export interface Repository {
   created_at: string;
   updated_at: string;
   
+  // Real GitHub data fields (optional for backward compatibility)
+  good_first_issues_count?: number;
+  recent_commits_count?: number;
+  
   // New enhanced fields
   competition_level: CompetitionLevel;
   activity_level: ActivityLevel;

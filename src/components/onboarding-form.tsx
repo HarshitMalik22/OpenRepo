@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { techStacks, goals, experienceLevels } from '@/lib/mock-data';
+import { techStacks, goals, experienceLevels } from '@/lib/filter-data';
 import type { UserPreferences } from '@/lib/types';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';

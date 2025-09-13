@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Space Grotesk', 'sans-serif'],
+        body: ['Inter', 'system-ui', 'sans-serif'],
+        headline: ['Inter', 'system-ui', 'sans-serif'],
         code: ['Source Code Pro', 'monospace'],
       },
       colors: {
@@ -55,11 +55,20 @@ export default {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        glass: {
+          bg: 'var(--glass-bg)',
+          border: 'var(--glass-border)',
+          shadow: 'var(--glass-shadow)',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        xs: 'calc(var(--radius) - 6px)',
+        '2xl': '1.25rem', 
+        '3xl': '1.5rem',
+        '4xl': '2rem',
       },
       keyframes: {
         'accordion-down': {
@@ -78,12 +87,51 @@ export default {
             height: '0',
           },
         },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        'glow': {
+          '0%': { opacity: '0.5' },
+          '100%': { opacity: '1' },
+        },
+        'slide-up': {
+          from: { transform: 'translateY(20px)', opacity: '0' },
+          to: { transform: 'translateY(0)', opacity: '1' },
+        },
+        'fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'float': 'float 6s ease-in-out infinite',
+        'glow': 'glow 2s ease-in-out infinite alternate',
+        'slide-up': 'slide-up 0.3s ease-out',
+        'fade-in': 'fade-in 0.5s ease-out',
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    {
+      backdropBlur: {
+        xs: '2px',
+        sm: '4px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
+        '2xl': '24px',
+      },
+      boxShadow: {
+        'glass-sm': '0 4px 16px rgba(0, 0, 0, 0.05)',
+        'glass': '0 8px 32px rgba(31, 38, 135, 0.15)',
+        'glass-lg': '0 16px 48px rgba(0, 0, 0, 0.12)',
+        'glass-xl': '0 24px 64px rgba(0, 0, 0, 0.18)',
+        'glass-inner': 'inset 0 2px 8px rgba(255, 255, 255, 0.1)',
+      },
+    },
+  ],
 } satisfies Config;

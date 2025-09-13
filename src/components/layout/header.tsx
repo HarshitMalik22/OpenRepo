@@ -5,7 +5,7 @@ import MobileNav from './mobile-nav';
 
 export default function Header() {
   return (
-    <header className="py-4 px-6 md:px-8 border-b border-border/40">
+    <header className="py-4 px-6 md:px-8 border-b border-border/20 bg-background/80 backdrop-blur-sm shadow-sm sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2">
           <BrainCircuit className="w-8 h-8 text-primary" />

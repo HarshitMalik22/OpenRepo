@@ -10,10 +10,10 @@ export default async function ProfilePage() {
   const savedRepos = allRepos.slice(0, 1); // Mocking saved repos
 
   return (
-    <div className="container mx-auto py-12">
-      <header className="mb-12">
-        <h1 className="text-4xl font-bold font-headline">Your Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Manage your saved repositories and preferences.</p>
+    <div className="container mx-auto py-16 animate-fade-in">
+      <header className="mb-16">
+        <h1 className="text-5xl font-bold font-headline mb-4">Your Dashboard</h1>
+        <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">Manage your saved repositories and preferences.</p>
       </header>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -29,7 +29,7 @@ export default async function ProfilePage() {
         </div>
         
         <div>
-          <Card>
+          <Card className="bg-glass/90 backdrop-blur-md border-glass-border shadow-glass hover:shadow-glass-lg transition-all duration-300">
             <CardHeader>
               <CardTitle className="font-headline">Your Preferences</CardTitle>
               <CardDescription>These settings help us recommend projects for you.</CardDescription>
@@ -41,7 +41,7 @@ export default async function ProfilePage() {
                 <p><span className="font-semibold">Goal:</span> Understand Architecture</p>
                 <p><span className="font-semibold">Experience:</span> Intermediate</p>
               </div>
-              <Button asChild className="w-full mt-6">
+              <Button variant="glass" asChild className="w-full mt-6">
                 <Link href="/onboarding">Edit Preferences</Link>
               </Button>
             </CardContent>

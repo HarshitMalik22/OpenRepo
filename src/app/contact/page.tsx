@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 
 export default function ContactPage() {
   return (
-    <div className="container mx-auto py-12 md:py-24">
-      <Card className="max-w-xl mx-auto">
+    <div className="container mx-auto py-16 md:py-32">
+      <Card className="max-w-xl mx-auto bg-glass/90 backdrop-blur-md border-glass-border shadow-glass hover:shadow-glass-lg transition-all duration-300">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold font-headline">Contact Us</CardTitle>
           <CardDescription>Have feedback or a question? We'd love to hear from you.</CardDescription>
@@ -28,7 +28,7 @@ export default function ContactPage() {
               <Label htmlFor="message">Message</Label>
               <Textarea id="message" placeholder="Your message..." rows={6} />
             </div>
-            <Button type="submit" className="w-full">Send Message</Button>
+            <Button type="submit" variant="glass" className="w-full">Send Message</Button>
           </form>
         </CardContent>
       </Card>

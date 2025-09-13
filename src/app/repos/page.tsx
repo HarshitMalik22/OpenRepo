@@ -21,7 +21,7 @@ import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
 import EnhancedRepoCard from '@/components/enhanced-repo-card';
 import { getPopularRepos, getRecommendedRepos, getFilteredRepos } from '@/lib/github';
 import { getUserPreferences } from '@/lib/user-preferences';
-import { communityStats, testimonials } from '@/lib/mock-data';
+import { getCommunityStats, getTestimonials } from '@/lib/github';
 import type { Repository, RepositoryFilters, UserPreferences } from '@/lib/types';
 
 export default function ReposPage() {
@@ -31,6 +31,8 @@ export default function ReposPage() {
   const [loading, setLoading] = useState(true);
   const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
   const [activeTab, setActiveTab] = useState('recommended');
+  const [communityStats, setCommunityStats] = useState<any>(null);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
   
   const [filters, setFilters] = useState<RepositoryFilters>({
     searchQuery: '',
@@ -57,6 +59,14 @@ export default function ReposPage() {
           const recommended = await getRecommendedRepos(preferences);
           setRecommendedRepos(recommended);
         }
+        
+        // Load community statistics
+        const stats = await getCommunityStats();
+        setCommunityStats(stats);
+        
+        // Load testimonials
+        const userTestimonials = await getTestimonials();
+        setTestimonials(userTestimonials);
         
         setFilteredRepos(repos);
       } catch (error) {
@@ -113,7 +123,7 @@ export default function ReposPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-12">
+      <div className="container mx-auto py-24">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading repositories...</p>
@@ -125,47 +135,47 @@ export default function ReposPage() {
   const displayRepos = activeTab === 'recommended' ? recommendedRepos : filteredRepos;
 
   return (
-    <div className="container mx-auto py-12">
+    <div className="container mx-auto py-16 animate-fade-in">
       {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold font-headline mb-4">Find Your Next Project</h1>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+      <div className="text-center mb-16">
+        <h1 className="text-5xl font-bold font-headline mb-6">Find Your Next Project</h1>
+        <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
           Discover personalized open source opportunities tailored to your skills and goals.
           Our AI-powered recommendations help you find the perfect projects to contribute to.
         </p>
       </div>
 
       {/* Community Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-        <Card>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-12">
+        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
           <CardContent className="p-4 text-center">
             <Trophy className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
             <div className="text-2xl font-bold">{communityStats.totalQueries.toLocaleString()}</div>
             <div className="text-xs text-muted-foreground">Total Queries</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
           <CardContent className="p-4 text-center">
             <Users className="w-8 h-8 mx-auto mb-2 text-blue-500" />
             <div className="text-2xl font-bold">{communityStats.totalUsers.toLocaleString()}</div>
             <div className="text-xs text-muted-foreground">Active Users</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
           <CardContent className="p-4 text-center">
             <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
             <div className="text-2xl font-bold">{communityStats.activeRepositories.toLocaleString()}</div>
             <div className="text-xs text-muted-foreground">Active Repos</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
           <CardContent className="p-4 text-center">
             <Sparkles className="w-8 h-8 mx-auto mb-2 text-purple-500" />
             <div className="text-2xl font-bold">{communityStats.successfulContributions.toLocaleString()}</div>
             <div className="text-xs text-muted-foreground">Contributions</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold mb-1">⭐ {communityStats.averageSatisfaction}</div>
             <div className="text-xs text-muted-foreground">Avg Rating</div>
@@ -174,7 +184,7 @@ export default function ReposPage() {
       </div>
 
       {/* Filters */}
-      <Card className="mb-8">
+      <Card className="mb-12 bg-glass/90 backdrop-blur-md border-glass-border shadow-glass hover:shadow-glass-lg transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="w-5 h-5" />
@@ -197,7 +207,7 @@ export default function ReposPage() {
             <Sparkles className="w-4 h-4" />
             For You
             {recommendedRepos.length > 0 && (
-              <Badge variant="secondary" className="ml-1">
+              <Badge variant="glass" className="ml-1">
                 {recommendedRepos.length}
               </Badge>
             )}
@@ -205,7 +215,7 @@ export default function ReposPage() {
           <TabsTrigger value="all" className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             All Repos
-            <Badge variant="secondary" className="ml-1">
+            <Badge variant="glass" className="ml-1">
               {filteredRepos.length}
             </Badge>
           </TabsTrigger>
@@ -242,7 +252,7 @@ export default function ReposPage() {
               <p className="text-muted-foreground mb-4">
                 Set up your preferences to get personalized recommendations tailored to your skills and goals.
               </p>
-              <Button onClick={() => window.location.href = '/onboarding'}>
+              <Button variant="glass" onClick={() => window.location.href = '/onboarding'}>
                 Complete Onboarding
               </Button>
             </div>
@@ -273,7 +283,7 @@ export default function ReposPage() {
         <TabsContent value="trending" className="mt-6">
           <div className="space-y-4">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-semibold mb-2">Trending Projects</h2>
+              <h2 className="text-2xl font-semibold mb-2">Trending Repos</h2>
               <p className="text-muted-foreground">
                 Most popular repositories this week
               </p>

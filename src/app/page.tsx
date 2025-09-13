@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { techStacks } from '@/lib/mock-data';
-import { communityStats } from '@/lib/mock-data';
+import { getCommunityStats } from '@/lib/github';
 import { 
   ArrowRight, 
   Star, 
@@ -28,49 +28,59 @@ import type { Repository } from '@/lib/types';
 export default async function Home() {
   const trendingImages = placeholderImages.placeholderImages.filter(p => p.id.startsWith('trending-carousel'));
   const repos: Repository[] = await getPopularRepos();
+  const communityStats = await getCommunityStats();
 
   return (
-    <div className="space-y-24 mb-24">
+    <div className="space-y-32 mb-32 min-h-screen">
       {/* Hero Section */}
-      <section className="container mx-auto text-center py-20 md:py-32">
-        <h1 className="text-5xl md:text-7xl font-bold font-headline tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70 pb-4">
-          Learn Open Source.
-          <br />
-          Smarter. Faster.
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mt-4">
-          Discover, analyze, and contribute to open-source projects with AI-powered recommendations, 
-          guided workflows, and advanced filtering. Your journey to becoming an open source contributor starts here.
-        </p>
-        <div className="mt-8 flex flex-col items-center gap-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button asChild size="lg" className="gap-2">
-              <Link href="/onboarding">
-                Get Started
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="gap-2">
-              <Link href="/contribute">
-                Start Contributing
-                <BookOpen className="h-5 w-5" />
-              </Link>
-            </Button>
+      <section className="container mx-auto text-center py-24 md:py-40 relative overflow-hidden">
+        <div className="relative z-10 animate-fade-in">
+          <h1 className="text-5xl md:text-7xl font-bold font-headline tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/80 pb-6">
+            Learn Open Source.
+            <br />
+            Smarter. Faster.
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mt-6 leading-relaxed">
+            Discover, analyze, and contribute to open-source projects with AI-powered recommendations, 
+            guided workflows, and advanced filtering. Your journey to becoming an open source contributor starts here.
+          </p>
+          <div className="mt-10 flex flex-col items-center gap-8 animate-slide-up">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button asChild size="lg" className="gap-2 shadow-glass hover:shadow-glass-lg">
+                <Link href="/onboarding">
+                  Get Started
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </Button>
+              <Button asChild variant="glass" size="lg" className="gap-2">
+                <Link href="/contribute">
+                  Start Contributing
+                  <BookOpen className="h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+            <div className="w-full max-w-md">
+              <GithubRepoSearch />
+            </div>
           </div>
-          <GithubRepoSearch />
         </div>
       </section>
 
       {/* Popular Tech Stacks */}
-      <section className="container mx-auto">
-        <h2 className="text-3xl font-bold font-headline text-center mb-12">Explore Popular Tech Stacks</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
+      <section className="container mx-auto animate-fade-in">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold font-headline mb-4">Explore Popular Tech Stacks</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">Discover projects built with your favorite technologies</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {techStacks.map((tech) => (
             <Link href="/repos" key={tech.id} passHref>
-              <Card className="group hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
-                <CardContent className="p-6 flex flex-col items-center justify-center gap-4">
-                  <tech.icon className="w-10 h-10 text-primary" />
-                  <span className="text-lg font-semibold font-headline">{tech.name}</span>
+              <Card className="group h-full hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg cursor-pointer">
+                <CardContent className="p-6 flex flex-col items-center justify-center gap-4 h-full">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <tech.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <span className="text-lg font-medium font-headline">{tech.name}</span>
                 </CardContent>
               </Card>
             </Link>
@@ -79,8 +89,11 @@ export default async function Home() {
       </section>
       
       {/* Trending Projects Carousel */}
-      <section className="container mx-auto">
-        <h2 className="text-3xl font-bold font-headline text-center mb-12">Trending Projects</h2>
+      <section className="container mx-auto animate-fade-in">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold font-headline mb-4">Trending Repos</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">Discover the most popular open source projects right now</p>
+        </div>
         <Carousel opts={{ loop: true }} className="w-full max-w-5xl mx-auto">
           <CarouselContent>
             {repos.slice(0, 10).map((repo, index) => {
@@ -89,7 +102,7 @@ export default async function Home() {
                 <CarouselItem key={repo.id} className="md:basis-1/2 lg:basis-1/3">
                   <div className="p-1">
                     <Link href={`/repos/${slug}`} className="block">
-                      <Card className="h-full flex flex-col hover:border-primary transition-colors cursor-pointer">
+                      <Card className="h-full flex flex-col hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg cursor-pointer">
                         <CardHeader>
                           <Image
                             src={trendingImages[index % trendingImages.length]?.imageUrl || ''}
@@ -124,16 +137,19 @@ export default async function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="container mx-auto">
-        <h2 className="text-3xl font-bold font-headline text-center mb-12">Everything You Need to Succeed in Open Source</h2>
+      <section className="container mx-auto animate-fade-in">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold font-headline mb-4">Everything You Need to Succeed in Open Source</h2>
+          <p className="text-muted-foreground max-w-3xl mx-auto">Powerful features designed to accelerate your open source journey</p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <Card className="group hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
+          <Card className="group h-full hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
             <CardHeader>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <Brain className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                <Brain className="w-6 h-6 text-primary" />
               </div>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-blue-500" />
+                <Sparkles className="w-5 h-5 text-primary" />
                 Personalized Recommendations
               </CardTitle>
             </CardHeader>
@@ -165,13 +181,13 @@ export default async function Home() {
             </CardContent>
           </Card>
 
-          <Card className="group hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
+          <Card className="group h-full hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
             <CardHeader>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-green-100/80 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 group-hover:bg-green-200/80 transition-colors">
                 <BookOpen className="w-6 h-6 text-green-600" />
               </div>
               <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-green-500" />
+                <Target className="w-5 h-5 text-green-600" />
                 Guided Contribution Workflow
               </CardTitle>
             </CardHeader>
@@ -203,13 +219,13 @@ export default async function Home() {
             </CardContent>
           </Card>
 
-          <Card className="group hover:border-primary transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20">
+          <Card className="group h-full hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
             <CardHeader>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-purple-100/80 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-200/80 transition-colors">
                 <Filter className="w-6 h-6 text-purple-600" />
               </div>
               <CardTitle className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-purple-500" />
+                <Zap className="w-5 h-5 text-purple-600" />
                 Advanced Filtering
               </CardTitle>
             </CardHeader>
@@ -244,40 +260,43 @@ export default async function Home() {
       </section>
 
       {/* Community Impact */}
-      <section className="container mx-auto">
-        <h2 className="text-3xl font-bold font-headline text-center mb-12">Join Our Growing Community</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="text-center">
+      <section className="container mx-auto animate-fade-in">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold font-headline mb-4">Join Our Growing Community</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">Be part of a thriving ecosystem of open source contributors</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <Card className="text-center hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
             <CardContent className="p-6">
               <Trophy className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
-              <div className="text-3xl font-bold mb-2">{communityStats.successfulContributions.toLocaleString()}+</div>
+              <div className="text-3xl font-bold mb-2">{communityStats?.successfulContributions?.toLocaleString() || '0'}+</div>
               <div className="text-muted-foreground">Contributions Made</div>
             </CardContent>
           </Card>
-          <Card className="text-center">
+          <Card className="text-center hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
             <CardContent className="p-6">
               <Users className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-              <div className="text-3xl font-bold mb-2">{communityStats.totalUsers.toLocaleString()}+</div>
+              <div className="text-3xl font-bold mb-2">{communityStats?.totalUsers?.toLocaleString() || '0'}+</div>
               <div className="text-muted-foreground">Active Contributors</div>
             </CardContent>
           </Card>
-          <Card className="text-center">
+          <Card className="text-center hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
             <CardContent className="p-6">
               <Target className="w-12 h-12 mx-auto mb-4 text-green-500" />
-              <div className="text-3xl font-bold mb-2">{communityStats.activeRepositories.toLocaleString()}+</div>
+              <div className="text-3xl font-bold mb-2">{communityStats?.activeRepositories?.toLocaleString() || '0'}+</div>
               <div className="text-muted-foreground">Projects Available</div>
             </CardContent>
           </Card>
-          <Card className="text-center">
+          <Card className="text-center hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
             <CardContent className="p-6">
-              <div className="text-3xl font-bold mb-2">⭐ {communityStats.averageSatisfaction}</div>
+              <div className="text-3xl font-bold mb-2">⭐ {communityStats?.averageSatisfaction || '0.0'}</div>
               <div className="text-muted-foreground">User Satisfaction</div>
             </CardContent>
           </Card>
         </div>
         
         <div className="text-center">
-          <Card className="max-w-2xl mx-auto">
+          <Card className="max-w-2xl mx-auto bg-glass/90 backdrop-blur-md border-glass-border shadow-glass hover:shadow-glass-lg transition-all duration-300">
             <CardContent className="p-8">
               <h3 className="text-xl font-semibold mb-4">Ready to Make Your Mark?</h3>
               <p className="text-muted-foreground mb-6">
@@ -286,13 +305,13 @@ export default async function Home() {
                 the perfect project waiting for you.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild size="lg">
+                <Button asChild size="lg" className="shadow-glass hover:shadow-glass-lg">
                   <Link href="/onboarding">
                     Get Started
                     <ArrowRight className="h-5 w-5 ml-2" />
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg">
+                <Button asChild variant="glass" size="lg">
                   <Link href="/contribute">
                     Browse Projects
                     <Target className="h-5 w-5 ml-2" />
