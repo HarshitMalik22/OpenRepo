@@ -21,16 +21,30 @@ interface GlassRepoListProps {
   repositories: Repository[];
   onViewAnalysis?: (repo: Repository) => void;
   onContribute?: (repo: Repository) => void;
+  onViewRepo?: (repo: Repository) => void;
+  onLikeRepo?: (repo: Repository) => void;
+  onDislikeRepo?: (repo: Repository) => void;
+  onRateRepo?: (repo: Repository, rating: number) => void;
   onFilterChange?: (filters: string[]) => void;
   activeFilters?: string[];
+  showExplanations?: boolean;
+  explanations?: Map<string, string[]>;
+  enhanced?: boolean;
 }
 
 export default function GlassRepoList({ 
   repositories, 
   onViewAnalysis, 
   onContribute,
+  onViewRepo,
+  onLikeRepo,
+  onDislikeRepo,
+  onRateRepo,
   onFilterChange,
-  activeFilters = []
+  activeFilters = [],
+  showExplanations = false,
+  explanations,
+  enhanced = false
 }: GlassRepoListProps) {
   const getBadgeClass = () => {
     return 'bg-black/5 text-gray-700 border border-gray-200';
@@ -244,12 +258,33 @@ export default function GlassRepoList({
                   </div>
                 </div>
 
+                {/* Recommendation Explanation */}
+                {showExplanations && explanations?.get(repo.full_name) && (
+                  <div className="mb-3 p-3 bg-gradient-to-r from-purple-50/50 to-pink-50/50 rounded-lg border border-purple-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="w-4 h-4 text-purple-600" />
+                      <span className="text-xs font-medium text-purple-700">Why this match?</span>
+                    </div>
+                    <div className="space-y-1">
+                      {explanations.get(repo.full_name)?.slice(0, 3).map((explanation, idx) => (
+                        <div key={idx} className="text-xs text-purple-600 flex items-start gap-2">
+                          <span className="text-purple-400">•</span>
+                          <span>{explanation}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Action Buttons */}
                 <div className="flex gap-2">
                   <Button 
                     variant="default" 
                     className="flex-1 text-xs h-8 px-3 bg-black text-white hover:bg-gray-800 transition-colors"
-                    onClick={() => onViewAnalysis?.(repo)}
+                    onClick={() => {
+                      onViewAnalysis?.(repo);
+                      onViewRepo?.(repo);
+                    }}
                   >
                     <Eye className="w-3 h-3 mr-1.5" />
                     Analyze with AI
@@ -258,11 +293,35 @@ export default function GlassRepoList({
                   <Button 
                     variant="outline" 
                     className="flex-1 text-xs h-8 px-3 border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                    onClick={() => onContribute?.(repo)}
+                    onClick={() => {
+                      onContribute?.(repo);
+                      onViewRepo?.(repo);
+                    }}
                   >
                     <Code className="w-3 h-3 mr-1.5" />
                     Contribute
                   </Button>
+                  
+                  {enhanced && (
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="h-8 w-8 p-0 border-green-300 text-green-600 hover:bg-green-50 transition-colors"
+                        onClick={() => onLikeRepo?.(repo)}
+                      >
+                        <Star className="w-3 h-3" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="h-8 w-8 p-0 border-red-300 text-red-600 hover:bg-red-50 transition-colors"
+                        onClick={() => onDislikeRepo?.(repo)}
+                      >
+                        <Star className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
                   
                   <Button 
                     variant="outline" 
@@ -273,6 +332,28 @@ export default function GlassRepoList({
                     <ArrowRight className="w-3 h-3" />
                   </Button>
                 </div>
+                
+                {/* Rating Section for Enhanced Mode */}
+                {enhanced && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">Rate this recommendation:</span>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <Button
+                            key={rating}
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-yellow-500 transition-colors"
+                            onClick={() => onRateRepo?.(repo, rating)}
+                          >
+                            <Star className="w-3 h-3" />
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

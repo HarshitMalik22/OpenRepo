@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
 import GlassRepoList from '@/components/glass-repo-list';
-import { getPopularRepos, getRecommendedRepos, getFilteredRepos } from '@/lib/github';
+import { getPopularRepos, getRecommendedRepos, getFilteredRepos, getEnhancedRecommendedRepos, trackUserInteraction, getRecommendationExplanation, getUserStats } from '@/lib/github';
 import { getUserPreferences } from '@/lib/user-preferences';
 import { getCommunityStats, getTestimonials } from '@/lib/github';
 import type { Repository, RepositoryFilters, UserPreferences } from '@/lib/types';
@@ -29,6 +29,7 @@ export default function ReposPage() {
   const [allRepos, setAllRepos] = useState<Repository[]>([]);
   const [filteredRepos, setFilteredRepos] = useState<Repository[]>([]);
   const [recommendedRepos, setRecommendedRepos] = useState<Repository[]>([]);
+  const [enhancedRecommendedRepos, setEnhancedRecommendedRepos] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
   const [activeTab, setActiveTab] = useState('recommended');
@@ -37,6 +38,13 @@ export default function ReposPage() {
   const [isLive, setIsLive] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [previousStats, setPreviousStats] = useState<any>(null);
+  
+  // Enhanced recommendation features
+  const [userId] = useState(() => `user-${Math.random().toString(36).substr(2, 9)}`);
+  const [recommendationExplanations, setRecommendationExplanations] = useState<Map<string, string[]>>(new Map());
+  const [userStats, setUserStats] = useState<any>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
   
   const [filters, setFilters] = useState<RepositoryFilters>({
     searchQuery: '',
@@ -112,6 +120,22 @@ export default function ReposPage() {
           const recommended = await getRecommendedRepos(preferences);
           console.log('Recommended repositories:', recommended.length);
           setRecommendedRepos(recommended);
+          
+          // Get enhanced ML-based recommendations
+          const enhancedRecommended = await getEnhancedRecommendedRepos(preferences, userId);
+          console.log('Enhanced recommended repositories:', enhancedRecommended.length);
+          setEnhancedRecommendedRepos(enhancedRecommended);
+          
+          // Generate recommendation explanations
+          const explanations = new Map<string, string[]>();
+          enhancedRecommended.forEach(repo => {
+            explanations.set(repo.full_name, getRecommendationExplanation(repo));
+          });
+          setRecommendationExplanations(explanations);
+          
+          // Load user statistics
+          const stats = getUserStats(userId);
+          setUserStats(stats);
         } else {
           console.log('No preferences found or empty tech stack');
         }
@@ -199,8 +223,51 @@ export default function ReposPage() {
   };
 
   const handleContribute = (repo: Repository) => {
+    // Track user interaction
+    trackUserInteraction(userId, repo.full_name, 'contribute');
+    
     // Navigate to repository contribution page
     window.open(repo.html_url, '_blank');
+  };
+
+  const handleLikeRepo = (repo: Repository) => {
+    // Track user interaction
+    trackUserInteraction(userId, repo.full_name, 'like', 5);
+    
+    // Update user stats
+    const stats = getUserStats(userId);
+    setUserStats(stats);
+    
+    // Show feedback
+    setSelectedRepo(repo);
+    setShowFeedback(true);
+    setTimeout(() => setShowFeedback(false), 2000);
+  };
+
+  const handleDislikeRepo = (repo: Repository) => {
+    // Track user interaction
+    trackUserInteraction(userId, repo.full_name, 'dislike', 1);
+    
+    // Update user stats
+    const stats = getUserStats(userId);
+    setUserStats(stats);
+    
+    // Remove from recommendations temporarily
+    setEnhancedRecommendedRepos(prev => prev.filter(r => r.full_name !== repo.full_name));
+  };
+
+  const handleViewRepo = (repo: Repository) => {
+    // Track user interaction
+    trackUserInteraction(userId, repo.full_name, 'view');
+  };
+
+  const handleRateRepo = (repo: Repository, rating: number) => {
+    // Track user interaction with rating
+    trackUserInteraction(userId, repo.full_name, 'analyze', rating);
+    
+    // Update user stats
+    const stats = getUserStats(userId);
+    setUserStats(stats);
   };
 
   if (loading) {
@@ -214,7 +281,9 @@ export default function ReposPage() {
     );
   }
 
-  const displayRepos = activeTab === 'recommended' ? recommendedRepos : filteredRepos;
+  const displayRepos = activeTab === 'recommended' ? recommendedRepos : 
+                     activeTab === 'enhanced' ? enhancedRecommendedRepos : 
+                     filteredRepos;
 
   return (
     <div className="container mx-auto py-16 animate-fade-in">
@@ -349,7 +418,7 @@ export default function ReposPage() {
       <div className="mb-8">
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-1 inline-flex">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto p-0 gap-1">
+            <TabsList className="grid w-full grid-cols-4 bg-transparent h-auto p-0 gap-1">
               <TabsTrigger 
                 value="recommended" 
                 className={`flex items-center gap-2 py-3 px-4 rounded-xl transition-all duration-200 ${
@@ -364,6 +433,23 @@ export default function ReposPage() {
                 {recommendedRepos.length > 0 && (
                   <Badge variant="secondary" className="ml-1 bg-white/20 text-foreground border-white/30">
                     {recommendedRepos.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="enhanced" 
+                className={`flex items-center gap-2 py-3 px-4 rounded-xl transition-all duration-200 ${
+                  !userPreferences || userPreferences.techStack.length === 0 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:bg-white/10 data-[state=active]:bg-white/20'
+                }`}
+                disabled={!userPreferences || userPreferences.techStack.length === 0}
+              >
+                <Target className="w-4 h-4" />
+                <span className="font-medium">AI-Powered</span>
+                {enhancedRecommendedRepos.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-foreground border-white/30">
+                    {enhancedRecommendedRepos.length}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -399,6 +485,7 @@ export default function ReposPage() {
                     repositories={recommendedRepos}
                     onViewAnalysis={handleViewAnalysis}
                     onContribute={handleContribute}
+                    onViewRepo={handleViewRepo}
                   />
                 </div>
               ) : (
@@ -407,6 +494,74 @@ export default function ReposPage() {
                   <h3 className="text-xl font-semibold mb-2">Complete Your Onboarding</h3>
                   <p className="text-muted-foreground mb-4">
                     Set up your preferences to get personalized recommendations tailored to your skills and goals.
+                  </p>
+                  <Button variant="glass" onClick={() => window.location.href = '/onboarding'}>
+                    Complete Onboarding
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="enhanced" className="mt-6">
+              {userPreferences && userPreferences.techStack.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-semibold mb-2">AI-Powered Recommendations</h2>
+                    <p className="text-muted-foreground mb-4">
+                      Enhanced with machine learning and real-time GitHub data
+                    </p>
+                    {userStats && (
+                      <div className="flex justify-center gap-6 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Interactions:</span>
+                          <span className="font-medium">{userStats.totalInteractions}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Positive:</span>
+                          <span className="font-medium text-green-500">{userStats.positiveInteractions}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Avg Score:</span>
+                          <span className="font-medium">{userStats.averageScore.toFixed(1)}/5</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* User Feedback Toast */}
+                  {showFeedback && selectedRepo && (
+                    <div className="fixed top-4 right-4 z-50 bg-green-500/20 backdrop-blur-sm border border-green-500/30 rounded-lg p-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-green-500/30 flex items-center justify-center">
+                          <Star className="w-4 h-4 text-green-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-green-400">Feedback recorded!</p>
+                          <p className="text-sm text-muted-foreground">Thanks for rating {selectedRepo.name}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <GlassRepoList
+                    repositories={enhancedRecommendedRepos}
+                    onViewAnalysis={handleViewAnalysis}
+                    onContribute={handleContribute}
+                    onViewRepo={handleViewRepo}
+                    onLikeRepo={handleLikeRepo}
+                    onDislikeRepo={handleDislikeRepo}
+                    onRateRepo={handleRateRepo}
+                    showExplanations={true}
+                    explanations={recommendationExplanations}
+                    enhanced={true}
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Target className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-xl font-semibold mb-2">Complete Your Onboarding</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Set up your preferences to get AI-powered recommendations with machine learning.
                   </p>
                   <Button variant="glass" onClick={() => window.location.href = '/onboarding'}>
                     Complete Onboarding

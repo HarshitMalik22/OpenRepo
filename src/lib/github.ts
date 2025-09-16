@@ -4,6 +4,7 @@ let repoDetailCache = new Map<string, Repository>();
 let communityStatsCache: any | null = null;
 
 import { enhanceRepository, getPersonalizedRecommendations, filterRepositories } from './recommendation-engine';
+import { enhancedRecommendationEngine } from './enhanced-recommendation-engine';
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats } from './types';
 
 // Validate GitHub API configuration
@@ -130,6 +131,44 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
 export async function getRecommendedRepos(preferences: UserPreferences, limit: number = 10): Promise<Repository[]> {
   const allRepos = await getPopularRepos();
   return getPersonalizedRecommendations(allRepos, preferences, limit);
+}
+
+// Get enhanced personalized recommendations with ML-based scoring
+export async function getEnhancedRecommendedRepos(
+  preferences: UserPreferences, 
+  userId?: string, 
+  limit: number = 10
+): Promise<Repository[]> {
+  const allRepos = await getPopularRepos();
+  return enhancedRecommendationEngine.getEnhancedRecommendations(allRepos, preferences, userId, limit);
+}
+
+// Track user interaction for learning
+export function trackUserInteraction(
+  userId: string, 
+  repoId: string, 
+  action: 'view' | 'like' | 'dislike' | 'contribute' | 'analyze', 
+  score?: number
+): void {
+  enhancedRecommendationEngine.trackInteraction(userId, repoId, action, score);
+}
+
+// Get recommendation explanations
+export function getRecommendationExplanation(repo: Repository): string[] {
+  if (!repo.recommendation_score) {
+    return ['Recommended based on general popularity'];
+  }
+  return enhancedRecommendationEngine.getRecommendationExplanation(repo, repo.recommendation_score);
+}
+
+// Update user preferences
+export function updateUserPreferences(userId: string, preferences: UserPreferences): void {
+  enhancedRecommendationEngine.updateUserPreferences(userId, preferences);
+}
+
+// Get user statistics
+export function getUserStats(userId: string) {
+  return enhancedRecommendationEngine.getUserStats(userId);
 }
 
 // Get filtered repositories based on filters
