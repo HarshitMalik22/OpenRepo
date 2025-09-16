@@ -34,6 +34,9 @@ export default function ReposPage() {
   const [activeTab, setActiveTab] = useState('recommended');
   const [communityStats, setCommunityStats] = useState<any>(null);
   const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [isLive, setIsLive] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [previousStats, setPreviousStats] = useState<any>(null);
   
   const [filters, setFilters] = useState<RepositoryFilters>({
     searchQuery: '',
@@ -43,6 +46,52 @@ export default function ReposPage() {
     aiDomain: [],
     language: [],
   });
+
+  // Animated number component
+  const AnimatedNumber = ({ value, duration = 1000 }: { value: number; duration?: number }) => {
+    const [displayValue, setDisplayValue] = useState(0);
+    
+    useEffect(() => {
+      let startTime: number;
+      let animationFrame: number;
+      
+      const animate = (timestamp: number) => {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        setDisplayValue(Math.floor(value * easeOutQuart));
+        
+        if (progress < 1) {
+          animationFrame = requestAnimationFrame(animate);
+        }
+      };
+      
+      animationFrame = requestAnimationFrame(animate);
+      
+      return () => {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+        }
+      };
+    }, [value, duration]);
+    
+    return <span>{displayValue.toLocaleString()}</span>;
+  };
+
+  const loadCommunityStats = async () => {
+    try {
+      const stats = await getCommunityStats();
+      setPreviousStats(communityStats);
+      setCommunityStats(stats);
+      setLastUpdated(new Date());
+      setIsLive(true);
+    } catch (error) {
+      console.error('Failed to load community stats:', error);
+      setIsLive(false);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -68,8 +117,7 @@ export default function ReposPage() {
         }
         
         // Load community statistics
-        const stats = await getCommunityStats();
-        setCommunityStats(stats);
+        await loadCommunityStats();
         
         // Load testimonials
         const userTestimonials = await getTestimonials();
@@ -84,6 +132,15 @@ export default function ReposPage() {
     };
     
     loadData();
+    
+    // Set up periodic polling for live stats (every 30 seconds)
+    const intervalId = setInterval(loadCommunityStats, 30000);
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -172,9 +229,16 @@ export default function ReposPage() {
 
       {/* Community Stats */}
       <div className="mb-12">
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-sm text-muted-foreground font-medium">Live Stats</span>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+            <span className="text-sm text-muted-foreground font-medium">
+              {isLive ? 'Live Stats' : 'Connection Lost'}
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </div>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -185,7 +249,7 @@ export default function ReposPage() {
                 <Trophy className="w-6 h-6 text-yellow-400" />
               </div>
               <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
-                {communityStats.totalQueries.toLocaleString()}
+                {communityStats ? <AnimatedNumber value={communityStats.totalQueries} /> : '—'}
               </div>
               <div className="text-sm text-muted-foreground mb-2">Total Queries</div>
               <div className="text-xs text-green-500 font-medium">+12% this week</div>
@@ -199,7 +263,7 @@ export default function ReposPage() {
                 <Users className="w-6 h-6 text-blue-400" />
               </div>
               <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
-                {communityStats.totalUsers.toLocaleString()}
+                {communityStats ? <AnimatedNumber value={communityStats.totalUsers} /> : '—'}
               </div>
               <div className="text-sm text-muted-foreground mb-2">Active Users</div>
               <div className="text-xs text-green-500 font-medium">+8% this week</div>
@@ -213,7 +277,7 @@ export default function ReposPage() {
                 <TrendingUp className="w-6 h-6 text-green-400" />
               </div>
               <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
-                {communityStats.activeRepositories.toLocaleString()}
+                {communityStats ? <AnimatedNumber value={communityStats.activeRepositories} /> : '—'}
               </div>
               <div className="text-sm text-muted-foreground mb-2">Active Repos</div>
               <div className="text-xs text-green-500 font-medium">+15% this week</div>
@@ -227,7 +291,7 @@ export default function ReposPage() {
                 <Sparkles className="w-6 h-6 text-purple-400" />
               </div>
               <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
-                {communityStats.successfulContributions.toLocaleString()}
+                {communityStats ? <AnimatedNumber value={communityStats.successfulContributions} /> : '—'}
               </div>
               <div className="text-sm text-muted-foreground mb-2">Contributions</div>
               <div className="text-xs text-green-500 font-medium">+22% this week</div>
@@ -241,7 +305,7 @@ export default function ReposPage() {
                 <Star className="w-6 h-6 text-orange-400" />
               </div>
               <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
-                {communityStats.averageSatisfaction}
+                {communityStats ? communityStats.averageSatisfaction : '—'}
               </div>
               <div className="text-sm text-muted-foreground mb-2">Avg Rating</div>
               <div className="text-xs text-green-500 font-medium">+0.2 this week</div>
