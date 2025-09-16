@@ -15,10 +15,11 @@ import {
   Zap,
   Activity,
   Target,
-  Filter
+  Filter,
+  Star
 } from 'lucide-react';
 import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
-import EnhancedRepoCard from '@/components/enhanced-repo-card';
+import GlassRepoList from '@/components/glass-repo-list';
 import { getPopularRepos, getRecommendedRepos, getFilteredRepos } from '@/lib/github';
 import { getUserPreferences } from '@/lib/user-preferences';
 import { getCommunityStats, getTestimonials } from '@/lib/github';
@@ -170,164 +171,222 @@ export default function ReposPage() {
       </div>
 
       {/* Community Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-12">
-        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
-          <CardContent className="p-4 text-center">
-            <Trophy className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-            <div className="text-2xl font-bold">{communityStats.totalQueries.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Total Queries</div>
-          </CardContent>
-        </Card>
-        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
-          <CardContent className="p-4 text-center">
-            <Users className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-            <div className="text-2xl font-bold">{communityStats.totalUsers.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Active Users</div>
-          </CardContent>
-        </Card>
-        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
-          <CardContent className="p-4 text-center">
-            <TrendingUp className="w-8 h-8 mx-auto mb-2 text-green-500" />
-            <div className="text-2xl font-bold">{communityStats.activeRepositories.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Active Repos</div>
-          </CardContent>
-        </Card>
-        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
-          <CardContent className="p-4 text-center">
-            <Sparkles className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-            <div className="text-2xl font-bold">{communityStats.successfulContributions.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Contributions</div>
-          </CardContent>
-        </Card>
-        <Card className="hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold mb-1">⭐ {communityStats.averageSatisfaction}</div>
-            <div className="text-xs text-muted-foreground">Avg Rating</div>
-          </CardContent>
-        </Card>
+      <div className="mb-12">
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="text-sm text-muted-foreground font-medium">Live Stats</span>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Total Queries Card */}
+          <div className="group relative bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 transition-all duration-300 hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:-translate-y-1">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Trophy className="w-6 h-6 text-yellow-400" />
+              </div>
+              <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
+                {communityStats.totalQueries.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground mb-2">Total Queries</div>
+              <div className="text-xs text-green-500 font-medium">+12% this week</div>
+            </div>
+          </div>
+          
+          {/* Active Users Card */}
+          <div className="group relative bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 transition-all duration-300 hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:-translate-y-1">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400/20 to-blue-600/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Users className="w-6 h-6 text-blue-400" />
+              </div>
+              <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
+                {communityStats.totalUsers.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground mb-2">Active Users</div>
+              <div className="text-xs text-green-500 font-medium">+8% this week</div>
+            </div>
+          </div>
+          
+          {/* Active Repos Card */}
+          <div className="group relative bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 transition-all duration-300 hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:-translate-y-1">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400/20 to-green-600/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="w-6 h-6 text-green-400" />
+              </div>
+              <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
+                {communityStats.activeRepositories.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground mb-2">Active Repos</div>
+              <div className="text-xs text-green-500 font-medium">+15% this week</div>
+            </div>
+          </div>
+          
+          {/* Contributions Card */}
+          <div className="group relative bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 transition-all duration-300 hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:-translate-y-1">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400/20 to-purple-600/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Sparkles className="w-6 h-6 text-purple-400" />
+              </div>
+              <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
+                {communityStats.successfulContributions.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground mb-2">Contributions</div>
+              <div className="text-xs text-green-500 font-medium">+22% this week</div>
+            </div>
+          </div>
+          
+          {/* Average Rating Card */}
+          <div className="group relative bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 transition-all duration-300 hover:bg-white/15 hover:border-white/20 hover:shadow-lg hover:-translate-y-1">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400/20 to-orange-600/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Star className="w-6 h-6 text-orange-400" />
+              </div>
+              <div className="text-3xl font-bold text-foreground mb-1 tabular-nums">
+                {communityStats.averageSatisfaction}
+              </div>
+              <div className="text-sm text-muted-foreground mb-2">Avg Rating</div>
+              <div className="text-xs text-green-500 font-medium">+0.2 this week</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card className="mb-12 bg-glass/90 backdrop-blur-md border-glass-border shadow-glass hover:shadow-glass-lg transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Advanced Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="mb-12">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                <Filter className="w-5 h-5 text-foreground" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Advanced Filters</h3>
+                <p className="text-sm text-muted-foreground">Refine your repository search</p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleClearFilters}
+              className="bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 text-foreground"
+            >
+              Clear All
+            </Button>
+          </div>
+          
           <EnhancedRepoFilters
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onClearFilters={handleClearFilters}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recommended" className="flex items-center gap-2" disabled={!userPreferences || userPreferences.techStack.length === 0}>
-            <Sparkles className="w-4 h-4" />
-            For You
-            {recommendedRepos.length > 0 && (
-              <Badge variant="glass" className="ml-1">
-                {recommendedRepos.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="all" className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            All Repos
-            <Badge variant="glass" className="ml-1">
-              {filteredRepos.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="trending" className="flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            Trending
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="recommended" className="mt-6">
-          {userPreferences && userPreferences.techStack.length > 0 ? (
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold mb-2">Personalized Recommendations</h2>
-                <p className="text-muted-foreground">
-                  Based on your preferences: {userPreferences.techStack.join(', ')} • {userPreferences.experienceLevel} • {userPreferences.goal}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {recommendedRepos.map(repo => (
-                  <EnhancedRepoCard
-                    key={repo.id}
-                    repository={repo}
+      <div className="mb-8">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-1 inline-flex">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto p-0 gap-1">
+              <TabsTrigger 
+                value="recommended" 
+                className={`flex items-center gap-2 py-3 px-4 rounded-xl transition-all duration-200 ${
+                  !userPreferences || userPreferences.techStack.length === 0 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:bg-white/10 data-[state=active]:bg-white/20'
+                }`}
+                disabled={!userPreferences || userPreferences.techStack.length === 0}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="font-medium">For You</span>
+                {recommendedRepos.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-white/20 text-foreground border-white/30">
+                    {recommendedRepos.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="all" 
+                className="flex items-center gap-2 py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 data-[state=active]:bg-white/20"
+              >
+                <TrendingUp className="w-4 h-4" />
+                <span className="font-medium">All Repos</span>
+                <Badge variant="secondary" className="ml-1 bg-white/20 text-foreground border-white/30">
+                  {filteredRepos.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="trending" 
+                className="flex items-center gap-2 py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 data-[state=active]:bg-white/20"
+              >
+                <Activity className="w-4 h-4" />
+                <span className="font-medium">Trending</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="recommended" className="mt-6">
+              {userPreferences && userPreferences.techStack.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-semibold mb-2">Personalized Recommendations</h2>
+                    <p className="text-muted-foreground">
+                      Based on your preferences: {userPreferences.techStack.join(', ')} • {userPreferences.experienceLevel} • {userPreferences.goal}
+                    </p>
+                  </div>
+                  <GlassRepoList
+                    repositories={recommendedRepos}
                     onViewAnalysis={handleViewAnalysis}
                     onContribute={handleContribute}
                   />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Sparkles className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">Complete Your Onboarding</h3>
-              <p className="text-muted-foreground mb-4">
-                Set up your preferences to get personalized recommendations tailored to your skills and goals.
-              </p>
-              <Button variant="glass" onClick={() => window.location.href = '/onboarding'}>
-                Complete Onboarding
-              </Button>
-            </div>
-          )}
-        </TabsContent>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Sparkles className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-xl font-semibold mb-2">Complete Your Onboarding</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Set up your preferences to get personalized recommendations tailored to your skills and goals.
+                  </p>
+                  <Button variant="glass" onClick={() => window.location.href = '/onboarding'}>
+                    Complete Onboarding
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
 
-        <TabsContent value="all" className="mt-6">
-          <div className="space-y-4">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-semibold mb-2">All Repositories</h2>
-              <p className="text-muted-foreground">
-                Browse through our curated collection of open source projects
-              </p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {displayRepos.map(repo => (
-                <EnhancedRepoCard
-                  key={repo.id}
-                  repository={repo}
+            <TabsContent value="all" className="mt-6">
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-semibold mb-2">All Repositories</h2>
+                  <p className="text-muted-foreground">
+                    Browse through our curated collection of open source projects
+                  </p>
+                </div>
+                <GlassRepoList
+                  repositories={displayRepos}
                   onViewAnalysis={handleViewAnalysis}
                   onContribute={handleContribute}
                 />
-              ))}
-            </div>
-          </div>
-        </TabsContent>
+              </div>
+            </TabsContent>
 
-        <TabsContent value="trending" className="mt-6">
-          <div className="space-y-4">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-semibold mb-2">Trending Repos</h2>
-              <p className="text-muted-foreground">
-                Most popular repositories this week
-              </p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {allRepos
-                .sort((a, b) => b.stargazers_count - a.stargazers_count)
-                .slice(0, 10)
-                .map(repo => (
-                  <EnhancedRepoCard
-                    key={repo.id}
-                    repository={repo}
-                    onViewAnalysis={handleViewAnalysis}
-                    onContribute={handleContribute}
-                  />
-                ))}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="trending" className="mt-6">
+              <div className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-semibold mb-2">Trending Repos</h2>
+                  <p className="text-muted-foreground">
+                    Most popular repositories this week
+                  </p>
+                </div>
+                <GlassRepoList
+                  repositories={allRepos
+                    .sort((a, b) => b.stargazers_count - a.stargazers_count)
+                    .slice(0, 10)}
+                  onViewAnalysis={handleViewAnalysis}
+                  onContribute={handleContribute}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
