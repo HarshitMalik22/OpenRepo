@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // User preferences
+  preferences UserPreferences?
+
+  // User interactions and analytics
+  interactions UserInteraction[]
+  savedRepos   SavedRepository[]
+  analyses     RepositoryAnalysis[]
+
+  @@map("users")
+}
+
+model UserPreferences {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  techStack       String[] // Array of tech stack preferences
+  goal            String   @default("learn")
+  experienceLevel String   @default("beginner")
+  completed       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model UserInteraction {
+  id           String   @id @default(cuid())
+  userId       String
+  repoFullName String
+  type         String // 'view', 'like', 'dislike', 'contribute', 'analyze'
+  score        Int?     // 1-5 rating
+  metadata     Json?    // Additional interaction data
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_interactions")
+}
+
+model SavedRepository {
+  id           String   @id @default(cuid())
+  userId       String
+  repoFullName String
+  repoName     String
+  repoUrl      String
+  description  String?
+  language     String?
+  stars        Int      @default(0)
+  tags         String[] // Repository topics/tags
+  savedAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, repoFullName])
+  @@map("saved_repositories")
+}
+
+model RepositoryAnalysis {
+  id                String   @id @default(cuid())
+  userId            String
+  repoFullName      String
+  repoUrl           String
+  flowchartMermaid  String   @db.Text
+  explanation       Json     // Structured explanation data
+  resources         Json     // Learning resources
+  insights          Json?    // Architecture insights
+  analysisVersion   String   @default("1.0")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, repoFullName])
+  @@map("repository_analyses")
+}
+
+model CommunityStats {
+  id                     String   @id @default(cuid())
+  totalQueries           Int      @default(0)
+  totalUsers             Int      @default(0)
+  activeRepositories     Int      @default(0)
+  successfulContributions Int     @default(0)
+  averageSatisfaction    Float    @default(0.0)
+  date                   DateTime @default(now())
+  createdAt              DateTime @default(now())
+
+  @@map("community_stats")
+}
+
+model PopularRepository {
+  id                String   @id @default(cuid())
+  fullName          String   @unique
+  name              String
+  description       String?
+  language          String?
+  stars             Int      @default(0)
+  forks             Int      @default(0)
+  openIssues        Int      @default(0)
+  topics            String[]
+  competitionLevel  String   @default("moderate")
+  activityLevel     String   @default("moderate")
+  aiDomain          String   @default("other")
+  difficultyLevel   String   @default("intermediate")
+  difficultyScore   Float    @default(50.0)
+  contributorCount  Int      @default(0)
+  recentCommits     Int      @default(0)
+  issueResponseRate Float    @default(50.0)
+  documentationScore Float   @default(50.0)
+  lastFetched       DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("popular_repositories")
+}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu, BrainCircuit } from 'lucide-react';
@@ -37,10 +38,19 @@ export default function MobileNav() {
             </Link>
           </nav>
           <div className="mt-auto flex flex-col gap-4 border-t pt-6">
-            <Button variant="ghost" onClick={() => setIsOpen(false)}>Log In</Button>
-            <Button asChild onClick={() => setIsOpen(false)}>
-              <Link href="/onboarding">Get Started</Link>
-            </Button>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button variant="ghost" onClick={() => setIsOpen(false)}>Sign In</Button>
+              </SignInButton>
+              <Button asChild onClick={() => setIsOpen(false)}>
+                <Link href="/onboarding">Get Started</Link>
+              </Button>
+            </SignedOut>
+            <SignedIn>
+              <div className="flex items-center justify-center">
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            </SignedIn>
           </div>
         </div>
       </SheetContent>

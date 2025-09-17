@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { BrainCircuit } from 'lucide-react';
 import MobileNav from './mobile-nav';
@@ -26,12 +27,20 @@ export default function Header() {
           </Link>
         </nav>
         <div className="hidden md:flex items-center gap-4">
-          <Button variant="ghost" asChild>
-            <Link href="/contribute">Start Contributing</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/onboarding">Get Started</Link>
-          </Button>
+          <SignedOut>
+            <Button variant="ghost" asChild>
+              <Link href="/contribute">Start Contributing</Link>
+            </Button>
+            <SignInButton mode="modal">
+              <Button>Sign In</Button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <Button variant="ghost" asChild>
+              <Link href="/contribute">Start Contributing</Link>
+            </Button>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
         </div>
         <div className="md:hidden">
           <MobileNav />

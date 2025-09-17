@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -19,15 +20,24 @@ const steps = [
 
 export default function OnboardingForm() {
   const router = useRouter();
+  const { user } = useUser();
   const [step, setStep] = useState(1);
   const [preferences, setPreferences] = useState<Partial<UserPreferences>>({
     techStack: [],
   });
+  const [saving, setSaving] = useState(false);
 
   const handleNext = () => {
     if (step < steps.length) {
       setStep(step + 1);
     } else {
+      handleSavePreferences();
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    setSaving(true);
+    try {
       // Mark preferences as completed and save
       const completedPreferences: UserPreferences = {
         techStack: preferences.techStack || [],
@@ -36,11 +46,14 @@ export default function OnboardingForm() {
         completed: true,
       };
       
-      saveUserPreferences(completedPreferences);
+      await saveUserPreferences(completedPreferences);
       router.push('/repos');
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
+    } finally {
+      setSaving(false);
     }
   };
-
   const handleBack = () => {
     if (step > 1) {
       setStep(step - 1);
@@ -136,7 +149,7 @@ export default function OnboardingForm() {
         <Button onClick={handleNext}>
           {step === steps.length ? (
             <>
-              Finish <Check className="ml-2 h-4 w-4" />
+              {saving ? 'Saving...' : 'Finish'} <Check className="ml-2 h-4 w-4" />
             </>
           ) : (
             'Next'
