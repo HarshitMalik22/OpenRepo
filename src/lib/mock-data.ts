@@ -3,14 +3,14 @@ import type { TechStack, Goal, ExperienceLevel, CommunityStats, Testimonial } fr
 import { Code, GitBranch, Puzzle, Lightbulb, Rocket, GraduationCap, BrainCircuit } from 'lucide-react';
 
 export const techStacks: TechStack[] = [
-  { id: 'react', name: 'React', icon: Code },
-  { id: 'python', name: 'Python', icon: Code },
-  { id: 'rust', name: 'Rust', icon: Code },
-  { id: 'nodejs', name: 'Node.js', icon: GitBranch },
-  { id: 'ml', name: 'ML', icon: BrainCircuit },
-  { id: 'go', name: 'Go', icon: Code },
-  { id: 'nextjs', name: 'Next.js', icon: Rocket },
-  { id: 'vue', name: 'Vue', icon: Code },
+  { id: 'react', name: 'React', logo: '/logos/react.svg' },
+  { id: 'python', name: 'Python', logo: '/logos/python.svg' },
+  { id: 'rust', name: 'Rust', logo: '/logos/rust.svg' },
+  { id: 'nodejs', name: 'Node.js', logo: '/logos/nodejs.svg' },
+  { id: 'ml', name: 'ML', logo: '/logos/ml.svg' },
+  { id: 'go', name: 'Go', logo: '/logos/go.svg' },
+  { id: 'nextjs', name: 'Next.js', logo: '/logos/nextjs.svg' },
+  { id: 'vue', name: 'Vue', logo: '/logos/vue.svg' },
 ];
 
 export const goals: Goal[] = [

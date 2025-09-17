@@ -72,19 +72,63 @@ export default async function Home() {
           <h2 className="text-4xl font-bold font-headline mb-4">Explore Popular Tech Stacks</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">Discover projects built with your favorite technologies</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {techStacks.map((tech) => (
-            <Link href="/repos" key={tech.id} passHref>
-              <Card className="group h-full hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg cursor-pointer">
-                <CardContent className="p-6 flex flex-col items-center justify-center gap-4 h-full">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <tech.icon className="w-6 h-6 text-primary" />
+        <div className="relative">
+          {/* Elegant background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5 rounded-3xl blur-3xl opacity-30" />
+          
+          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-8 p-8">
+            {techStacks.map((tech, index) => (
+              <Link 
+                href="/repos" 
+                key={tech.id} 
+                passHref
+                className="group relative"
+              >
+                {/* Floating card effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105 group-hover:-translate-y-2" />
+                
+                {/* Main content */}
+                <div className="relative flex flex-col items-center justify-center gap-4 p-6 transition-all duration-300 group-hover:scale-110">
+                  {/* Logo with sophisticated glow effect */}
+                  <div className="relative">
+                    {/* Glow ring */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500 scale-110" />
+                    
+                    {/* Logo container with glass effect */}
+                    <div className="relative w-16 h-16 bg-gradient-to-br from-white/10 to-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-lg transition-all duration-300 group-hover:shadow-2xl group-hover:border-white/30">
+                      {tech.logo ? (
+                        <div className="relative w-10 h-10 flex items-center justify-center">
+                          <Image 
+                            src={tech.logo} 
+                            alt={`${tech.name} logo`} 
+                            width={40} 
+                            height={40} 
+                            className="w-8 h-8 object-contain filter drop-shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-lg"
+                          />
+                          {/* Subtle shine effect */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 bg-gradient-to-br from-primary/40 to-primary/60 rounded-xl" />
+                      )}
+                    </div>
                   </div>
-                  <span className="text-lg font-medium font-headline">{tech.name}</span>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  
+                  {/* Tech name with elegant typography */}
+                  <div className="text-center">
+                    <span className="text-lg font-semibold font-headline tracking-tight text-foreground/90 group-hover:text-foreground transition-colors duration-300">
+                      {tech.name}
+                    </span>
+                    <div className="h-0.5 w-0 bg-gradient-to-r from-primary to-purple-500 mx-auto mt-2 transition-all duration-300 group-hover:w-8" />
+                  </div>
+                </div>
+                
+                {/* Decorative corner elements */}
+                <div className="absolute top-2 left-2 w-2 h-2 bg-primary/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute bottom-2 right-2 w-2 h-2 bg-purple-500/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100" />
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
       

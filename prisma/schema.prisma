@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SUPABASE_DATABASE_URL")
+}
+
+// User model for profile management (Clerk handles authentication)
+model User {
+  id          String   @id @default(cuid())
+  externalId  String   @unique // Clerk user ID
+  email       String?  // From Clerk, not unique here since Clerk manages it
+  name        String?
+  avatar      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userProfile     UserProfile?
+  interactions    UserInteraction[]
+  preferences     UserPreference[]
+  savedRepos      SavedRepository[]
+  aiAnalyses      AiAnalysis[]
+
+  @@map("users")
+}
+
+// User profile for storing preferences and learning data
+model UserProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  skillLevel       String   @default("beginner") // beginner, intermediate, advanced
+  interests        String[] // Array of interest tags
+  goals            String[] // Array of goal tags
+  experience       Json?   // JSON field for complex experience data
+  learnedWeights   Json?   // JSON field for ML weights
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// GitHub repository data
+model Repository {
+  id                String   @id @default(cuid())
+  fullName          String   @unique
+  name              String
+  owner             String
+  description       String?
+  language          String?
+  stars             Int      @default(0)
+  forks             Int      @default(0)
+  issues            Int      @default(0)
+  contributors      Int      @default(0)
+  lastUpdated       DateTime?
+  topics            String[]
+  techStack         String[]
+  difficulty        String   @default("beginner") // beginner, intermediate, advanced, expert
+  competition       String   @default("low") // low, medium, high
+  hasContributing   Boolean  @default(false)
+  matchScore        Float?  // AI-calculated match score
+  aiAnalysis        Json?   // JSON field for AI analysis data
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  interactions UserInteraction[]
+  savedRepos   SavedRepository[]
+  aiAnalyses   AiAnalysis[]
+
+  @@map("repositories")
+}
+
+// User interactions with repositories
+model UserInteraction {
+  id                   String   @id @default(cuid())
+  userId               String
+  repositoryFullName   String
+  type                 String   // view, like, contribute, analyze, bookmark
+  score                Int?     // 1-5 rating
+  metadata             Json?    // Additional interaction data
+  timestamp            DateTime @default(now())
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repository Repository @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
+
+  @@map("user_interactions")
+}
+
+// User preferences for recommendations
+model UserPreference {
+  id          String   @id @default(cuid())
+  userId      String
+  category    String   // e.g., "languages", "topics", "difficulty"
+  key         String   // e.g., "javascript", "ai-ml", "advanced"
+  value       Float    // Preference weight (0.0 - 1.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, key])
+  @@map("user_preferences")
+}
+
+// Saved repositories by users
+model SavedRepository {
+  id          String   @id @default(cuid())
+  userId      String
+  repositoryFullName String
+  tags        String[] // User-defined tags
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repository Repository @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
+
+  @@unique([userId, repositoryFullName])
+  @@map("saved_repositories")
+}
+
+// AI analysis results
+model AiAnalysis {
+  id                String   @id @default(cuid())
+  userId            String?
+  repositoryFullName String
+  analysisType      String   // "explanation", "flowchart", "component_explorer"
+  content           Json     // AI-generated content
+  metadata          Json?    // Analysis metadata
+  createdAt         DateTime @default(now())
+  expiresAt         DateTime?
+
+  // Relations
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  repository Repository @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
+
+  @@map("ai_analyses")
+}
+
+// Recommendation cache for performance
+model RecommendationCache {
+  id          String   @id @default(cuid())
+  userId      String?
+  cacheKey    String   @unique
+  repositories Json     // Cached repository data
+  metadata    Json?    // Cache metadata
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@map("recommendation_cache")
+}
+
+// System configuration
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_config")
+}

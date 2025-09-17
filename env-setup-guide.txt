@@ -1,0 +1,37 @@
+# OpenSauce Environment Variables Setup Guide
+# Copy this content to your .env file and replace the placeholder values
+
+# ===========================================
+# DATABASE CONFIGURATION (Prisma + PostgreSQL)
+# ===========================================
+# Get this from your Supabase project settings > Database > Connection string
+# Replace [YOUR-PASSWORD] with your actual database password
+# Replace [YOUR-PROJECT-REF] with your Supabase project reference
+SUPABASE_DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres"
+
+# ===========================================
+# SUPABASE STORAGE CONFIGURATION
+# ===========================================
+# Get these from your Supabase project settings > API
+# Replace [YOUR-PROJECT-REF] with your Supabase project reference
+NEXT_PUBLIC_SUPABASE_URL="https://[YOUR-PROJECT-REF].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key-here"
+
+# ===========================================
+# CLERK AUTHENTICATION CONFIGURATION
+# ===========================================
+# Get these from your Clerk dashboard
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="your-clerk-publishable-key-here"
+CLERK_SECRET_KEY="your-clerk-secret-key-here"
+
+# ===========================================
+# AI CONFIGURATION (Optional - for AI features)
+# ===========================================
+# Get this from Google AI Studio (Gemini API)
+GEMINI_API_KEY="your-gemini-api-key-here"
+
+# ===========================================
+# GITHUB API CONFIGURATION (Optional - for enhanced GitHub features)
+# ===========================================
+# Get this from GitHub Developer Settings > Personal Access Tokens
+GITHUB_TOKEN="your-github-token-here"

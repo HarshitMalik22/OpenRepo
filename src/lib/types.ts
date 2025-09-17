@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 export type TechStack = {
   id: string;
   name: string;
-  icon: LucideIcon;
+  logo?: string;
 };
 
 export type Goal = {
