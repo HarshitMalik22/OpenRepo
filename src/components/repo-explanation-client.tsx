@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
 import type { Repository } from '@/lib/types';
 import { renderInteractiveFlowchart, type RenderInteractiveFlowchartOutput } from '@/ai/flows/render-interactive-flowchart';
+import { saveRepositoryAnalysis, getRepositoryAnalysis, trackUserInteraction } from '@/lib/database';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -218,6 +220,7 @@ const getResourceIcon = (type: string) => {
 
 export default function RepoExplanationClient({ repository }: RepoExplanationClientProps) {
     const [isClient, setIsClient] = useState(false);
+    const { user } = useUser();
     const [aiData, setAiData] = useState<RenderInteractiveFlowchartOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -237,6 +240,26 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
             setError(null);
             
             try {
+                // Check if we have cached analysis first
+                if (user) {
+                    try {
+                        const cachedAnalysis = await getRepositoryAnalysis(user.id, repository.full_name);
+                        if (cachedAnalysis) {
+                            console.log('Using cached analysis from database');
+                            setAiData({
+                                flowchartMermaid: cachedAnalysis.flowchartMermaid,
+                                explanation: cachedAnalysis.explanation as any,
+                                resources: cachedAnalysis.resources as any,
+                                architectureInsights: cachedAnalysis.insights as any,
+                            });
+                            setIsLoading(false);
+                            return;
+                        }
+                    } catch (dbError) {
+                        console.error('Failed to get cached analysis:', dbError);
+                    }
+                }
+
                 console.log('Generating AI explanation for repository:', repository.name);
                 
                 // Prepare tech stack from repository data
@@ -273,6 +296,16 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                   }
                   
                   setAiData(data);
+                  
+                  // Save analysis to database if user is authenticated
+                  if (user) {
+                    try {
+                      await saveRepositoryAnalysis(user.id, repository.full_name, repository.html_url, data);
+                      console.log('Analysis saved to database');
+                    } catch (dbError) {
+                      console.error('Failed to save analysis to database:', dbError);
+                    }
+                  }
                 } catch (aiError) {
                   const endTime = Date.now();
                   const startTime = endTime - 30000; // Approximate start time for logging
@@ -302,8 +335,12 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
             }
         };
 
+        // Track user interaction
+        if (user) {
+            trackUserInteraction(user.id, repository.full_name, 'analyze').catch(console.error);
+        }
         generateExplanation();
-    }, [repository, isClient, isExplanationVisible]);
+    }, [repository, isClient, isExplanationVisible, user]);
 
     if (!repository) {
         return (

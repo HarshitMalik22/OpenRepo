@@ -1,3 +1,5 @@
+import { auth } from '@clerk/nextjs/server';
+import { getUserPreferencesFromDB, saveUserPreferencesToDB } from './database';
 import type { UserPreferences } from './types';
 
 const STORAGE_KEY = 'opensauce-user-preferences';
@@ -11,7 +13,27 @@ const defaultPreferences: UserPreferences = {
 };
 
 // Get user preferences from local storage
-export function getUserPreferences(): UserPreferences | null {
+export async function getUserPreferences(): Promise<UserPreferences | null> {
+  try {
+    const { userId } = auth();
+    
+    if (userId) {
+      // Get from database if user is authenticated
+      const dbPreferences = await getUserPreferencesFromDB(userId);
+      if (dbPreferences) {
+        return {
+          techStack: dbPreferences.techStack,
+          goal: dbPreferences.goal,
+          experienceLevel: dbPreferences.experienceLevel,
+          completed: dbPreferences.completed,
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Failed to get user preferences from database:', error);
+  }
+
+  // Fallback to localStorage for unauthenticated users
   if (typeof window === 'undefined') {
     return null;
   }
@@ -36,7 +58,20 @@ export function getUserPreferences(): UserPreferences | null {
 }
 
 // Save user preferences to local storage
-export function saveUserPreferences(preferences: UserPreferences): void {
+export async function saveUserPreferences(preferences: UserPreferences): Promise<void> {
+  try {
+    const { userId } = auth();
+    
+    if (userId) {
+      // Save to database if user is authenticated
+      await saveUserPreferencesToDB(userId, preferences);
+      return;
+    }
+  } catch (error) {
+    console.error('Failed to save user preferences to database:', error);
+  }
+
+  // Fallback to localStorage for unauthenticated users
   if (typeof window === 'undefined') {
     return;
   }
@@ -54,8 +89,8 @@ export function saveUserPreferences(preferences: UserPreferences): void {
 }
 
 // Update specific preference fields
-export function updateUserPreferences(updates: Partial<UserPreferences>): UserPreferences | null {
-  const current = getUserPreferences();
+export async function updateUserPreferences(updates: Partial<UserPreferences>): Promise<UserPreferences | null> {
+  const current = await getUserPreferences();
   if (!current) {
     return null;
   }
@@ -65,7 +100,7 @@ export function updateUserPreferences(updates: Partial<UserPreferences>): UserPr
     ...updates,
   };
 
-  saveUserPreferences(updated);
+  await saveUserPreferences(updated);
   return updated;
 }
 
@@ -83,25 +118,25 @@ export function clearUserPreferences(): void {
 }
 
 // Check if user has completed onboarding
-export function hasCompletedOnboarding(): boolean {
-  const preferences = getUserPreferences();
+export async function hasCompletedOnboarding(): Promise<boolean> {
+  const preferences = await getUserPreferences();
   return preferences?.completed || false;
 }
 
 // Get user's tech stack preferences
-export function getTechStackPreferences(): string[] {
-  const preferences = getUserPreferences();
+export async function getTechStackPreferences(): Promise<string[]> {
+  const preferences = await getUserPreferences();
   return preferences?.techStack || [];
 }
 
 // Get user's goal preference
-export function getGoalPreference(): string {
-  const preferences = getUserPreferences();
+export async function getGoalPreference(): Promise<string> {
+  const preferences = await getUserPreferences();
   return preferences?.goal || 'learn';
 }
 
 // Get user's experience level preference
-export function getExperienceLevelPreference(): string {
-  const preferences = getUserPreferences();
+export async function getExperienceLevelPreference(): Promise<string> {
+  const preferences = await getUserPreferences();
   return preferences?.experienceLevel || 'beginner';
 }

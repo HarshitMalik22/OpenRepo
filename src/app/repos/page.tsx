@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,10 +23,12 @@ import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
 import GlassRepoList from '@/components/glass-repo-list';
 import { getPopularRepos, getRecommendedRepos, getFilteredRepos, getEnhancedRecommendedRepos, trackUserInteraction, getRecommendationExplanation, getUserStats } from '@/lib/github';
 import { getUserPreferences } from '@/lib/user-preferences';
+import { trackUserInteraction as trackUserInteractionDB } from '@/lib/database';
 import { getCommunityStats, getTestimonials } from '@/lib/github';
 import type { Repository, RepositoryFilters, UserPreferences } from '@/lib/types';
 
 export default function ReposPage() {
+  const { user } = useUser();
   const [allRepos, setAllRepos] = useState<Repository[]>([]);
   const [filteredRepos, setFilteredRepos] = useState<Repository[]>([]);
   const [recommendedRepos, setRecommendedRepos] = useState<Repository[]>([]);
@@ -105,7 +108,7 @@ export default function ReposPage() {
     const loadData = async () => {
       try {
         // Load user preferences
-        const preferences = getUserPreferences();
+        const preferences = await getUserPreferences();
         console.log('Loaded preferences:', preferences);
         setUserPreferences(preferences);
         
@@ -258,11 +261,17 @@ export default function ReposPage() {
 
   const handleViewRepo = (repo: Repository) => {
     // Track user interaction
+    if (user) {
+      trackUserInteractionDB(user.id, repo.full_name, 'view').catch(console.error);
+    }
     trackUserInteraction(userId, repo.full_name, 'view');
   };
 
   const handleRateRepo = (repo: Repository, rating: number) => {
     // Track user interaction with rating
+    if (user) {
+      trackUserInteractionDB(user.id, repo.full_name, 'analyze', rating).catch(console.error);
+    }
     trackUserInteraction(userId, repo.full_name, 'analyze', rating);
     
     // Update user stats

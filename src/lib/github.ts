@@ -5,6 +5,7 @@ let communityStatsCache: any | null = null;
 
 import { enhanceRepository, getPersonalizedRecommendations, filterRepositories } from './recommendation-engine';
 import { enhancedRecommendationEngine } from './enhanced-recommendation-engine';
+import { cachePopularRepository, getCachedPopularRepositories, updateCommunityStats } from './database';
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats } from './types';
 
 // Validate GitHub API configuration
@@ -36,6 +37,19 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
     return repoCache;
   }
 
+  // Try to get cached repositories from database first
+  if (useCache) {
+    try {
+      const cachedRepos = await getCachedPopularRepositories();
+      if (cachedRepos.length > 0) {
+        console.log(`Using ${cachedRepos.length} cached repositories from database`);
+        repoCache = cachedRepos;
+        return cachedRepos;
+      }
+    } catch (error) {
+      console.error('Failed to get cached repositories:', error);
+    }
+  }
   try {
     // Fetch multiple queries to get tons of diverse repositories
     const queries = [
@@ -119,6 +133,15 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
 
     // Enhance repositories with additional metadata
     const enhancedRepos = allRepos.map((repo: any) => enhanceRepository(repo));
+    
+    // Cache repositories in database for future use
+    try {
+      await Promise.all(enhancedRepos.map(repo => cachePopularRepository(repo)));
+      console.log('Successfully cached repositories in database');
+    } catch (error) {
+      console.error('Failed to cache repositories in database:', error);
+    }
+    
     repoCache = enhancedRepos;
     return enhancedRepos;
   } catch (error) {
@@ -231,6 +254,23 @@ export async function getCommunityStats(useCache = true): Promise<CommunityStats
     return communityStatsCache;
   }
 
+  // Try to get stats from database first
+  try {
+    const dbStats = await updateCommunityStats();
+    if (dbStats) {
+      const stats: CommunityStats = {
+        totalQueries: dbStats.totalQueries,
+        totalUsers: dbStats.totalUsers,
+        activeRepositories: dbStats.activeRepositories,
+        successfulContributions: dbStats.successfulContributions,
+        averageSatisfaction: dbStats.averageSatisfaction,
+      };
+      communityStatsCache = stats;
+      return stats;
+    }
+  } catch (error) {
+    console.error('Failed to get community stats from database:', error);
+  }
   try {
     // Fetch various GitHub statistics
     const [reposResponse, usersResponse, commitsResponse] = await Promise.all([
