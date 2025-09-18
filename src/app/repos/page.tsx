@@ -22,7 +22,7 @@ import {
 import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
 import GlassRepoList from '@/components/glass-repo-list';
 import { getPopularRepos, getRecommendedRepos, getFilteredRepos, getEnhancedRecommendedRepos, trackUserInteraction, getRecommendationExplanation, getUserStats } from '@/lib/github';
-import { getUserPreferences } from '@/lib/user-preferences';
+import { getUserPreferencesClient } from '@/lib/user-preferences-client';
 import { trackUserInteraction as trackUserInteractionDB } from '@/lib/database';
 import { getCommunityStats, getTestimonials } from '@/lib/github';
 import type { Repository, RepositoryFilters, UserPreferences } from '@/lib/types';
@@ -108,7 +108,7 @@ export default function ReposPage() {
     const loadData = async () => {
       try {
         // Load user preferences
-        const preferences = await getUserPreferences();
+        const preferences = await getUserPreferencesClient();
         console.log('Loaded preferences:', preferences);
         setUserPreferences(preferences);
         

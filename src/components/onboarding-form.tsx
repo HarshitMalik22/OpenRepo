@@ -10,7 +10,7 @@ import { techStacks, goals, experienceLevels } from '@/lib/filter-data';
 import type { UserPreferences } from '@/lib/types';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { saveUserPreferences } from '@/lib/user-preferences';
+import { saveUserPreferencesClient, saveUserPreferencesToDBClient } from '@/lib/user-preferences-client';
 
 const steps = [
   { id: 1, title: 'Select Your Tech Stack', description: 'Choose the technologies you are interested in. You can select multiple.' },
@@ -46,7 +46,13 @@ export default function OnboardingForm() {
         completed: true,
       };
       
-      await saveUserPreferences(completedPreferences);
+      // Save to localStorage first
+      await saveUserPreferencesClient(completedPreferences);
+      
+      // If user is authenticated, also save to database
+      if (user?.id) {
+        await saveUserPreferencesToDBClient(completedPreferences, user.id);
+      }
       router.push('/repos');
     } catch (error) {
       console.error('Failed to save preferences:', error);

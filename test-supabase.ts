@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { supabase, isStorageConfigured, initializeStorageBuckets } from './src/lib/supabase-storage'
 
 async function testSupabaseConnection() {

@@ -20,7 +20,7 @@ import EnhancedRepoCard from '@/components/enhanced-repo-card';
 import GuidedContributionWorkflow from '@/components/guided-contribution-workflow';
 import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
 import { getPopularRepos, getRecommendedRepos, getFilteredRepos, getCommunityStats } from '@/lib/github';
-import { getUserPreferences } from '@/lib/user-preferences';
+import { getUserPreferencesClient } from '@/lib/user-preferences-client';
 import type { Repository, RepositoryFilters, UserPreferences, CommunityStats } from '@/lib/types';
 
 export default function ContributePage() {
@@ -46,7 +46,7 @@ export default function ContributePage() {
     const loadData = async () => {
       try {
         // Load user preferences
-        const preferences = getUserPreferences();
+        const preferences = await getUserPreferencesClient();
         setUserPreferences(preferences);
         
         // Load repositories

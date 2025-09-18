@@ -2,8 +2,10 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 let supabaseClient: ReturnType<typeof createClient> | null = null
+let supabaseAdminClient: ReturnType<typeof createClient> | null = null
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase environment variables are not configured. Storage functionality will be disabled.')
@@ -11,7 +13,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
   supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
 }
 
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  console.warn('Supabase service role key is not configured. Administrative operations will be disabled.')
+} else {
+  supabaseAdminClient = createClient(supabaseUrl, supabaseServiceRoleKey)
+}
+
 export const supabase = supabaseClient
+export const supabaseAdmin = supabaseAdminClient
 
 // Storage buckets
 export const STORAGE_BUCKETS = {
@@ -115,6 +124,10 @@ export async function listFiles(
     offset?: number
   }
 ) {
+  if (!supabase) {
+    throw new Error('Supabase storage is not configured. Please check your environment variables.')
+  }
+  
   try {
     const { data, error } = await supabase.storage
       .from(bucket)
@@ -220,8 +233,8 @@ export function getAiAnalysisImageUrl(analysisId: string, fileName: string) {
  * Initialize storage buckets (should be called once during setup)
  */
 export async function initializeStorageBuckets() {
-  if (!supabase) {
-    console.error('Supabase storage is not configured. Cannot initialize buckets.')
+  if (!supabaseAdmin) {
+    console.error('Supabase admin client is not configured. Cannot initialize buckets.')
     return
   }
   
@@ -230,7 +243,7 @@ export async function initializeStorageBuckets() {
   for (const bucket of buckets) {
     try {
       // Check if bucket exists
-      const { data: bucketsData, error: listError } = await supabase.storage.listBuckets()
+      const { data: bucketsData, error: listError } = await supabaseAdmin.storage.listBuckets()
       
       if (listError) {
         console.error('Error listing buckets:', listError)
@@ -241,7 +254,7 @@ export async function initializeStorageBuckets() {
       
       if (!bucketExists) {
         // Create bucket
-        const { error: createError } = await supabase.storage.createBucket(bucket, {
+        const { error: createError } = await supabaseAdmin.storage.createBucket(bucket, {
           public: bucket !== STORAGE_BUCKETS.USER_UPLOADS, // Make user uploads private
           fileSizeLimit: 52428800, // 50MB limit
         })

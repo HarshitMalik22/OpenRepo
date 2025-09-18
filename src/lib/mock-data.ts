@@ -1,6 +1,6 @@
 
 import type { TechStack, Goal, ExperienceLevel, CommunityStats, Testimonial } from './types';
-import { Code, GitBranch, Puzzle, Lightbulb, Rocket, GraduationCap, BrainCircuit } from 'lucide-react';
+import { Code, GitBranch, Puzzle, Lightbulb, Rocket, GraduationCap } from 'lucide-react';
 
 export const techStacks: TechStack[] = [
   { id: 'react', name: 'React', logo: '/logos/react.svg' },

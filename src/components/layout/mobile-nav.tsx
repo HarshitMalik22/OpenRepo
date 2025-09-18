@@ -1,11 +1,12 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, BrainCircuit } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,7 +23,14 @@ export default function MobileNav() {
         <div className="flex flex-col h-full">
           <div className="border-b pb-4">
             <Link href="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
-              <BrainCircuit className="w-8 h-8 text-primary" />
+              <div className="relative w-8 h-8">
+                <Image 
+                  src="/logos/opensauce-logo.png" 
+                  alt="OpenSauce Logo" 
+                  fill
+                  className="object-contain"
+                />
+              </div>
               <span className="text-xl font-bold font-headline text-foreground">OpenSauce</span>
             </Link>
           </div>

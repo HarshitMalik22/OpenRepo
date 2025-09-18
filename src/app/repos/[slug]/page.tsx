@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, GitBranch, ExternalLink, BrainCircuit } from 'lucide-react';
+import { Star, GitBranch, ExternalLink } from 'lucide-react';
 import RepoExplanationClient from '@/components/repo-explanation-client';
 import { getRepo } from '@/lib/github';
 
