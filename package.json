@@ -63,6 +63,7 @@
     "react-syntax-highlighter": "^5.8.0",
     "react-zoom-pan-pinch": "^3.7.0",
     "recharts": "^2.15.1",
+    "svix": "^1.76.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2"

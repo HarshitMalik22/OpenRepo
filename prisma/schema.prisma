@@ -10,30 +10,55 @@ datasource db {
   url       = env("DATABASE_URL")
 }
 
-// User model for profile management (Clerk handles authentication)
+// Enhanced User model for advanced contributor profiling
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique // Clerk user ID
-  email     String   @unique
-  firstName String?
-  lastName  String?
-  imageUrl  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id                    String   @id @default(cuid())
+  clerkId               String   @unique // Clerk user ID
+  email                 String   @unique
+  firstName             String?
+  lastName              String?
+  imageUrl              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Contributor profile data
+  bio                   String?
+  location              String?
+  website               String?
+  githubUsername        String?  @unique
+  twitterUsername       String?
+  linkedinUrl           String?
+  experienceLevel       String   @default("intermediate") // beginner, intermediate, advanced, expert
+  availability           String   @default("sporadic") // part-time, full-time, sporadic
+  openSourceExperience  Int      @default(0) // Years of experience
+  totalContributions    Int      @default(0) // Total contributions made
+  totalStarsReceived    Int      @default(0) // Stars received from contributions
+  followersCount        Int      @default(0) // GitHub followers
+  followingCount        Int      @default(0) // GitHub following
+  publicReposCount      Int      @default(0) // GitHub public repos
+  contributorScore      Float    @default(0.0) // 0-100 contributor score
+  isMentor              Boolean  @default(false) // Willing to mentor others
+  isAvailableForHire    Boolean  @default(false) // Available for freelance work
+  lastGitHubSync        DateTime?
+  
   // Relations
-  userProfile     UserProfile?
-  userPreferences UserPreferences?
-  interactions    UserInteraction[]
-  preferences     UserPreference[]
-  savedRepos      SavedRepository[]
-  aiAnalyses      AiAnalysis[]
-  repositoryAnalyses RepositoryAnalysis[]
+  userProfile           UserProfile?
+  userPreferences       UserPreferences?
+  interactions          UserInteraction[]
+  preferences           UserPreference[]
+  savedRepos            SavedRepository[]
+  aiAnalyses            AiAnalysis[]
+  repositoryAnalyses    RepositoryAnalysis[]
+  contributorPortfolio  ContributorPortfolio?
+  technicalSkills       TechnicalSkill[]
+  contributions         Contribution[]
+  learningGoals         LearningGoal[]
+  impactAnalyses       ImpactAnalysis[]
 
   @@map("users")
 }
 
-// User profile for storing preferences and learning data
+// Enhanced User profile for storing preferences and learning data
 model UserProfile {
   id               String   @id @default(cuid())
   userId           String   @unique
@@ -42,6 +67,12 @@ model UserProfile {
   goals            String[] // Array of goal tags
   experience       Json?   // JSON field for complex experience data
   learnedWeights   Json?   // JSON field for ML weights
+  preferredTech    String[] // Preferred technologies
+  avoidedTech      String[] // Technologies to avoid
+  timeCommitment   String   @default("5hrs") // 2hrs, 5hrs, 10hrs, 20hrs+
+  preferredDifficulty String @default("medium") // beginner, medium, advanced
+  learningStyle    String   @default("hands-on") // visual, hands-on, theoretical
+  communicationStyle String @default("collaborative") // independent, collaborative, mentorship
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -67,33 +98,48 @@ model UserPreferences {
   @@map("user_onboarding_preferences")
 }
 
-// GitHub repository data
+// GitHub repository data with real-time health metrics
 model Repository {
-  id                String   @id @default(cuid())
-  fullName          String   @unique
-  name              String
-  owner             String
-  description       String?
-  language          String?
-  stars             Int      @default(0)
-  forks             Int      @default(0)
-  issues            Int      @default(0)
-  contributors      Int      @default(0)
-  lastUpdated       DateTime?
-  topics            String[]
-  techStack         String[]
-  difficulty        String   @default("beginner") // beginner, intermediate, advanced, expert
-  competition       String   @default("low") // low, medium, high
-  hasContributing   Boolean  @default(false)
-  matchScore        Float?  // AI-calculated match score
-  aiAnalysis        Json?   // JSON field for AI analysis data
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
+  id                      String   @id @default(cuid())
+  fullName                String   @unique
+  name                    String
+  owner                   String
+  description             String?
+  language                String?
+  stars                   Int      @default(0)
+  forks                   Int      @default(0)
+  issues                  Int      @default(0)
+  contributors            Int      @default(0)
+  lastUpdated             DateTime?
+  topics                  String[]
+  techStack               String[]
+  difficulty              String   @default("beginner") // beginner, intermediate, advanced, expert
+  competition             String   @default("low") // low, medium, high
+  hasContributing         Boolean  @default(false)
+  matchScore              Float?  // AI-calculated match score
+  aiAnalysis              Json?   // JSON field for AI analysis data
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  
+  // Real-time health metrics
+  lastCommitDate          DateTime?
+  issueResolutionRate     Float    @default(0.0) // Percentage of issues resolved
+  prMergeRate             Float    @default(0.0) // Percentage of PRs merged
+  maintainerActivityScore Float    @default(0.0) // 0-100 score based on recent activity
+  busFactor               Int      @default(1) // Number of people who understand the codebase
+  codeQualityScore        Float    @default(50.0) // 0-100 based on tests, linting, docs
+  testCoverage            Float    @default(0.0) // Test coverage percentage
+  documentationScore      Float    @default(50.0) // Documentation quality score
+  maintainerResponseTime  Int      @default(0) // Average response time in hours
+  isActive                Boolean  @default(true) // Is the project actively maintained
+  healthScore             Float    @default(50.0) // Overall health score 0-100
+  
   // Relations
-  interactions UserInteraction[]
-  savedRepos   SavedRepository[]
-  aiAnalyses   AiAnalysis[]
+  interactions            UserInteraction[]
+  savedRepos              SavedRepository[]
+  aiAnalyses              AiAnalysis[]
+  goodFirstIssues         GoodFirstIssue[]
+  contributionOpportunities ContributionOpportunity[]
 
   @@map("repositories")
 }
@@ -245,6 +291,181 @@ model RecommendationCache {
   expiresAt   DateTime
 
   @@map("recommendation_cache")
+}
+
+// Good First Issues intelligence system
+model GoodFirstIssue {
+  id                String   @id @default(cuid())
+  repoFullName      String
+  issueNumber       Int
+  title             String
+  body              String?
+  state             String   @default("open") // open, closed
+  labels            String[]
+  estimatedTime     String   @default("2hrs") // 1hr, 2hrs, 4hrs, 8hrs
+  requiredSkills    String[] // Skills needed to solve this
+  mentorAvailable   Boolean  @default(false)
+  successRate       Float    @default(0.0) // Historical success rate
+  difficulty        String   @default("beginner") // beginner, intermediate
+  type              String   @default("bug-fix") // bug-fix, feature, docs, refactor
+  language          String?
+  assignee          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  closedAt          DateTime?
+
+  // Relations
+  repository Repository @relation(fields: [repoFullName], references: [fullName], onDelete: Cascade)
+
+  @@unique([repoFullName, issueNumber])
+  @@map("good_first_issues")
+}
+
+// Contribution opportunities with intelligence
+model ContributionOpportunity {
+  id                String   @id @default(cuid())
+  repoFullName      String
+  title             String
+  description       String?
+  type              String   // bug-fix, feature, docs, refactor, test
+  difficulty        String   // beginner, intermediate, advanced
+  estimatedTime     String   // 1hr, 2hrs, 4hrs, 8hrs, 1day, 1week
+  requiredSkills    String[]
+  impactLevel       String   // low, medium, high
+  skillMatch        Float    // 0-100 match with user skills
+  mentorAvailable   Boolean  @default(false)
+  firstTimerFriendly Boolean @default(false)
+  urgency           String   @default("low") // low, medium, high
+  status            String   @default("available") // available, taken, completed
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  expiresAt         DateTime?
+
+  // Relations
+  repository Repository @relation(fields: [repoFullName], references: [fullName], onDelete: Cascade)
+
+  @@map("contribution_opportunities")
+}
+
+// Technical skills for contributor profiling
+model TechnicalSkill {
+  id          String   @id @default(cuid())
+  userId      String
+  skillName   String
+  category    String   // language, framework, tool, domain
+  proficiency Float    // 0-100 proficiency level
+  yearsOfExperience Int @default(0)
+  lastUsed    DateTime?
+  isPreferred Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillName])
+  @@map("technical_skills")
+}
+
+// Learning goals for contributors
+model LearningGoal {
+  id          String   @id @default(cuid())
+  userId      String
+  skillName   String
+  category    String   // language, framework, tool, domain
+  targetLevel Float    // 0-100 target proficiency
+  priority    String   @default("medium") // low, medium, high
+  deadline    DateTime?
+  status      String   @default("active") // active, completed, paused
+  progress    Float    @default(0.0) // 0-100 progress
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("learning_goals")
+}
+
+// Individual contributions tracking
+model Contribution {
+  id                String   @id @default(cuid())
+  userId            String
+  repoFullName      String
+  contributionType  String   // bug-fix, feature, docs, refactor, test
+  title             String
+  description       String?
+  prNumber          Int?
+  issueNumber       Int?
+  status            String   // in-progress, merged, closed, rejected
+  estimatedTime     String?
+  actualTime        String?
+  skillsUsed        String[]
+  skillsLearned     String[]
+  impactScore       Float    // 0-100 impact of contribution
+  visibilityBoost   Float    // 0-100 visibility gained
+  learningValue     Float    // 0-100 learning value
+  networkingValue   Float    // 0-100 networking value
+  mentorshipValue   Float    // 0-100 mentorship value
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  completedAt       DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("contributions")
+}
+
+// Contributor portfolio system
+model ContributorPortfolio {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  totalContributions    Int      @default(0)
+  totalRepositories     Int      @default(0)
+  totalStarsReceived    Int      @default(0)
+  totalIssuesClosed     Int      @default(0)
+  totalPRsMerged        Int      @default(0)
+  averageImpactScore    Float    @default(0.0)
+  topSkills             String[]
+  favoriteLanguages     String[]
+  contributionsByType   Json     // Structured contribution data
+  skillsAcquired        String[] // Skills gained from contributions
+  testimonials          Json     // Feedback from maintainers
+  impactMetrics         Json     // Stars added, users helped, etc.
+  achievements          String[] // Badges, recognitions
+  portfolioUrl          String?
+  resumeUrl             String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("contributor_portfolios")
+}
+
+// Impact analysis for contributions
+model ImpactAnalysis {
+  id                String   @id @default(cuid())
+  userId            String
+  repoFullName      String
+  contributionId    String
+  visibilityBoost   Float    // How much visibility this contribution gives me
+  learningValue     Float    // What I'll learn from this
+  networkingValue   Float    // Connections I'll make
+  careerAdvancement Float    // How this helps my career
+  communityImpact   Float    // Impact on the community
+  technicalImpact   Float    // Technical significance
+  documentationImpact Float  // Documentation improvement
+  overallScore      Float    // Overall impact score 0-100
+  analysisDate      DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("impact_analyses")
 }
 
 // System configuration

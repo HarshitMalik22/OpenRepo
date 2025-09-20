@@ -24,7 +24,7 @@ import {
   Clock
 } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { atomOneDark } from 'react-syntax-highlighter/dist/styles';
 import type { Repository } from '@/lib/types';
 
 interface CodeSnippet {
@@ -408,7 +408,7 @@ export default function EnhancedComponentExplorer({
                 <CardContent>
                   <SyntaxHighlighter
                     language={selectedComponent.codeSnippet.language}
-                    style={vscDarkPlus}
+                    style={atomOneDark}
                     customStyle={{
                       margin: 0,
                       borderRadius: '0.5rem',
