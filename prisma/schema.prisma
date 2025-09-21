@@ -1,414 +1,361 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// Enhanced User model for advanced contributor profiling
 model User {
-  id                    String   @id @default(cuid())
-  clerkId               String   @unique // Clerk user ID
-  email                 String   @unique
-  firstName             String?
-  lastName              String?
-  imageUrl              String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  // Contributor profile data
-  bio                   String?
-  location              String?
-  website               String?
-  githubUsername        String?  @unique
-  twitterUsername       String?
-  linkedinUrl           String?
-  experienceLevel       String   @default("intermediate") // beginner, intermediate, advanced, expert
-  availability           String   @default("sporadic") // part-time, full-time, sporadic
-  openSourceExperience  Int      @default(0) // Years of experience
-  totalContributions    Int      @default(0) // Total contributions made
-  totalStarsReceived    Int      @default(0) // Stars received from contributions
-  followersCount        Int      @default(0) // GitHub followers
-  followingCount        Int      @default(0) // GitHub following
-  publicReposCount      Int      @default(0) // GitHub public repos
-  contributorScore      Float    @default(0.0) // 0-100 contributor score
-  isMentor              Boolean  @default(false) // Willing to mentor others
-  isAvailableForHire    Boolean  @default(false) // Available for freelance work
-  lastGitHubSync        DateTime?
-  
-  // Relations
-  userProfile           UserProfile?
-  userPreferences       UserPreferences?
-  interactions          UserInteraction[]
-  preferences           UserPreference[]
-  savedRepos            SavedRepository[]
-  aiAnalyses            AiAnalysis[]
-  repositoryAnalyses    RepositoryAnalysis[]
-  contributorPortfolio  ContributorPortfolio?
-  technicalSkills       TechnicalSkill[]
-  contributions         Contribution[]
-  learningGoals         LearningGoal[]
+  id                   String                @id @default(cuid())
+  clerkId              String                @unique
+  email                String                @unique
+  firstName            String?
+  lastName             String?
+  imageUrl             String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  availability         String                @default("sporadic")
+  bio                  String?
+  contributorScore     Float                 @default(0.0)
+  experienceLevel      String                @default("intermediate")
+  followersCount       Int                   @default(0)
+  followingCount       Int                   @default(0)
+  githubUsername       String?               @unique
+  isAvailableForHire   Boolean               @default(false)
+  isMentor             Boolean               @default(false)
+  lastGitHubSync       DateTime?
+  linkedinUrl          String?
+  location             String?
+  openSourceExperience Int                   @default(0)
+  publicReposCount     Int                   @default(0)
+  totalContributions   Int                   @default(0)
+  totalStarsReceived   Int                   @default(0)
+  twitterUsername      String?
+  website              String?
+  aiAnalyses           AiAnalysis[]
+  contributions        Contribution[]
+  contributorPortfolio ContributorPortfolio?
   impactAnalyses       ImpactAnalysis[]
+  learningGoals        LearningGoal[]
+  repositoryAnalyses   RepositoryAnalysis[]
+  savedRepos           SavedRepository[]
+  technicalSkills      TechnicalSkill[]
+  interactions         UserInteraction[]
+  preferences          UserPreference[]
+  userPreferences      UserPreferences?
+  userProfile          UserProfile?
 
   @@map("users")
 }
 
-// Enhanced User profile for storing preferences and learning data
 model UserProfile {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  skillLevel       String   @default("beginner") // beginner, intermediate, advanced
-  interests        String[] // Array of interest tags
-  goals            String[] // Array of goal tags
-  experience       Json?   // JSON field for complex experience data
-  learnedWeights   Json?   // JSON field for ML weights
-  preferredTech    String[] // Preferred technologies
-  avoidedTech      String[] // Technologies to avoid
-  timeCommitment   String   @default("5hrs") // 2hrs, 5hrs, 10hrs, 20hrs+
-  preferredDifficulty String @default("medium") // beginner, medium, advanced
-  learningStyle    String   @default("hands-on") // visual, hands-on, theoretical
-  communicationStyle String @default("collaborative") // independent, collaborative, mentorship
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  skillLevel          String   @default("beginner")
+  interests           String[]
+  goals               String[]
+  experience          Json?
+  learnedWeights      Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  avoidedTech         String[]
+  communicationStyle  String   @default("collaborative")
+  learningStyle       String   @default("hands-on")
+  preferredDifficulty String   @default("medium")
+  preferredTech       String[]
+  timeCommitment      String   @default("5hrs")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
 }
 
-// User preferences for onboarding
 model UserPreferences {
   id              String   @id @default(cuid())
   userId          String   @unique
-  techStack       String[] // Array of tech stack preferences
+  techStack       String[]
   goal            String   @default("learn")
   experienceLevel String   @default("beginner")
   completed       Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_onboarding_preferences")
 }
 
-// Minimal repository data for relations and tracking
 model Repository {
-  id           String   @id @default(cuid())
-  fullName     String   @unique // GitHub repository full name
-  name         String   // Repository name
-  owner        String   // Repository owner
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
-  // Relations
-  interactions UserInteraction[]
-  savedRepos   SavedRepository[]
+  id           String            @id @default(cuid())
+  fullName     String            @unique
+  name         String
+  owner        String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   aiAnalyses   AiAnalysis[]
+  savedRepos   SavedRepository[]
+  interactions UserInteraction[]
 
   @@map("repositories")
 }
 
-// User interactions with repositories
 model UserInteraction {
-  id                   String   @id @default(cuid())
-  userId               String
-  repositoryFullName   String
-  type                 String   // view, like, contribute, analyze, bookmark, search, filter
-  score                Int?     // 1-5 rating
-  metadata             Json?    // Additional interaction data (filters, search terms, etc.)
-  timestamp            DateTime @default(now())
-  session_id           String?  // For tracking user sessions
-  
-  // Performance tracking
-  duration_ms          Int?     // How long user spent on this interaction
-  source_page          String?  // Where the interaction originated
-  
-  // Relations
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  repository Repository @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
+  id                 String     @id @default(cuid())
+  userId             String
+  repositoryFullName String
+  type               String
+  score              Int?
+  metadata           Json?
+  timestamp          DateTime   @default(now())
+  duration_ms        Int?
+  session_id         String?
+  source_page        String?
+  repository         Repository @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_interactions")
 }
 
-// User preferences for recommendations (ML-based)
 model UserPreference {
-  id          String   @id @default(cuid())
-  userId      String
-  category    String   // e.g., "languages", "topics", "difficulty"
-  key         String   // e.g., "javascript", "ai-ml", "advanced"
-  value       Float    // Preference weight (0.0 - 1.0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String
+  category  String
+  key       String
+  value     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, category, key])
   @@map("user_ml_preferences")
 }
 
-// Saved repositories by users
 model SavedRepository {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   userId       String
   repoFullName String
   repoName     String
   repoUrl      String
   description  String?
   language     String?
-  stars        Int      @default(0)
-  tags         String[] // Repository topics/tags
+  stars        Int        @default(0)
+  tags         String[]
   notes        String?
-  savedAt      DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  repository Repository @relation(fields: [repoFullName], references: [fullName], onDelete: Cascade)
+  savedAt      DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  repository   Repository @relation(fields: [repoFullName], references: [fullName], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, repoFullName])
   @@map("saved_repositories")
 }
 
-// AI analysis results
 model AiAnalysis {
-  id                String   @id @default(cuid())
-  userId            String?
+  id                 String     @id @default(cuid())
+  userId             String?
   repositoryFullName String
-  
-  // Relations
-  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  repository Repository  @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
-  analysisType      String   // "explanation", "flowchart", "component_explorer"
-  content           Json     // AI-generated content
-  metadata          Json?    // Analysis metadata
-  createdAt         DateTime @default(now())
-  expiresAt         DateTime?
-
+  analysisType       String
+  content            Json
+  metadata           Json?
+  createdAt          DateTime   @default(now())
+  expiresAt          DateTime?
+  repository         Repository @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
+  user               User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("ai_analyses")
 }
 
-// Repository analysis results
 model RepositoryAnalysis {
-  id                String   @id @default(cuid())
-  userId            String
-  repoFullName      String
-  repoUrl           String
-  flowchartMermaid  String   @db.Text
-  explanation       Json     // Structured explanation data
-  resources         Json     // Learning resources
-  insights          Json?    // Architecture insights
-  analysisVersion   String   @default("1.0")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  userId           String
+  repoFullName     String
+  repoUrl          String
+  flowchartMermaid String
+  explanation      Json
+  resources        Json
+  insights         Json?
+  analysisVersion  String   @default("1.0")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, repoFullName])
   @@map("repository_analyses")
 }
 
-// Community statistics
 model CommunityStats {
-  id                     String   @id @default(cuid())
-  totalQueries           Int      @default(0)
-  totalUsers             Int      @default(0)
-  activeRepositories     Int      @default(0)
-  successfulContributions Int     @default(0)
-  averageSatisfaction    Float    @default(0.0)
-  date                   DateTime @default(now())
-  createdAt              DateTime @default(now())
+  id                      String   @id @default(cuid())
+  totalQueries            Int      @default(0)
+  totalUsers              Int      @default(0)
+  activeRepositories      Int      @default(0)
+  successfulContributions Int      @default(0)
+  averageSatisfaction     Float    @default(0.0)
+  date                    DateTime @default(now())
+  createdAt               DateTime @default(now())
 
   @@map("community_stats")
 }
 
-// Popular repositories cache
 model PopularRepository {
-  id                String   @id @default(cuid())
-  fullName          String   @unique
-  name              String
-  description       String?
-  language          String?
-  stars             Int      @default(0)
-  forks             Int      @default(0)
-  openIssues        Int      @default(0)
-  topics            String[]
-  competitionLevel  String   @default("moderate")
-  activityLevel     String   @default("moderate")
-  aiDomain          String   @default("other")
-  difficultyLevel   String   @default("intermediate")
-  difficultyScore   Float    @default(50.0)
-  contributorCount  Int      @default(0)
-  recentCommits     Int      @default(0)
-  issueResponseRate Float    @default(50.0)
-  documentationScore Float   @default(50.0)
-  lastFetched       DateTime @default(now())
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  fullName           String   @unique
+  name               String
+  description        String?
+  language           String?
+  stars              Int      @default(0)
+  forks              Int      @default(0)
+  openIssues         Int      @default(0)
+  topics             String[]
+  competitionLevel   String   @default("moderate")
+  activityLevel      String   @default("moderate")
+  aiDomain           String   @default("other")
+  difficultyLevel    String   @default("intermediate")
+  difficultyScore    Float    @default(50.0)
+  contributorCount   Int      @default(0)
+  recentCommits      Int      @default(0)
+  issueResponseRate  Float    @default(50.0)
+  documentationScore Float    @default(50.0)
+  lastFetched        DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@map("popular_repositories")
 }
 
-// Recommendation cache for performance
 model RecommendationCache {
-  id          String   @id @default(cuid())
-  userId      String?
-  cacheKey    String   @unique
-  repositories Json     // Cached repository data
-  metadata    Json?    // Cache metadata
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime
+  id           String   @id @default(cuid())
+  userId       String?
+  cacheKey     String   @unique
+  repositories Json
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
 
   @@map("recommendation_cache")
 }
 
-// Repository reference for user interactions (minimal data)
-// This table stores basic repository info for faster lookups
 model RepositoryReference {
-  id           String   @id @default(cuid())
-  fullName     String   @unique // GitHub repository full name
-  name         String   // Repository name
-  owner        String   // Repository owner
-  description  String?
-  language     String?
-  stars        Int      @default(0)
-  tags         String[] // Repository topics/tags
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  fullName    String   @unique
+  name        String
+  owner       String
+  description String?
+  language    String?
+  stars       Int      @default(0)
+  tags        String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("repository_references")
 }
 
-// Technical skills for contributor profiling
 model TechnicalSkill {
-  id          String   @id @default(cuid())
-  userId      String
-  skillName   String
-  category    String   // language, framework, tool, domain
-  proficiency Float    // 0-100 proficiency level
-  yearsOfExperience Int @default(0)
-  lastUsed    DateTime?
-  isPreferred Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String    @id @default(cuid())
+  userId            String
+  skillName         String
+  category          String
+  proficiency       Float
+  yearsOfExperience Int       @default(0)
+  lastUsed          DateTime?
+  isPreferred       Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, skillName])
   @@map("technical_skills")
 }
 
-// Learning goals for contributors
 model LearningGoal {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
   skillName   String
-  category    String   // language, framework, tool, domain
-  targetLevel Float    // 0-100 target proficiency
-  priority    String   @default("medium") // low, medium, high
+  category    String
+  targetLevel Float
+  priority    String    @default("medium")
   deadline    DateTime?
-  status      String   @default("active") // active, completed, paused
-  progress    Float    @default(0.0) // 0-100 progress
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      String    @default("active")
+  progress    Float     @default(0.0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("learning_goals")
 }
 
-// Individual contributions tracking
 model Contribution {
-  id                String   @id @default(cuid())
-  userId            String
-  repoFullName      String
-  contributionType  String   // bug-fix, feature, docs, refactor, test
-  title             String
-  description       String?
-  prNumber          Int?
-  issueNumber       Int?
-  status            String   // in-progress, merged, closed, rejected
-  estimatedTime     String?
-  actualTime        String?
-  skillsUsed        String[]
-  skillsLearned     String[]
-  impactScore       Float    // 0-100 impact of contribution
-  visibilityBoost   Float    // 0-100 visibility gained
-  learningValue     Float    // 0-100 learning value
-  networkingValue   Float    // 0-100 networking value
-  mentorshipValue   Float    // 0-100 mentorship value
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  completedAt       DateTime?
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  userId           String
+  repoFullName     String
+  contributionType String
+  title            String
+  description      String?
+  prNumber         Int?
+  issueNumber      Int?
+  status           String
+  estimatedTime    String?
+  actualTime       String?
+  skillsUsed       String[]
+  skillsLearned    String[]
+  impactScore      Float
+  visibilityBoost  Float
+  learningValue    Float
+  networkingValue  Float
+  mentorshipValue  Float
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  completedAt      DateTime?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("contributions")
 }
 
-// Contributor portfolio system
 model ContributorPortfolio {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  totalContributions    Int      @default(0)
-  totalRepositories     Int      @default(0)
-  totalStarsReceived    Int      @default(0)
-  totalIssuesClosed     Int      @default(0)
-  totalPRsMerged        Int      @default(0)
-  averageImpactScore    Float    @default(0.0)
-  topSkills             String[]
-  favoriteLanguages     String[]
-  contributionsByType   Json     // Structured contribution data
-  skillsAcquired        String[] // Skills gained from contributions
-  testimonials          Json     // Feedback from maintainers
-  impactMetrics         Json     // Stars added, users helped, etc.
-  achievements          String[] // Badges, recognitions
-  portfolioUrl          String?
-  resumeUrl             String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  totalContributions  Int      @default(0)
+  totalRepositories   Int      @default(0)
+  totalStarsReceived  Int      @default(0)
+  totalIssuesClosed   Int      @default(0)
+  totalPRsMerged      Int      @default(0)
+  averageImpactScore  Float    @default(0.0)
+  topSkills           String[]
+  favoriteLanguages   String[]
+  contributionsByType Json
+  skillsAcquired      String[]
+  testimonials        Json
+  impactMetrics       Json
+  achievements        String[]
+  portfolioUrl        String?
+  resumeUrl           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("contributor_portfolios")
 }
 
-// Impact analysis for contributions
 model ImpactAnalysis {
-  id                String   @id @default(cuid())
-  userId            String
-  repoFullName      String
-  contributionId    String
-  visibilityBoost   Float    // How much visibility this contribution gives me
-  learningValue     Float    // What I'll learn from this
-  networkingValue   Float    // Connections I'll make
-  careerAdvancement Float    // How this helps my career
-  communityImpact   Float    // Impact on the community
-  technicalImpact   Float    // Technical significance
-  documentationImpact Float  // Documentation improvement
-  overallScore      Float    // Overall impact score 0-100
-  analysisDate      DateTime @default(now())
-  createdAt         DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  userId              String
+  repoFullName        String
+  contributionId      String
+  visibilityBoost     Float
+  learningValue       Float
+  networkingValue     Float
+  careerAdvancement   Float
+  communityImpact     Float
+  technicalImpact     Float
+  documentationImpact Float
+  overallScore        Float
+  analysisDate        DateTime @default(now())
+  createdAt           DateTime @default(now())
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("impact_analyses")
 }
 
-// System configuration
 model SystemConfig {
   id          String   @id @default(cuid())
   key         String   @unique

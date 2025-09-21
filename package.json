@@ -10,7 +10,10 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test-supabase": "tsx --require dotenv/config test-supabase.ts"
+    "test-supabase": "tsx --require dotenv/config test-supabase.ts",
+    "db:health": "tsx scripts/database-health-check.ts",
+    "db:sync": "tsx scripts/database-sync.ts",
+    "db:cleanup": "tsx scripts/database-cleanup.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.32.0",
