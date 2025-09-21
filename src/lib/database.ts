@@ -1,6 +1,7 @@
 import { prisma, ensureUser, getUserWithPreferences } from './prisma';
 import type { Repository, UserPreferences, RepositoryFilters } from './types';
 import { enhanceRepository } from './recommendation-engine';
+import { githubLiveService } from './github-live';
 
 // User management
 export async function createOrUpdateUser(clerkUser: any) {
@@ -9,7 +10,7 @@ export async function createOrUpdateUser(clerkUser: any) {
 
 export async function getUserPreferencesFromDB(clerkId: string) {
   const user = await getUserWithPreferences(clerkId);
-  return user?.preferences;
+  return user?.userPreferences;
 }
 
 export async function saveUserPreferencesToDB(clerkId: string, preferences: UserPreferences) {
@@ -39,16 +40,14 @@ export async function saveUserPreferencesToDB(clerkId: string, preferences: User
   });
 }
 
-// Repository management
+// Repository management - now uses live data
 export async function saveRepositoryAnalysis(
   clerkId: string,
   repoFullName: string,
-  repoUrl: string,
   analysis: {
     flowchartMermaid: string;
     explanation: any;
     resources: any;
-    insights?: any;
   }
 ) {
   const user = await prisma.user.findUnique({
@@ -59,29 +58,29 @@ export async function saveRepositoryAnalysis(
     throw new Error('User not found');
   }
 
-  return await prisma.repositoryAnalysis.upsert({
-    where: {
-      userId_repoFullName: {
-        userId: user.id,
-        repoFullName
-      }
-    },
-    update: {
-      flowchartMermaid: analysis.flowchartMermaid,
-      explanation: analysis.explanation,
-      resources: analysis.resources,
-      insights: analysis.insights,
-      analysisVersion: "1.0",
-    },
+  // First, ensure the repository exists
+  const repo = await prisma.repository.upsert({
+    where: { fullName: repoFullName },
+    update: {},
     create: {
+      fullName: repoFullName,
+      name: repoFullName.split('/')[1],
+      owner: repoFullName.split('/')[0]
+    }
+  });
+
+  return await prisma.aiAnalysis.create({
+    data: {
       userId: user.id,
-      repoFullName,
-      repoUrl,
-      flowchartMermaid: analysis.flowchartMermaid,
-      explanation: analysis.explanation,
-      resources: analysis.resources,
-      insights: analysis.insights,
-      analysisVersion: "1.0",
+      repositoryFullName: repoFullName,
+      analysisType: 'explanation',
+      content: {
+        flowchartMermaid: analysis.flowchartMermaid,
+        explanation: analysis.explanation,
+        resources: analysis.resources
+      },
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
     }
   });
 }
@@ -95,12 +94,13 @@ export async function getRepositoryAnalysis(clerkId: string, repoFullName: strin
     return null;
   }
 
-  return await prisma.repositoryAnalysis.findUnique({
+  return await prisma.aiAnalysis.findFirst({
     where: {
-      userId_repoFullName: {
-        userId: user.id,
-        repoFullName
-      }
+      userId: user.id,
+      repositoryFullName: repoFullName
+    },
+    orderBy: {
+      createdAt: 'desc'
     }
   });
 }
@@ -174,13 +174,46 @@ export async function removeSavedRepository(clerkId: string, repoFullName: strin
   });
 }
 
+// Repository reference management for faster lookups
+export async function upsertRepositoryReference(repository: Repository) {
+  return await prisma.repositoryReference.upsert({
+    where: { fullName: repository.full_name },
+    update: {
+      name: repository.name,
+      owner: typeof repository.owner === 'string' ? repository.owner : repository.owner.login,
+      description: repository.description,
+      language: repository.language,
+      stars: repository.stargazers_count,
+      tags: repository.topics,
+      updatedAt: new Date()
+    },
+    create: {
+      fullName: repository.full_name,
+      name: repository.name,
+      owner: typeof repository.owner === 'string' ? repository.owner : repository.owner.login,
+      description: repository.description,
+      language: repository.language,
+      stars: repository.stargazers_count,
+      tags: repository.topics
+    }
+  });
+}
+
+export async function getRepositoryReference(fullName: string) {
+  return await prisma.repositoryReference.findUnique({
+    where: { fullName }
+  });
+}
+
 // User interactions
 export async function trackUserInteraction(
   clerkId: string,
   repoFullName: string,
-  type: 'view' | 'like' | 'dislike' | 'contribute' | 'analyze',
+  type: 'view' | 'like' | 'dislike' | 'contribute' | 'analyze' | 'search' | 'filter',
   score?: number,
-  metadata?: any
+  metadata?: any,
+  duration_ms?: number,
+  source_page?: string
 ) {
   const user = await prisma.user.findUnique({
     where: { clerkId }
@@ -190,29 +223,48 @@ export async function trackUserInteraction(
     throw new Error('User not found');
   }
 
+  // First, ensure the repository exists
+  const repo = await prisma.repository.upsert({
+    where: { fullName: repoFullName },
+    update: {},
+    create: {
+      fullName: repoFullName,
+      name: repoFullName.split('/')[1],
+      owner: repoFullName.split('/')[0]
+    }
+  });
+
   return await prisma.userInteraction.create({
     data: {
       userId: user.id,
-      repoFullName,
+      repositoryFullName: repoFullName,
       type,
       score,
       metadata,
+      timestamp: new Date(),
+      session_id: metadata?.session_id,
+      duration_ms,
+      source_page
     }
   });
 }
 
 export async function getUserInteractions(clerkId: string, limit: number = 50) {
   const user = await prisma.user.findUnique({
-    where: { clerkId },
-    include: {
-      interactions: {
-        orderBy: { createdAt: 'desc' },
-        take: limit
-      }
-    }
+    where: { clerkId }
   });
 
-  return user?.interactions || [];
+  if (!user) {
+    return [];
+  }
+
+  return await prisma.userInteraction.findMany({
+    where: { userId: user.id },
+    orderBy: {
+      timestamp: 'desc'
+    },
+    take: limit
+  });
 }
 
 // Community stats

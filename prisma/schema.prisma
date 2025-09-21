@@ -98,48 +98,19 @@ model UserPreferences {
   @@map("user_onboarding_preferences")
 }
 
-// GitHub repository data with real-time health metrics
+// Minimal repository data for relations and tracking
 model Repository {
-  id                      String   @id @default(cuid())
-  fullName                String   @unique
-  name                    String
-  owner                   String
-  description             String?
-  language                String?
-  stars                   Int      @default(0)
-  forks                   Int      @default(0)
-  issues                  Int      @default(0)
-  contributors            Int      @default(0)
-  lastUpdated             DateTime?
-  topics                  String[]
-  techStack               String[]
-  difficulty              String   @default("beginner") // beginner, intermediate, advanced, expert
-  competition             String   @default("low") // low, medium, high
-  hasContributing         Boolean  @default(false)
-  matchScore              Float?  // AI-calculated match score
-  aiAnalysis              Json?   // JSON field for AI analysis data
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  
-  // Real-time health metrics
-  lastCommitDate          DateTime?
-  issueResolutionRate     Float    @default(0.0) // Percentage of issues resolved
-  prMergeRate             Float    @default(0.0) // Percentage of PRs merged
-  maintainerActivityScore Float    @default(0.0) // 0-100 score based on recent activity
-  busFactor               Int      @default(1) // Number of people who understand the codebase
-  codeQualityScore        Float    @default(50.0) // 0-100 based on tests, linting, docs
-  testCoverage            Float    @default(0.0) // Test coverage percentage
-  documentationScore      Float    @default(50.0) // Documentation quality score
-  maintainerResponseTime  Int      @default(0) // Average response time in hours
-  isActive                Boolean  @default(true) // Is the project actively maintained
-  healthScore             Float    @default(50.0) // Overall health score 0-100
+  id           String   @id @default(cuid())
+  fullName     String   @unique // GitHub repository full name
+  name         String   // Repository name
+  owner        String   // Repository owner
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
   // Relations
-  interactions            UserInteraction[]
-  savedRepos              SavedRepository[]
-  aiAnalyses              AiAnalysis[]
-  goodFirstIssues         GoodFirstIssue[]
-  contributionOpportunities ContributionOpportunity[]
+  interactions UserInteraction[]
+  savedRepos   SavedRepository[]
+  aiAnalyses   AiAnalysis[]
 
   @@map("repositories")
 }
@@ -149,11 +120,16 @@ model UserInteraction {
   id                   String   @id @default(cuid())
   userId               String
   repositoryFullName   String
-  type                 String   // view, like, contribute, analyze, bookmark
+  type                 String   // view, like, contribute, analyze, bookmark, search, filter
   score                Int?     // 1-5 rating
-  metadata             Json?    // Additional interaction data
+  metadata             Json?    // Additional interaction data (filters, search terms, etc.)
   timestamp            DateTime @default(now())
-
+  session_id           String?  // For tracking user sessions
+  
+  // Performance tracking
+  duration_ms          Int?     // How long user spent on this interaction
+  source_page          String?  // Where the interaction originated
+  
   // Relations
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   repository Repository @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
@@ -195,7 +171,7 @@ model SavedRepository {
   updatedAt    DateTime @updatedAt
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  repository Repository? @relation(fields: [repoFullName], references: [fullName], onDelete: Cascade)
+  repository Repository @relation(fields: [repoFullName], references: [fullName], onDelete: Cascade)
 
   @@unique([userId, repoFullName])
   @@map("saved_repositories")
@@ -206,15 +182,16 @@ model AiAnalysis {
   id                String   @id @default(cuid())
   userId            String?
   repositoryFullName String
+  
+  // Relations
+  user       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repository Repository  @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
   analysisType      String   // "explanation", "flowchart", "component_explorer"
   content           Json     // AI-generated content
   metadata          Json?    // Analysis metadata
   createdAt         DateTime @default(now())
   expiresAt         DateTime?
 
-  // Relations
-  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  repository Repository @relation(fields: [repositoryFullName], references: [fullName], onDelete: Cascade)
 
   @@map("ai_analyses")
 }
@@ -293,58 +270,21 @@ model RecommendationCache {
   @@map("recommendation_cache")
 }
 
-// Good First Issues intelligence system
-model GoodFirstIssue {
-  id                String   @id @default(cuid())
-  repoFullName      String
-  issueNumber       Int
-  title             String
-  body              String?
-  state             String   @default("open") // open, closed
-  labels            String[]
-  estimatedTime     String   @default("2hrs") // 1hr, 2hrs, 4hrs, 8hrs
-  requiredSkills    String[] // Skills needed to solve this
-  mentorAvailable   Boolean  @default(false)
-  successRate       Float    @default(0.0) // Historical success rate
-  difficulty        String   @default("beginner") // beginner, intermediate
-  type              String   @default("bug-fix") // bug-fix, feature, docs, refactor
-  language          String?
-  assignee          String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  closedAt          DateTime?
+// Repository reference for user interactions (minimal data)
+// This table stores basic repository info for faster lookups
+model RepositoryReference {
+  id           String   @id @default(cuid())
+  fullName     String   @unique // GitHub repository full name
+  name         String   // Repository name
+  owner        String   // Repository owner
+  description  String?
+  language     String?
+  stars        Int      @default(0)
+  tags         String[] // Repository topics/tags
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  // Relations
-  repository Repository @relation(fields: [repoFullName], references: [fullName], onDelete: Cascade)
-
-  @@unique([repoFullName, issueNumber])
-  @@map("good_first_issues")
-}
-
-// Contribution opportunities with intelligence
-model ContributionOpportunity {
-  id                String   @id @default(cuid())
-  repoFullName      String
-  title             String
-  description       String?
-  type              String   // bug-fix, feature, docs, refactor, test
-  difficulty        String   // beginner, intermediate, advanced
-  estimatedTime     String   // 1hr, 2hrs, 4hrs, 8hrs, 1day, 1week
-  requiredSkills    String[]
-  impactLevel       String   // low, medium, high
-  skillMatch        Float    // 0-100 match with user skills
-  mentorAvailable   Boolean  @default(false)
-  firstTimerFriendly Boolean @default(false)
-  urgency           String   @default("low") // low, medium, high
-  status            String   @default("available") // available, taken, completed
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  expiresAt         DateTime?
-
-  // Relations
-  repository Repository @relation(fields: [repoFullName], references: [fullName], onDelete: Cascade)
-
-  @@map("contribution_opportunities")
+  @@map("repository_references")
 }
 
 // Technical skills for contributor profiling
