@@ -23,7 +23,7 @@ import {
   TrendingUp,
   Clock
 } from 'lucide-react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import SyntaxHighlighter from 'react-syntax-highlighter';
 import { atomOneDark } from 'react-syntax-highlighter/dist/styles';
 import type { Repository } from '@/lib/types';
 
