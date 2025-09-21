@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import type { Repository } from '@/lib/types';
 import { renderInteractiveFlowchart, type RenderInteractiveFlowchartOutput } from '@/ai/flows/render-interactive-flowchart';
-import { saveRepositoryAnalysis, getRepositoryAnalysis, trackUserInteraction } from '@/lib/database';
+import { saveRepositoryAnalysisClient, getRepositoryAnalysisClient, trackUserInteractionClient } from '@/lib/database-client';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -243,7 +243,7 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                 // Check if we have cached analysis first
                 if (user) {
                     try {
-                        const cachedAnalysis = await getRepositoryAnalysis(user.id, repository.full_name);
+                        const cachedAnalysis = await getRepositoryAnalysisClient(user.id, repository.full_name);
                         if (cachedAnalysis) {
                             console.log('Using cached analysis from database');
                             setAiData({
@@ -300,7 +300,7 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                   // Save analysis to database if user is authenticated
                   if (user) {
                     try {
-                      await saveRepositoryAnalysis(user.id, repository.full_name, data);
+                      await saveRepositoryAnalysisClient(user.id, repository.full_name, aiData);
                       console.log('Analysis saved to database');
                     } catch (dbError) {
                       console.error('Failed to save analysis to database:', dbError);
@@ -337,7 +337,7 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
 
         // Track user interaction
         if (user) {
-            trackUserInteraction(user.id, repository.full_name, 'analyze').catch(console.error);
+            trackUserInteractionClient(user.id, repository.full_name, 'view_ai_analysis', {}).catch(console.error);
         }
         generateExplanation();
     }, [repository, isClient, isExplanationVisible, user]);

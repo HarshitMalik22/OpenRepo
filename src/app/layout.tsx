@@ -29,13 +29,15 @@ export default function RootLayout({
           <link rel="icon" href="/logos/opensauce-logo.png" />
           <link rel="apple-touch-icon" href="/logos/opensauce-logo.png" />
         </head>
-        <body className="font-body antialiased min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
-          <Toaster />
+        <body suppressHydrationWarning={true}>
+          <div className="font-body antialiased min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+            <Toaster />
+          </div>
         </body>
       </html>
     </ClerkProviderWrapper>

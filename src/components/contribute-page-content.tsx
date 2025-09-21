@@ -18,7 +18,8 @@ import {
 import EnhancedRepoCard from '@/components/enhanced-repo-card';
 import GuidedContributionWorkflow from '@/components/guided-contribution-workflow';
 import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
-import { getPopularRepos, getRecommendedRepos, getFilteredRepos, getCommunityStats } from '@/lib/github';
+import { getPopularReposClient, getRecommendedReposClient, getCommunityStatsClient } from '@/lib/github-client';
+import { getFilteredRepos } from '@/lib/github';
 import { getUserPreferencesClient } from '@/lib/user-preferences-client';
 import type { Repository, RepositoryFilters, UserPreferences, CommunityStats } from '@/lib/types';
 
@@ -49,17 +50,17 @@ export default function ContributePageContent() {
         setUserPreferences(preferences);
         
         // Load repositories
-        const repos = await getPopularRepos();
+        const repos = await getPopularReposClient();
         setAllRepos(repos);
         
         // Get personalized recommendations if user has preferences
         if (preferences && preferences.techStack.length > 0) {
-          const recommended = await getRecommendedRepos(preferences);
+          const recommended = await getRecommendedReposClient(preferences);
           setRecommendedRepos(recommended);
         }
         
         // Load real community statistics
-        const stats = await getCommunityStats();
+        const stats = await getCommunityStatsClient();
         setCommunityStats(stats);
         
         setFilteredRepos(repos);

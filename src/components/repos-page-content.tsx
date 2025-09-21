@@ -21,10 +21,11 @@ import {
 } from 'lucide-react';
 import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
 import GlassRepoList from '@/components/glass-repo-list';
-import { getPopularRepos, getRecommendedRepos, getFilteredRepos, getEnhancedRecommendedRepos, trackUserInteraction, getRecommendationExplanation, getUserStats } from '@/lib/github';
+import { getPopularReposClient, getRecommendedReposClient, getEnhancedRecommendedReposClient, getCommunityStatsClient } from '@/lib/github-client';
 import { getUserPreferencesClient } from '@/lib/user-preferences-client';
-import { trackUserInteraction as trackUserInteractionDB } from '@/lib/database';
-import { getCommunityStats, getTestimonials } from '@/lib/github';
+import { getFilteredRepos, getRecommendationExplanation, getUserStats } from '@/lib/github';
+import { trackUserInteractionClient } from '@/lib/database-client';
+import { getTestimonials } from '@/lib/github';
 import type { Repository, RepositoryFilters, UserPreferences } from '@/lib/types';
 
 function ReposPageContentClient() {
@@ -93,7 +94,7 @@ function ReposPageContentClient() {
 
   const loadCommunityStats = async () => {
     try {
-      const stats = await getCommunityStats();
+      const stats = await getCommunityStatsClient();
       setPreviousStats(communityStats);
       setCommunityStats(stats);
       setLastUpdated(new Date());
@@ -113,19 +114,19 @@ function ReposPageContentClient() {
         setUserPreferences(preferences);
         
         // Load repositories
-        const repos = await getPopularRepos();
+        const repos = await getPopularReposClient();
         console.log('Loaded repositories:', repos.length);
         setAllRepos(repos);
         
         // Get personalized recommendations if user has preferences
         if (preferences && preferences.techStack.length > 0) {
           console.log('Getting recommendations for preferences:', preferences);
-          const recommended = await getRecommendedRepos(preferences);
+          const recommended = await getRecommendedReposClient(preferences);
           console.log('Recommended repositories:', recommended.length);
           setRecommendedRepos(recommended);
           
           // Get enhanced ML-based recommendations
-          const enhancedRecommended = await getEnhancedRecommendedRepos(preferences, userId);
+          const enhancedRecommended = await getEnhancedRecommendedReposClient(preferences, userId);
           console.log('Enhanced recommended repositories:', enhancedRecommended.length);
           setEnhancedRecommendedRepos(enhancedRecommended);
           
@@ -227,7 +228,7 @@ function ReposPageContentClient() {
 
   const handleContribute = (repo: Repository) => {
     // Track user interaction
-    trackUserInteraction(userId, repo.full_name, 'contribute');
+    trackUserInteractionClient(userId, repo.full_name, 'contribute').catch(console.error);
     
     // Navigate to repository contribution page
     window.open(repo.html_url, '_blank');
@@ -235,7 +236,7 @@ function ReposPageContentClient() {
 
   const handleLikeRepo = (repo: Repository) => {
     // Track user interaction
-    trackUserInteraction(userId, repo.full_name, 'like', 5);
+    trackUserInteractionClient(userId, repo.full_name, 'like', 5).catch(console.error);
     
     // Update user stats
     const stats = getUserStats(userId);
@@ -249,7 +250,7 @@ function ReposPageContentClient() {
 
   const handleDislikeRepo = (repo: Repository) => {
     // Track user interaction
-    trackUserInteraction(userId, repo.full_name, 'dislike', 1);
+    trackUserInteractionClient(userId, repo.full_name, 'dislike', 1).catch(console.error);
     
     // Update user stats
     const stats = getUserStats(userId);
@@ -262,17 +263,17 @@ function ReposPageContentClient() {
   const handleViewRepo = (repo: Repository) => {
     // Track user interaction
     if (user) {
-      trackUserInteractionDB(user.id, repo.full_name, 'view').catch(console.error);
+      trackUserInteractionClient(user.id, repo.full_name, 'view').catch(console.error);
     }
-    trackUserInteraction(userId, repo.full_name, 'view');
+    trackUserInteractionClient(userId, repo.full_name, 'view').catch(console.error);
   };
 
   const handleRateRepo = (repo: Repository, rating: number) => {
     // Track user interaction with rating
     if (user) {
-      trackUserInteractionDB(user.id, repo.full_name, 'analyze', rating).catch(console.error);
+      trackUserInteractionClient(user.id, repo.full_name, 'analyze', rating).catch(console.error);
     }
-    trackUserInteraction(userId, repo.full_name, 'analyze', rating);
+    trackUserInteractionClient(userId, repo.full_name, 'analyze', rating).catch(console.error);
     
     // Update user stats
     const stats = getUserStats(userId);
