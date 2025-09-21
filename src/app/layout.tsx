@@ -1,9 +1,9 @@
 import type {Metadata} from 'next';
-import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
+import ClerkProviderWrapper from '@/components/clerk-provider';
 
 export const metadata: Metadata = {
   title: 'OpenSauce',
@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProviderWrapper>
       <html lang="en">
         <head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -38,6 +38,6 @@ export default function RootLayout({
           <Toaster />
         </body>
       </html>
-    </ClerkProvider>
+    </ClerkProviderWrapper>
   );
 }

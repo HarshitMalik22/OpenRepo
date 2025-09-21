@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import MobileNav from './mobile-nav';
+import ClerkComponentsWrapper from '@/components/clerk-components';
 
 export default function Header() {
   return (
@@ -34,20 +35,22 @@ export default function Header() {
           </Link>
         </nav>
         <div className="hidden md:flex items-center gap-4">
-          <SignedOut>
-            <Button variant="ghost" asChild>
-              <Link href="/contribute">Start Contributing</Link>
-            </Button>
-            <SignInButton mode="modal">
-              <Button>Sign In</Button>
-            </SignInButton>
-          </SignedOut>
-          <SignedIn>
-            <Button variant="ghost" asChild>
-              <Link href="/contribute">Start Contributing</Link>
-            </Button>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+          <ClerkComponentsWrapper>
+            <SignedOut>
+              <Button variant="ghost" asChild>
+                <Link href="/contribute">Start Contributing</Link>
+              </Button>
+              <SignInButton mode="modal">
+                <Button>Sign In</Button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <Button variant="ghost" asChild>
+                <Link href="/contribute">Start Contributing</Link>
+              </Button>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+          </ClerkComponentsWrapper>
         </div>
         <div className="md:hidden">
           <MobileNav />

@@ -143,7 +143,7 @@ export default async function Home() {
             {repos.slice(0, 10).map((repo, index) => {
               const slug = repo.full_name.replace('/', '--');
               return (
-                <CarouselItem key={repo.id} className="md:basis-1/2 lg:basis-1/3">
+                <CarouselItem key={repo.full_name} className="md:basis-1/2 lg:basis-1/3">
                   <div className="p-1">
                     <Link href={`/repos/${slug}`} className="block">
                       <Card className="h-full flex flex-col hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg cursor-pointer">

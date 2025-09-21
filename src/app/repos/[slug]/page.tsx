@@ -5,19 +5,22 @@ import { Star, GitBranch, ExternalLink } from 'lucide-react';
 import RepoExplanationClient from '@/components/repo-explanation-client';
 import { getRepo } from '@/lib/github';
 
-export default async function RepoDetailPage({ params }: { params: { slug: string } }) {
+export default async function RepoDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Await the params in Next.js 15
+  const { slug } = await params;
+  
   // Validate the slug parameter
-  if (!params.slug || typeof params.slug !== 'string') {
-    console.error('RepoDetailPage - Invalid slug parameter:', params.slug);
+  if (!slug || typeof slug !== 'string') {
+    console.error('RepoDetailPage - Invalid slug parameter:', slug);
     notFound();
   }
   
   // The slug is expected to be in the format "owner--repo".
   // We need to decode and replace '--' with '/' to get "owner/repo".
-  const decodedSlug = decodeURIComponent(params.slug);
+  const decodedSlug = decodeURIComponent(slug);
   const repoFullName = decodedSlug.replace('--', '/');
   
-  console.log('RepoDetailPage - params.slug:', params.slug);
+  console.log('RepoDetailPage - slug:', slug);
   console.log('RepoDetailPage - decodedSlug:', decodedSlug);
   console.log('RepoDetailPage - repoFullName:', repoFullName);
   

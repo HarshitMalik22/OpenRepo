@@ -7,6 +7,7 @@ import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from 'lucide-react';
+import ClerkComponentsWrapper from '@/components/clerk-components';
 
 export default function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,19 +47,21 @@ export default function MobileNav() {
             </Link>
           </nav>
           <div className="mt-auto flex flex-col gap-4 border-t pt-6">
-            <SignedOut>
-              <SignInButton mode="modal">
-                <Button variant="ghost" onClick={() => setIsOpen(false)}>Sign In</Button>
-              </SignInButton>
-              <Button asChild onClick={() => setIsOpen(false)}>
-                <Link href="/onboarding">Get Started</Link>
-              </Button>
-            </SignedOut>
-            <SignedIn>
-              <div className="flex items-center justify-center">
-                <UserButton afterSignOutUrl="/" />
-              </div>
-            </SignedIn>
+            <ClerkComponentsWrapper>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button variant="ghost" onClick={() => setIsOpen(false)}>Sign In</Button>
+                </SignInButton>
+                <Button asChild onClick={() => setIsOpen(false)}>
+                  <Link href="/onboarding">Get Started</Link>
+                </Button>
+              </SignedOut>
+              <SignedIn>
+                <div className="flex items-center justify-center">
+                  <UserButton afterSignOutUrl="/" />
+                </div>
+              </SignedIn>
+            </ClerkComponentsWrapper>
           </div>
         </div>
       </SheetContent>

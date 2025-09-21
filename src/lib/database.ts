@@ -316,7 +316,9 @@ export async function getCachedPopularRepositories(): Promise<Repository[]> {
   });
 
   return cached.map(repo => ({
-    id: parseInt(repo.id),
+    id: Math.abs(repo.fullName.split('').reduce((hash, char) => {
+      return char.charCodeAt(0) + ((hash << 5) - hash);
+    }, 0)),
     name: repo.name,
     full_name: repo.fullName,
     owner: {
