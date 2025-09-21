@@ -1,4 +1,5 @@
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats, LiveActivity, Issue, PullRequest, Commit, Contributor, AIDomain, ContributionDifficulty } from './types';
+import { cacheManager } from './cache-manager';
 
 // Live GitHub API service for real-time data
 export class GitHubLiveService {
@@ -41,12 +42,51 @@ export class GitHubLiveService {
     return (Date.now() - lastUpdate.getTime()) < expiryTime;
   }
 
+  // Get real-time activity data (always fresh)
+  private async getRealTimeActivity(fullName: string) {
+    try {
+      const [commitsResponse, issuesResponse] = await Promise.all([
+        fetch(`https://api.github.com/repos/${fullName}/commits?per_page=10&since=${new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()}`, {
+          headers: this.getGitHubHeaders()
+        }),
+        fetch(`https://api.github.com/repos/${fullName}/issues?state=open&per_page=20&sort=updated`, {
+          headers: this.getGitHubHeaders()
+        })
+      ]);
+
+      const commits = commitsResponse.ok ? await commitsResponse.json() : [];
+      const issues = issuesResponse.ok ? await issuesResponse.json() : [];
+
+      return {
+        recent_commits: commits.length,
+        recent_issues: issues.length,
+        last_activity: commits[0]?.commit?.author?.date || issues[0]?.created_at || null
+      };
+    } catch (error) {
+      console.error('Error fetching real-time activity:', error);
+      return {
+        recent_commits: 0,
+        recent_issues: 0,
+        last_activity: null
+      };
+    }
+  }
+
   // Get live repository data with real-time metrics
   async getLiveRepository(fullName: string): Promise<Repository | null> {
     const cacheKey = `repo-${fullName}`;
     
+    // Check legacy cache first for backward compatibility
     if (this.isCacheValid(cacheKey, this.CACHE_EXPIRY.REPO_BASIC)) {
-      return this.activityCache.get(cacheKey)?.repository || null;
+      const cached = this.activityCache.get(cacheKey);
+      if (cached?.repository) {
+        // Enhance with real-time activity
+        const realTimeActivity = await this.getRealTimeActivity(fullName);
+        return {
+          ...cached.repository,
+          ...realTimeActivity
+        };
+      }
     }
 
     try {
@@ -147,7 +187,45 @@ export class GitHubLiveService {
         })
       };
 
-      // Cache the result
+      // Cache the result with intelligent cache manager
+      const basicData = {
+        id: liveRepo.id,
+        name: liveRepo.name,
+        full_name: liveRepo.full_name,
+        owner: liveRepo.owner,
+        description: liveRepo.description,
+        language: liveRepo.language,
+        html_url: liveRepo.html_url,
+        topics: liveRepo.topics,
+        created_at: liveRepo.created_at,
+        updated_at: liveRepo.updated_at
+      };
+      
+      const statsData = {
+        stargazers_count: liveRepo.stargazers_count,
+        watchers_count: liveRepo.watchers_count,
+        forks_count: liveRepo.forks_count,
+        open_issues_count: liveRepo.open_issues_count,
+        contributor_count: liveRepo.contributor_count
+      };
+      
+      const healthData = {
+        health_score: liveRepo.health_score,
+        techStack: liveRepo.techStack,
+        competition_level: liveRepo.competition_level,
+        activity_level: liveRepo.activity_level,
+        ai_domain: liveRepo.ai_domain,
+        contribution_difficulty: liveRepo.contribution_difficulty,
+        good_first_issues_count: liveRepo.good_first_issues_count,
+        help_wanted_issues_count: liveRepo.help_wanted_issues_count
+      };
+      
+      // Store in intelligent cache with different TTLs
+      cacheManager.setRepositoryBasic(fullName, basicData);
+      cacheManager.setRepositoryStats(fullName, statsData);
+      cacheManager.setRepositoryHealth(fullName, healthData);
+      
+      // Also update legacy cache for compatibility
       this.activityCache.set(cacheKey, {
         repository: liveRepo,
         lastUpdated: new Date()
