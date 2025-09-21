@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Star, GitFork, Clock, TrendingUp } from 'lucide-react';
 import type { Repository } from '@/lib/types';
+import SavedRepoCard from '@/components/saved-repo-card';
 
 export default async function ProfilePage() {
-  const { userId } = auth();
+  const { userId } = await auth();
   
   if (!userId) {
     redirect('/sign-in');
@@ -107,9 +108,9 @@ export default async function ProfilePage() {
                           <div className="flex items-center gap-3">
                             <div className="w-2 h-2 rounded-full bg-primary"></div>
                             <div>
-                              <p className="font-medium">{interaction.repoFullName}</p>
+                              <p className="font-medium">{interaction.repositoryFullName}</p>
                               <p className="text-sm text-muted-foreground">
-                                {interaction.type} • {new Date(interaction.createdAt).toLocaleDateString()}
+                                {interaction.type} • {new Date(interaction.timestamp).toLocaleDateString()}
                               </p>
                             </div>
                           </div>
@@ -142,12 +143,12 @@ export default async function ProfilePage() {
               <CardDescription>These settings help us recommend projects for you.</CardDescription>
             </CardHeader>
             <CardContent>
-              {user?.preferences ? (
+              {user?.userPreferences ? (
                 <div className="space-y-3">
                   <div>
                     <span className="font-semibold text-sm">Tech Stack:</span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {user.preferences.techStack.map(tech => (
+                      {user.userPreferences.techStack.map(tech => (
                         <Badge key={tech} variant="secondary" className="text-xs">
                           {tech}
                         </Badge>
@@ -156,11 +157,11 @@ export default async function ProfilePage() {
                   </div>
                   <div>
                     <span className="font-semibold text-sm">Goal:</span>
-                    <p className="text-sm text-muted-foreground">{user.preferences.goal}</p>
+                    <p className="text-sm text-muted-foreground">{user.userPreferences.goal}</p>
                   </div>
                   <div>
                     <span className="font-semibold text-sm">Experience:</span>
-                    <p className="text-sm text-muted-foreground">{user.preferences.experienceLevel}</p>
+                    <p className="text-sm text-muted-foreground">{user.userPreferences.experienceLevel}</p>
                   </div>
                 </div>
               ) : (
@@ -203,7 +204,7 @@ export default async function ProfilePage() {
           </Card>
           <div className="space-y-6">
             {savedRepos.length > 0 ? (
-              savedRepos.map(repo => <RepoCard key={repo.id} repo={repo} />)
+              savedRepos.map(repo => <SavedRepoCard key={repo.id} repo={repo} />)
             ) : (
               <p className="text-muted-foreground">You haven't saved any repositories yet.</p>
             )}

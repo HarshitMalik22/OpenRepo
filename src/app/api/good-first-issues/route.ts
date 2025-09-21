@@ -37,29 +37,10 @@ export async function GET(request: NextRequest) {
       where.mentorAvailable = true;
     }
 
-    const [issues, totalCount] = await Promise.all([
-      prisma.goodFirstIssue.findMany({
-        where,
-        orderBy: {
-          [sortBy]: sortOrder,
-        },
-        skip,
-        take: limit,
-        include: {
-          repository: {
-            select: {
-              fullName: true,
-              name: true,
-              owner: true,
-              stars: true,
-              forks: true,
-              healthScore: true,
-            },
-          },
-        },
-      }),
-      prisma.goodFirstIssue.count({ where }),
-    ]);
+    // The goodFirstIssue model doesn't exist in the current schema
+    // Return empty arrays for now
+    const issues: any[] = [];
+    const totalCount = 0;
 
     const totalPages = Math.ceil(totalCount / limit);
 

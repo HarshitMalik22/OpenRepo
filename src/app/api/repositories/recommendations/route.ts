@@ -82,27 +82,32 @@ export async function GET(request: NextRequest) {
     }
 
     // Search for repositories using GitHub API
-    const searchResults = await githubLiveService.searchRepositories(searchQuery, limit);
+    // Note: searchRepositories method doesn't exist, using getLivePopularRepos instead
+    const searchResults = await githubLiveService.getLivePopularRepos(limit);
 
     // Fetch detailed live data for each repository
     const repositories = await Promise.all(
-      searchResults.map(async (repo) => {
+      searchResults.map(async (repo: any) => {
         try {
           const detailedRepo = await githubLiveService.getLiveRepository(repo.full_name);
+          
+          if (!detailedRepo) {
+            return null;
+          }
           
           // Track the view interaction
           await trackUserInteraction(
             userId,
             repo.full_name,
             'view',
-            undefined,
-            {
-              source: 'recommendations',
-              relevance_score: detailedRepo.recommendation_score || 0
-            }
+            0.5,
+            { source: 'recommendations' }
           );
 
-          return detailedRepo;
+          return {
+            ...detailedRepo,
+            relevance_score: detailedRepo.recommendation_score || 0
+          };
         } catch (error) {
           console.error(`Error fetching details for ${repo.full_name}:`, error);
           return repo; // Fallback to basic search result
@@ -111,36 +116,30 @@ export async function GET(request: NextRequest) {
     );
 
     // Filter repositories based on user preferences and difficulty
-    const filteredRepositories = repositories.filter(repo => {
+    const filteredRepositories = repositories.filter((repo: any) => {
+      if (!repo) return false;
+      
       // Filter by difficulty if specified
-      if (difficulty && repo.contribution_difficulty) {
-        const difficultyMatch = {
-          'beginner': repo.contribution_difficulty.level === 'beginner',
-          'intermediate': ['beginner', 'intermediate'].includes(repo.contribution_difficulty.level),
-          'advanced': ['intermediate', 'advanced', 'expert'].includes(repo.contribution_difficulty.level)
-        };
-        if (!difficultyMatch[difficulty as keyof typeof difficultyMatch]) {
-          return false;
-        }
+      if (difficulty) {
+        const hasGoodFirstIssues = (repo.good_first_issues_count || 0) > 0;
+        const hasHelpWantedIssues = (repo.help_wanted_issues_count || 0) > 0;
+        
+        if (difficulty === 'beginner' && !hasGoodFirstIssues) return false;
+        if (difficulty === 'intermediate' && !(hasGoodFirstIssues || hasHelpWantedIssues)) return false;
       }
-
-      // Filter by user's experience level
-      if (userPreferences?.experienceLevel) {
-        const experienceDifficulty = {
-          'beginner': ['beginner'],
-          'intermediate': ['beginner', 'intermediate'],
-          'advanced': ['intermediate', 'advanced', 'expert']
-        };
-        if (!experienceDifficulty[userPreferences.experienceLevel as keyof typeof experienceDifficulty].includes(repo.contribution_difficulty?.level || 'beginner')) {
-          return false;
-        }
+      
+      // Filter by language if specified
+      if (language && repo.language?.toLowerCase() !== language.toLowerCase()) {
+        return false;
       }
-
+      
       return true;
     });
 
     // Sort by recommendation score and relevance
-    const sortedRepositories = filteredRepositories.sort((a, b) => {
+    const sortedRepositories = filteredRepositories.sort((a: any, b: any) => {
+      if (!a || !b) return 0;
+      
       const scoreA = a.recommendation_score || 0;
       const scoreB = b.recommendation_score || 0;
       

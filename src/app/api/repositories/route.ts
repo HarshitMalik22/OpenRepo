@@ -33,14 +33,7 @@ export async function GET(request: NextRequest) {
         },
         skip,
         take: limit,
-        include: {
-          contributionOpportunities: {
-            take: 3,
-            orderBy: {
-              createdAt: 'desc',
-            },
-          },
-        },
+        include: {},
       }),
       prisma.repository.count({ where }),
     ]);
