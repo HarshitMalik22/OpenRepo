@@ -19,14 +19,13 @@ import {
   Brain
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import placeholderImages from '@/lib/placeholder-images.json';
 import { getPopularRepos } from '@/lib/github';
 import GithubRepoSearch from '@/components/github-repo-search';
 import EnhancedRepoCard from '@/components/enhanced-repo-card';
+import RepositoryImage from '@/components/repository-image';
 import type { Repository } from '@/lib/types';
 
 export default async function Home() {
-  const trendingImages = placeholderImages.placeholderImages.filter(p => p.id.startsWith('trending-carousel'));
   const repos: Repository[] = await getPopularRepos();
   const communityStats = await getCommunityStats();
 
@@ -148,14 +147,7 @@ export default async function Home() {
                     <Link href={`/repos/${slug}`} className="block">
                       <Card className="h-full flex flex-col hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-glass-lg cursor-pointer">
                         <CardHeader>
-                          <Image
-                            src={trendingImages[index % trendingImages.length]?.imageUrl || ''}
-                            alt={repo.name}
-                            width={500}
-                            height={300}
-                            className="rounded-lg object-cover aspect-[5/3]"
-                            data-ai-hint={trendingImages[index % trendingImages.length]?.imageHint || 'code project'}
-                          />
+                          <RepositoryImage repo={repo} />
                           <CardTitle className="pt-4 font-headline">{repo.name}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-grow flex flex-col">
