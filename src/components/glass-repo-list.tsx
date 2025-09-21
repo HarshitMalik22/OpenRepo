@@ -153,8 +153,8 @@ export default function GlassRepoList({
                   <div className="flex items-start gap-3 flex-1">
                     <div className="flex-shrink-0">
                       <img
-                        src={repo.owner.avatar_url}
-                        alt={`${repo.owner.login} avatar`}
+                        src={typeof repo.owner === 'string' ? `https://github.com/${repo.owner}.png` : repo.owner.avatar_url}
+                        alt={`${typeof repo.owner === 'string' ? repo.owner : repo.owner.login} avatar`}
                         className="w-8 h-8 rounded border border-gray-200"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;

@@ -237,8 +237,8 @@ export default function InteractiveFlowchartRenderer({
         targetNodes = [startNode];
         // Add connected nodes
         const connectedNodes = flowchartData.edges
-          .filter(edge => edge.source === startNode.id)
-          .map(edge => flowchartData.nodes.find(n => n.id === edge.target))
+          .filter(edge => edge.from === startNode.id)
+          .map(edge => flowchartData.nodes.find(n => n.id === edge.to))
           .filter(Boolean) as FlowchartNode[];
         targetNodes.push(...connectedNodes);
       }

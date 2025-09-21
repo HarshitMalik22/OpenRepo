@@ -247,10 +247,10 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                         if (cachedAnalysis) {
                             console.log('Using cached analysis from database');
                             setAiData({
-                                flowchartMermaid: cachedAnalysis.flowchartMermaid,
-                                explanation: cachedAnalysis.explanation as any,
-                                resources: cachedAnalysis.resources as any,
-                                architectureInsights: cachedAnalysis.insights as any,
+                                flowchartMermaid: (cachedAnalysis.content as any).flowchartMermaid,
+                                explanation: (cachedAnalysis.content as any).explanation,
+                                resources: (cachedAnalysis.content as any).resources,
+                                architectureInsights: (cachedAnalysis.content as any).insights,
                             });
                             setIsLoading(false);
                             return;
@@ -300,7 +300,7 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                   // Save analysis to database if user is authenticated
                   if (user) {
                     try {
-                      await saveRepositoryAnalysis(user.id, repository.full_name, repository.html_url, data);
+                      await saveRepositoryAnalysis(user.id, repository.full_name, data);
                       console.log('Analysis saved to database');
                     } catch (dbError) {
                       console.error('Failed to save analysis to database:', dbError);

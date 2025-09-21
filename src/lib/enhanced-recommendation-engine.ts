@@ -302,7 +302,7 @@ export class EnhancedRecommendationEngine {
     const competitionScores: Record<CompetitionLevel, number> = {
       'very-low': 90,
       'low': 75,
-      'moderate': 50,
+      'medium': 50,
       'high': 25,
       'very-high': 10,
     };
@@ -312,7 +312,7 @@ export class EnhancedRecommendationEngine {
     const activityScores: Record<ActivityLevel, number> = {
       'highest': 90,
       'high': 75,
-      'moderate': 50,
+      'medium': 50,
       'low': 25,
     };
     const activityScore = activityScores[repo.activity_level] || 50;
@@ -516,7 +516,7 @@ export class EnhancedRecommendationEngine {
       return repo?.contribution_difficulty?.level || 'unknown';
     });
 
-    const difficultyRank = { 'beginner': 1, 'intermediate': 2, 'advanced': 3, 'unknown': 0 };
+    const difficultyRank = { 'beginner': 1, 'intermediate': 2, 'advanced': 3, 'expert': 4, 'unknown': 0 };
     const recentAvg = recentDifficulties.reduce((sum, d) => sum + difficultyRank[d], 0) / recentDifficulties.length;
     const earlierAvg = earlierDifficulties.reduce((sum, d) => sum + difficultyRank[d], 0) / earlierDifficulties.length;
     

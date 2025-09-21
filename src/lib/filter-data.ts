@@ -72,11 +72,11 @@ export const techStacks = [
 
 // Goals for onboarding
 export const goals = [
-  { id: 'learn', name: 'Learn new technologies', description: 'Focus on educational projects' },
-  { id: 'build-portfolio', name: 'Build portfolio', description: 'Projects that showcase your skills' },
-  { id: 'network', name: 'Network with developers', description: 'Join active communities' },
-  { id: 'contribute', name: 'Make meaningful contributions', description: 'Projects where you can have impact' },
-  { id: 'start-project', name: 'Start own project', description: 'Learn from successful open source' }
+  { id: 'learn', name: 'Learn new technologies', description: 'Focus on educational projects', icon: '📚' },
+  { id: 'build-portfolio', name: 'Build portfolio', description: 'Projects that showcase your skills', icon: '💼' },
+  { id: 'network', name: 'Network with developers', description: 'Join active communities', icon: '🤝' },
+  { id: 'contribute', name: 'Make meaningful contributions', description: 'Projects where you can have impact', icon: '🚀' },
+  { id: 'start-project', name: 'Start own project', description: 'Learn from successful open source', icon: '💡' }
 ];
 
 // Experience levels for onboarding

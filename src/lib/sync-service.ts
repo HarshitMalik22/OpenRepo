@@ -141,10 +141,7 @@ class SyncService {
 
       const staleRepos = await prisma.repository.findMany({
         where: {
-          OR: [
-            { updatedAt: { lt: threeDaysAgo } },
-            { healthScore: { lt: 50 } },
-          ],
+          updatedAt: { lt: threeDaysAgo },
         },
         orderBy: { updatedAt: 'asc' },
         take: 20, // Limit to 20 repos per run
@@ -219,7 +216,7 @@ class SyncService {
         failedJobs,
       ] = await Promise.all([
         prisma.repository.count(),
-        prisma.repository.count({ where: { isActive: true } }),
+        prisma.repository.count(),
         prisma.user.count(),
         prisma.user.count({ where: { lastGitHubSync: { not: null } } }),
         prisma.repository.findFirst({ orderBy: { updatedAt: 'desc' } }),

@@ -59,7 +59,7 @@ const calculateCompetitionLevel = (repo: Repository): CompetitionLevel => {
   
   if (stars > 50000 || forks > 10000) return 'very-high';
   if (stars > 10000 || forks > 2000) return 'high';
-  if (stars > 1000 || forks > 200) return 'moderate';
+  if (stars > 1000 || forks > 200) return 'medium';
   if (stars > 100 || forks > 20) return 'low';
   return 'very-low';
 };
@@ -71,7 +71,7 @@ const calculateActivityLevel = (repo: Repository): ActivityLevel => {
   
   if (daysSinceUpdate <= 7 && openIssues > 10) return 'highest';
   if (daysSinceUpdate <= 30 && openIssues > 5) return 'high';
-  if (daysSinceUpdate <= 90 && openIssues > 0) return 'moderate';
+  if (daysSinceUpdate <= 90 && openIssues > 0) return 'medium';
   return 'low';
 };
 
@@ -155,7 +155,7 @@ const calculateRecommendationScore = (
   const competitionScores: Record<CompetitionLevel, number> = {
     'very-low': 90,
     'low': 75,
-    'moderate': 50,
+    'medium': 50,
     'high': 25,
     'very-high': 10,
   };
@@ -165,7 +165,7 @@ const calculateRecommendationScore = (
   const activityScores: Record<ActivityLevel, number> = {
     'highest': 90,
     'high': 75,
-    'moderate': 50,
+    'medium': 50,
     'low': 25,
   };
   activityScore = activityScores[repo.activity_level];

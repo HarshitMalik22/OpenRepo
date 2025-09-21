@@ -34,12 +34,6 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
         include: {
-          goodFirstIssues: {
-            take: 5,
-            orderBy: {
-              createdAt: 'desc',
-            },
-          },
           contributionOpportunities: {
             take: 3,
             orderBy: {

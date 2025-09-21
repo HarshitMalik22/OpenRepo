@@ -5,11 +5,11 @@ import { trackUserInteraction, getRepositoryAnalysis, saveRepositoryAnalysis, up
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { fullName: string } }
+  { params }: { params: Promise<{ fullName: string }> }
 ) {
+  const { fullName } = await params;
   try {
     const { userId } = await auth();
-    const { fullName } = params;
 
     if (!fullName) {
       return NextResponse.json({ error: 'Repository full name is required' }, { status: 400 });
@@ -67,11 +67,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { fullName: string } }
+  { params }: { params: Promise<{ fullName: string }> }
 ) {
+  const { fullName } = await params;
   try {
     const { userId } = await auth();
-    const { fullName } = params;
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -91,7 +91,7 @@ export async function POST(
         await trackUserInteraction(
           userId,
           fullName,
-          'bookmark',
+          'like',
           5, // High score for saved repositories
           {
             action: 'save',
@@ -107,7 +107,7 @@ export async function POST(
       case 'analyze':
         // Save AI analysis for this repository
         if (data?.analysis) {
-          await saveRepositoryAnalysis(userId, fullName, repository?.html_url || `https://github.com/${fullName}`, data.analysis);
+          await saveRepositoryAnalysis(userId, fullName, data.analysis);
           await trackUserInteraction(
             userId,
             fullName,
@@ -131,7 +131,7 @@ export async function POST(
           5, // Highest score for contribution intent
           {
             action: 'contribute_intent',
-            difficulty: data?.difficulty || repository?.contribution_difficulty?.level,
+            difficulty: data?.difficulty || 'intermediate',
             timestamp: new Date().toISOString()
           }
         );

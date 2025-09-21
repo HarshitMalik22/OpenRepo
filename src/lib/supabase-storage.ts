@@ -30,7 +30,7 @@ export const STORAGE_BUCKETS = {
   AI_ANALYSIS_IMAGES: 'ai-analysis-images',
 } as const
 
-export type StorageBucket = keyof typeof STORAGE_BUCKETS
+export type StorageBucket = typeof STORAGE_BUCKETS[keyof typeof STORAGE_BUCKETS]
 
 /**
  * Upload a file to Supabase storage
@@ -155,7 +155,7 @@ export async function uploadAvatar(userId: string, file: File) {
   const fileExt = file.name.split('.').pop()
   const fileName = `${userId}/avatar.${fileExt}`
   
-  return uploadFile(STORAGE_BUCKETS.AVATARS, fileName, file, {
+  return uploadFile('avatars', fileName, file, {
     upsert: true,
     metadata: {
       userId,
@@ -170,7 +170,7 @@ export async function uploadAvatar(userId: string, file: File) {
  */
 export function getAvatarUrl(userId: string, fileName?: string) {
   const path = fileName ? `${userId}/${fileName}` : `${userId}/avatar`
-  return getPublicUrl(STORAGE_BUCKETS.AVATARS, path)
+  return getPublicUrl('avatars', path)
 }
 
 /**
@@ -184,7 +184,7 @@ export async function uploadRepositoryImage(
   const fileExt = file.name.split('.').pop()
   const fileName = `${repositoryFullName.replace('/', '_')}/${type}-${Date.now()}.${fileExt}`
   
-  return uploadFile(STORAGE_BUCKETS.REPOSITORY_IMAGES, fileName, file, {
+  return uploadFile('repository-images', fileName, file, {
     metadata: {
       repository: repositoryFullName,
       type,
@@ -198,7 +198,7 @@ export async function uploadRepositoryImage(
  */
 export function getRepositoryImageUrl(repositoryFullName: string, fileName: string) {
   const path = `${repositoryFullName.replace('/', '_')}/${fileName}`
-  return getPublicUrl(STORAGE_BUCKETS.REPOSITORY_IMAGES, path)
+  return getPublicUrl('repository-images', path)
 }
 
 /**
@@ -212,7 +212,7 @@ export async function uploadAiAnalysisImage(
   const fileExt = file.name.split('.').pop()
   const fileName = `${analysisId}/${type}-${Date.now()}.${fileExt}`
   
-  return uploadFile(STORAGE_BUCKETS.AI_ANALYSIS_IMAGES, fileName, file, {
+  return uploadFile('ai-analysis-images', fileName, file, {
     metadata: {
       analysisId,
       type,
@@ -226,7 +226,7 @@ export async function uploadAiAnalysisImage(
  */
 export function getAiAnalysisImageUrl(analysisId: string, fileName: string) {
   const path = `${analysisId}/${fileName}`
-  return getPublicUrl(STORAGE_BUCKETS.AI_ANALYSIS_IMAGES, path)
+  return getPublicUrl('ai-analysis-images', path)
 }
 
 /**
