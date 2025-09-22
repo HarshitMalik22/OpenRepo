@@ -1,4 +1,3 @@
-import { getUserPreferencesFromDB, saveUserPreferencesToDB } from './database';
 import type { UserPreferences } from './types';
 
 const STORAGE_KEY = 'opensauce-user-preferences';
@@ -50,29 +49,41 @@ export async function saveUserPreferencesClient(preferences: UserPreferences): P
   }
 }
 
-// Save user preferences to database (client-side only, requires userId)
-export async function saveUserPreferencesToDBClient(preferences: UserPreferences, userId: string): Promise<void> {
+// Save user preferences to database via API (client-side only)
+export async function saveUserPreferencesToDBClient(preferences: UserPreferences): Promise<void> {
   try {
-    await saveUserPreferencesToDB(userId, preferences);
+    const response = await fetch('/api/user/preferences', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(preferences),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save preferences to database');
+    }
   } catch (error) {
     console.error('Failed to save user preferences to database:', error);
     throw error;
   }
 }
 
-// Get user preferences from database (client-side only, requires userId)
-export async function getUserPreferencesFromDBClient(userId: string): Promise<UserPreferences | null> {
+// Get user preferences from database via API (client-side only)
+export async function getUserPreferencesFromDBClient(): Promise<UserPreferences | null> {
   try {
-    const dbPreferences = await getUserPreferencesFromDB(userId);
-    if (dbPreferences) {
-      return {
-        techStack: dbPreferences.techStack,
-        goal: dbPreferences.goal,
-        experienceLevel: dbPreferences.experienceLevel,
-        completed: dbPreferences.completed,
-      };
+    const response = await fetch('/api/user/preferences');
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        // User is not authenticated, return null
+        return null;
+      }
+      throw new Error('Failed to fetch preferences from database');
     }
-    return null;
+    
+    const preferences = await response.json();
+    return preferences;
   } catch (error) {
     console.error('Failed to get user preferences from database:', error);
     return null;

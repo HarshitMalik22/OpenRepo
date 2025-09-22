@@ -60,6 +60,13 @@ export default function ClerkProviderWrapper({ children }: ClerkProviderWrapperP
         return;
       }
       
+      // Suppress Clerk development notices about single session
+      if (process.env.NODE_ENV === 'development' && 
+          (errorMessage.includes('cannot_render_single_session_enabled') ||
+           errorMessage.includes('The SignIn or SignUp modals do not render when a user is already signed in'))) {
+        return;
+      }
+      
       originalError.apply(console, args);
     };
     

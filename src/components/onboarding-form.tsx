@@ -51,7 +51,7 @@ export default function OnboardingForm() {
       
       // If user is authenticated, also save to database
       if (user?.id) {
-        await saveUserPreferencesToDBClient(completedPreferences, user.id);
+        await saveUserPreferencesToDBClient(completedPreferences);
       }
       router.push('/repos');
     } catch (error) {
