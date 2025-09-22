@@ -10,6 +10,9 @@ import type { Repository } from '@/lib/types';
 import SavedRepoCard from '@/components/saved-repo-card';
 import { getCurrentUserId } from '@/lib/auth-utils';
 
+// Make this page dynamic to avoid static generation issues with auth()
+export const dynamic = 'force-dynamic';
+
 export default async function ProfilePage() {
   const userId = await getCurrentUserId();
   

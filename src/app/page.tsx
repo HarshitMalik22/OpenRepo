@@ -26,8 +26,27 @@ import RepositoryImage from '@/components/repository-image';
 import type { Repository } from '@/lib/types';
 
 export default async function Home() {
-  const repos: Repository[] = await getPopularRepos();
-  const communityStats = await getCommunityStats();
+  // Skip database calls during build time to avoid connection errors
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || process.env.NEXT_BUILD === 'true';
+  
+  let repos: Repository[] = [];
+  let communityStats: any = {
+    totalQueries: 0,
+    totalUsers: 0,
+    activeRepositories: 0,
+    successfulContributions: 0,
+    averageSatisfaction: 0,
+  };
+  
+  if (!isBuildTime) {
+    try {
+      repos = await getPopularRepos();
+      communityStats = await getCommunityStats();
+    } catch (error) {
+      console.error('Failed to fetch data during page load:', error);
+      // Use empty data as fallback
+    }
+  }
 
   return (
     <div className="space-y-32 mb-32 min-h-screen">
