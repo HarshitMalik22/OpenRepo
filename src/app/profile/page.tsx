@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { getSavedRepositories, getUserInteractions } from '@/lib/database';
 import { getUserWithPreferences } from '@/lib/prisma';
@@ -9,9 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Star, GitFork, Clock, TrendingUp } from 'lucide-react';
 import type { Repository } from '@/lib/types';
 import SavedRepoCard from '@/components/saved-repo-card';
+import { getCurrentUserId } from '@/lib/auth-utils';
 
 export default async function ProfilePage() {
-  const { userId } = await auth();
+  const userId = await getCurrentUserId();
   
   if (!userId) {
     redirect('/sign-in');

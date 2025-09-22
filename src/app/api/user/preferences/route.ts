@@ -1,11 +1,11 @@
-import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { saveUserPreferencesToDB, getUserPreferencesFromDB } from '@/lib/database';
 import type { UserPreferences } from '@/lib/types';
+import { getCurrentUserId } from '@/lib/auth-utils';
 
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -21,7 +21,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -79,18 +79,21 @@ async function checkDatabaseHealth() {
     console.log('\n⚡ Performance Indicators:');
 
     // Large tables that might need indexing
+    const userInteractionCount = await prisma.userInteraction.count({});
+    const aiAnalysisCount = await prisma.aiAnalysis.count({});
+    const popularRepositoryCount = await prisma.popularRepository.count({});
+
     const largeTables = [
-      { name: 'UserInteraction', model: prisma.userInteraction },
-      { name: 'AiAnalysis', model: prisma.aiAnalysis },
-      { name: 'PopularRepository', model: prisma.popularRepository }
+      { name: 'UserInteraction', count: userInteractionCount },
+      { name: 'AiAnalysis', count: aiAnalysisCount },
+      { name: 'PopularRepository', count: popularRepositoryCount }
     ];
 
     for (const table of largeTables) {
-      const count = await table.model.count();
-      if (count > 10000) {
-        console.log(`  ⚠️ ${table.name} has ${count} rows - consider archiving`);
+      if (table.count > 10000) {
+        console.log(`  ⚠️ ${table.name} has ${table.count} rows - consider archiving`);
       } else {
-        console.log(`  ✅ ${table.name} has ${count} rows`);
+        console.log(`  ✅ ${table.name} has ${table.count} rows`);
       }
     }
 

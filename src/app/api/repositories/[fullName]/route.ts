@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { githubLiveService } from '@/lib/github-live';
 import { trackUserInteraction, getRepositoryAnalysis, saveRepositoryAnalysis, upsertRepositoryReference } from '@/lib/database';
+import { getCurrentUserId } from '@/lib/auth-utils';
 
 export async function GET(
   request: NextRequest,
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { fullName } = await params;
   try {
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
 
     if (!fullName) {
       return NextResponse.json({ error: 'Repository full name is required' }, { status: 400 });
@@ -71,7 +71,7 @@ export async function POST(
 ) {
   const { fullName } = await params;
   try {
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

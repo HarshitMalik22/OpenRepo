@@ -1,6 +1,6 @@
-import { auth } from '@clerk/nextjs/server';
 import { getUserPreferencesFromDB, saveUserPreferencesToDB } from './database';
 import type { UserPreferences } from './types';
+import { getCurrentUserId } from './auth-utils';
 
 // Default preferences
 const defaultPreferences: UserPreferences = {
@@ -13,7 +13,7 @@ const defaultPreferences: UserPreferences = {
 // Get user preferences (server-side only)
 export async function getUserPreferences(): Promise<UserPreferences | null> {
   try {
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
     
     if (userId) {
       // Get from database if user is authenticated
@@ -38,7 +38,7 @@ export async function getUserPreferences(): Promise<UserPreferences | null> {
 // Save user preferences (server-side only)
 export async function saveUserPreferences(preferences: UserPreferences): Promise<void> {
   try {
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
     
     if (userId) {
       // Save to database if user is authenticated

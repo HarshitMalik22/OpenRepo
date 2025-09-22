@@ -47,10 +47,7 @@ async function syncDatabase() {
           data: {
             fullName: savedRepo.repoFullName,
             name: savedRepo.repoName,
-            owner: savedRepo.repoFullName.split('/')[0],
-            description: savedRepo.description,
-            language: savedRepo.language,
-            stars: savedRepo.stars || 0
+            owner: savedRepo.repoFullName.split('/')[0]
           }
         });
         createdCount++;

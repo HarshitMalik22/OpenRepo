@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { githubLiveService } from '@/lib/github-live';
 import { trackUserInteraction, getUserPreferencesFromDB } from '@/lib/database';
+import { getCurrentUserId } from '@/lib/auth-utils';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const userId = await getCurrentUserId();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
