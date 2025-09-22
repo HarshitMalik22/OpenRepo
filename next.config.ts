@@ -8,6 +8,26 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  webpack: (config, { isServer }) => {
+    // Handle Handlebars require.extensions warning by ignoring it
+    config.ignoreWarnings = [
+      {
+        module: /node_modules\/handlebars\/lib\/index\.js/,
+        message: /require\.extensions is not supported by webpack/,
+      },
+    ];
+    
+    // Handle fallbacks for client-side
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+      };
+    }
+    
+    return config;
+  },
   images: {
     remotePatterns: [
       {
