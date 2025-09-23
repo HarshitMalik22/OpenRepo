@@ -170,13 +170,41 @@ Provide detailed explanations that include:
 - **Integration Points**: Third-party services, APIs, databases, external systems
 - **Deployment Strategy**: CI/CD pipeline, containerization, environment management
 
-### 4. Learning Resources
-Include comprehensive learning resources:
-- **Official Documentation**: Links to official docs for each technology
-- **Video Tutorials**: High-quality YouTube videos, courses, workshops
-- **Blog Posts**: In-depth articles, best practices, case studies
-- **GitHub Repositories**: Example projects, starter templates, libraries
-- **Tools & Extensions**: VSCode extensions, CLI tools, debugging utilities
+### 4. Learning Resources (MANDATORY - Must include at least 5 real resources)
+
+**CRITICAL REQUIREMENT:** You MUST include a comprehensive "resources" array in your response with at least 5 REAL, WORKING URLs. This is not optional.
+
+**REQUIRED RESOURCE FORMAT:**
+Each resource must have these fields:
+- type: one of 'docs', 'video', 'blog', 'course', 'tool', 'repo'
+- title: specific, descriptive title
+- url: real, working URL (must be accessible)
+- description: brief description of what the resource covers
+- difficulty: one of 'beginner', 'intermediate', 'advanced'
+
+**RESOURCE REQUIREMENTS:**
+- **MINIMUM 5 RESOURCES** - You must include at least 5 resources
+- **REAL URLs ONLY** - No placeholder URLs like "example.com" or "youtube.com/watch?v=..."
+- **SPECIFIC LINKS** - Provide exact, clickable URLs that work today
+- **TECH STACK SPECIFIC** - Focus on resources for: {{#each techStack}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+- **CURRENT YEAR** - Prioritize resources from 2023-2024
+- **REPUTABLE SOURCES** - Use official docs, well-known blogs, popular YouTube channels
+
+**MANDATORY RESOURCE CATEGORIES TO INCLUDE:**
+1. **Official Documentation** (at least 1): Direct links to official docs for each technology
+2. **Video Tutorials** (at least 1): Specific YouTube videos from channels like freeCodeCamp, Traversy Media, The Net Ninja, Fireship
+3. **Blog Posts** (at least 1): Articles from Medium, Dev.to, MDN Web Docs, or official blogs
+4. **Interactive Courses** (at least 1): Links to freeCodeCamp, Codecademy, Coursera, or similar
+5. **Tools/Extensions** (at least 1): VSCode extensions, CLI tools, or developer utilities
+
+**EXAMPLE REAL RESOURCES (for reference - find actual ones for the tech stack):**
+- React docs: "https://react.dev/learn"
+- YouTube: "https://www.youtube.com/watch?v=w7ejDZ8SWv8"
+- Blog: "https://dev.to/username/react-best-practices-2024"
+- Course: "https://www.freecodecamp.org/learn/"
+- Tool: "https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode"
+
+**WARNING:** If you do not include the "resources" array with at least 5 real URLs, your response will be considered invalid.
 
 Example output structure:
 {

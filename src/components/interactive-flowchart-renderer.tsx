@@ -785,14 +785,160 @@ export default function InteractiveFlowchartRenderer({
     return 'component'; // Default type
   };
 
+  // Helper function to calculate optimal edge path with minimal crossings
+  const calculateOptimalEdgePath = (fromNode: FlowchartNode, toNode: FlowchartNode, allNodes: FlowchartNode[], allEdges: FlowchartEdge[]) => {
+    interface Point {
+      x: number;
+      y: number;
+    }
+    
+    interface EdgePath {
+      start: Point;
+      end: Point;
+      controlPoints: Point[];
+    }
+    
+    if (!fromNode.x || !fromNode.y || !toNode.x || !toNode.y) {
+      return {
+        start: { x: fromNode.x || 0, y: fromNode.y || 0 },
+        end: { x: toNode.x || 0, y: toNode.y || 0 },
+        controlPoints: []
+      };
+    }
+    
+    const dx = toNode.x - fromNode.x;
+    const dy = toNode.y - fromNode.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Calculate start and end points at node boundaries
+    const fromRadius = Math.max((fromNode.width || 80) / 2, (fromNode.height || 40) / 2);
+    const toRadius = Math.max((toNode.width || 80) / 2, (toNode.height || 40) / 2);
+    
+    const angle = Math.atan2(dy, dx);
+    const startX = fromNode.x + Math.cos(angle) * fromRadius;
+    const startY = fromNode.y + Math.sin(angle) * fromRadius;
+    const endX = toNode.x - Math.cos(angle) * toRadius;
+    const endY = toNode.y - Math.sin(angle) * toRadius;
+    
+    // Check if this edge might cross other nodes
+    const mightCross = allNodes.some(node => {
+      if (node.id === fromNode.id || node.id === toNode.id) return false;
+      if (!node.x || !node.y || !node.width || !node.height) return false;
+      
+      // Simple line-rectangle intersection check
+      return lineIntersectsRect(
+        startX, startY, endX, endY,
+        node.x - node.width / 2, node.y - node.height / 2,
+        node.width, node.height
+      );
+    });
+    
+    if (!mightCross || distance < 200) {
+      // Simple curved path for short distances or no crossings
+      const controlOffset = Math.min(distance * 0.3, 60);
+      const controlX = (startX + endX) / 2 + dy / distance * controlOffset;
+      const controlY = (startY + endY) / 2 - dx / distance * controlOffset;
+      
+      return {
+        start: { x: startX, y: startY },
+        end: { x: endX, y: endY },
+        controlPoints: [{ x: controlX, y: controlY }]
+      };
+    } else {
+      // Complex path with two control points to avoid crossings
+      const midX = (startX + endX) / 2;
+      const midY = (startY + endY) / 2;
+      
+      // Create control points that route around potential obstacles
+      const offset1 = Math.min(distance * 0.25, 80);
+      const offset2 = Math.min(distance * 0.25, 80);
+      
+      const control1X = midX + dy / distance * offset1;
+      const control1Y = midY - dx / distance * offset1;
+      const control2X = midX - dy / distance * offset2;
+      const control2Y = midY + dx / distance * offset2;
+      
+      return {
+        start: { x: startX, y: startY },
+        end: { x: endX, y: endY },
+        controlPoints: [
+          { x: control1X, y: control1Y },
+          { x: control2X, y: control2Y }
+        ]
+      };
+    }
+  };
+  
+  // Helper function to check line-rectangle intersection
+  const lineIntersectsRect = (x1: number, y1: number, x2: number, y2: number, rectX: number, rectY: number, rectWidth: number, rectHeight: number): boolean => {
+    // Check if line endpoints are inside rectangle
+    if ((x1 >= rectX && x1 <= rectX + rectWidth && y1 >= rectY && y1 <= rectY + rectHeight) ||
+        (x2 >= rectX && x2 <= rectX + rectWidth && y2 >= rectY && y2 <= rectY + rectHeight)) {
+      return true;
+    }
+    
+    // Check line intersection with rectangle edges
+    return lineIntersectsLine(x1, y1, x2, y2, rectX, rectY, rectX + rectWidth, rectY) ||
+           lineIntersectsLine(x1, y1, x2, y2, rectX + rectWidth, rectY, rectX + rectWidth, rectY + rectHeight) ||
+           lineIntersectsLine(x1, y1, x2, y2, rectX + rectWidth, rectY + rectHeight, rectX, rectY + rectHeight) ||
+           lineIntersectsLine(x1, y1, x2, y2, rectX, rectY + rectHeight, rectX, rectY);
+  };
+  
+  // Helper function to check line-line intersection
+  const lineIntersectsLine = (x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): boolean => {
+    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (Math.abs(denom) < 1e-10) return false;
+    
+    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+    const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+    
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+  };
+
+  // Helper function to check if two nodes are overlapping
+  const isNodesOverlapping = (nodeA: FlowchartNode, nodeB: FlowchartNode): boolean => {
+    if (!nodeA.x || !nodeA.y || !nodeB.x || !nodeB.y) return false;
+    if (!nodeA.width || !nodeA.height || !nodeB.width || !nodeB.height) return false;
+    
+    const nodeALeft = nodeA.x - nodeA.width / 2;
+    const nodeARight = nodeA.x + nodeA.width / 2;
+    const nodeATop = nodeA.y - nodeA.height / 2;
+    const nodeABottom = nodeA.y + nodeA.height / 2;
+    
+    const nodeBLeft = nodeB.x - nodeB.width / 2;
+    const nodeBRight = nodeB.x + nodeB.width / 2;
+    const nodeBTop = nodeB.y - nodeB.height / 2;
+    const nodeBBottom = nodeB.y + nodeB.height / 2;
+    
+    return !(nodeARight < nodeBLeft || 
+             nodeALeft > nodeBRight || 
+             nodeABottom < nodeBTop || 
+             nodeATop > nodeBBottom);
+  };
+
   const layoutNodes = (nodes: FlowchartNode[], edges: FlowchartEdge[]) => {
     if (nodes.length === 0) return;
 
     console.log('Layout nodes called with:', { nodes: nodes.length, edges: edges.length });
 
-    // Simple hierarchical layout
+    // Enhanced hierarchical layout with proper tree structure
     const levels = new Map<string, number>();
     const nodesInLevel = new Map<number, FlowchartNode[]>();
+    const childrenMap = new Map<string, FlowchartNode[]>();
+    
+    // Build adjacency list for children relationships
+    nodes.forEach(node => {
+      childrenMap.set(node.id, []);
+    });
+    
+    edges.forEach(edge => {
+      const children = childrenMap.get(edge.from) || [];
+      const targetNode = nodes.find(n => n.id === edge.to);
+      if (targetNode) {
+        children.push(targetNode);
+      }
+      childrenMap.set(edge.from, children);
+    });
     
     // Find root nodes (nodes with no incoming edges)
     const hasIncomingEdge = new Set<string>();
@@ -819,12 +965,12 @@ export default function InteractiveFlowchartRenderer({
     
     console.log('Root nodes found:', rootNodes.map(n => n.id));
     
-    // Assign levels using BFS
-    const queue: { node: FlowchartNode; level: number }[] = rootNodes.map(node => ({ node, level: 0 }));
+    // Assign levels using BFS with improved tree structure
+    const queue: { node: FlowchartNode; level: number; parentX?: number }[] = rootNodes.map(node => ({ node, level: 0 }));
     const visited = new Set<string>();
     
     while (queue.length > 0) {
-      const { node, level } = queue.shift()!;
+      const { node, level, parentX } = queue.shift()!;
       
       if (visited.has(node.id)) continue;
       visited.add(node.id);
@@ -840,36 +986,144 @@ export default function InteractiveFlowchartRenderer({
       outgoingEdges.forEach(edge => {
         const targetNode = nodes.find(n => n.id === edge.to);
         if (targetNode && !visited.has(targetNode.id)) {
-          queue.push({ node: targetNode, level: level + 1 });
+          queue.push({ node: targetNode, level: level + 1, parentX: node.x });
         }
       });
     }
     
-    // Position nodes
-    const levelHeight = 150;
-    const nodeWidth = 140;
-    const nodeSpacing = 20;
-    const canvasWidth = 800; // Default canvas width
+    // Calculate layout parameters
+    const levelHeight = 180;
+    const nodeWidth = 160;
+    const nodeHeight = 60;
+    const nodeSpacing = 40;
+    const levelSpacing = 80;
     
+    // Find the maximum number of nodes in any level for canvas sizing
+    const maxNodesInLevel = Math.max(...Array.from(nodesInLevel.values()).map(levelNodes => levelNodes.length));
+    const maxLevel = Math.max(...Array.from(nodesInLevel.keys()));
+    
+    // Calculate required canvas dimensions
+    const requiredCanvasWidth = Math.max(800, maxNodesInLevel * (nodeWidth + nodeSpacing) + nodeSpacing);
+    const requiredCanvasHeight = Math.max(600, (maxLevel + 1) * (levelHeight + levelSpacing) + 100);
+    
+    // Position nodes with improved tree layout and collision detection
     nodesInLevel.forEach((nodesInThisLevel, level) => {
       const totalWidth = nodesInThisLevel.length * nodeWidth + (nodesInThisLevel.length - 1) * nodeSpacing;
-      const startX = (canvasWidth - totalWidth) / 2; // Center horizontally
+      const startX = (requiredCanvasWidth - totalWidth) / 2; // Center horizontally
       
+      // Initial positioning
       nodesInThisLevel.forEach((node, index) => {
         node.x = startX + index * (nodeWidth + nodeSpacing) + nodeWidth / 2;
-        node.y = 100 + level * levelHeight;
+        node.y = 80 + level * (levelHeight + levelSpacing);
+        node.width = nodeWidth;
+        node.height = nodeHeight;
+      });
+      
+      // Apply collision detection and adjustment within the same level
+      for (let i = 0; i < nodesInThisLevel.length; i++) {
+        const nodeA = nodesInThisLevel[i];
+        for (let j = i + 1; j < nodesInThisLevel.length; j++) {
+          const nodeB = nodesInThisLevel[j];
+          
+          if (isNodesOverlapping(nodeA, nodeB)) {
+            // Move nodeB to the right to avoid overlap
+            const overlapX = (nodeA.width! + nodeB.width!) / 2 + nodeSpacing - Math.abs(nodeA.x - nodeB.x);
+            if (overlapX > 0) {
+              nodeB.x += overlapX;
+            }
+          }
+        }
+      }
+      
+      // Log final positions
+      nodesInThisLevel.forEach((node) => {
         console.log(`Positioned node ${node.id} at (${node.x}, ${node.y})`);
       });
     });
     
+    // Apply collision detection between levels
+    const allLevels = Array.from(nodesInLevel.keys()).sort((a, b) => a - b);
+    for (let i = 0; i < allLevels.length - 1; i++) {
+      const currentLevel = allLevels[i];
+      const nextLevel = allLevels[i + 1];
+      const currentNodes = nodesInLevel.get(currentLevel) || [];
+      const nextNodes = nodesInLevel.get(nextLevel) || [];
+      
+      // Check for overlaps between current level and next level
+      for (const currentNode of currentNodes) {
+        for (const nextNode of nextNodes) {
+          if (isNodesOverlapping(currentNode, nextNode)) {
+            // Move next level down to avoid overlap
+            const overlapY = (currentNode.height! + nextNode.height!) / 2 + levelSpacing - Math.abs(currentNode.y - nextNode.y);
+            if (overlapY > 0) {
+              // Move all nodes in next level and below down
+              for (let level = nextLevel; level <= maxLevel; level++) {
+                const levelNodes = nodesInLevel.get(level) || [];
+                levelNodes.forEach(node => {
+                  node.y += overlapY;
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+    
     // Position any remaining nodes that weren't reached in BFS
     nodes.forEach(node => {
       if (!levels.has(node.id)) {
-        node.x = Math.random() * (canvasWidth - 200) + 100;
-        node.y = Math.random() * 400 + 100;
+        node.x = Math.random() * (requiredCanvasWidth - 200) + 100;
+        node.y = Math.random() * (requiredCanvasHeight - 200) + 100;
+        node.width = nodeWidth;
+        node.height = nodeHeight;
         console.log(`Positioned unconnected node ${node.id} at (${node.x}, ${node.y})`);
       }
     });
+    
+    // Calculate actual bounds after positioning
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach(node => {
+      if (node.x && node.y && node.width && node.height) {
+        minX = Math.min(minX, node.x - node.width / 2);
+        maxX = Math.max(maxX, node.x + node.width / 2);
+        minY = Math.min(minY, node.y - node.height / 2);
+        maxY = Math.max(maxY, node.y + node.height / 2);
+      }
+    });
+    
+    // Add padding around the bounds
+    const padding = 100;
+    const actualWidth = maxX - minX + padding * 2;
+    const actualHeight = maxY - minY + padding * 2;
+    
+    // Update canvas size with actual bounds
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const finalWidth = Math.max(requiredCanvasWidth, actualWidth);
+      const finalHeight = Math.max(requiredCanvasHeight, actualHeight);
+      
+      canvas.width = finalWidth;
+      canvas.height = finalHeight;
+      
+      // Center all nodes within the canvas
+      const centerX = finalWidth / 2;
+      const centerY = finalHeight / 2;
+      const currentCenterX = (minX + maxX) / 2;
+      const currentCenterY = (minY + maxY) / 2;
+      
+      const offsetX = centerX - currentCenterX;
+      const offsetY = centerY - currentCenterY;
+      
+      nodes.forEach(node => {
+        if (node.x && node.y) {
+          node.x += offsetX;
+          node.y += offsetY;
+        }
+      });
+      
+      console.log(`Canvas resized to: ${finalWidth}x${finalHeight}`);
+      console.log(`Nodes centered with offset: (${offsetX}, ${offsetY})`);
+    }
   };
 
   const getNodeColor = (type: FlowchartNode['type']) => {
@@ -969,64 +1223,206 @@ export default function InteractiveFlowchartRenderer({
       return;
     }
     
-    // Draw edges (only for visible nodes)
-    ctx.strokeStyle = '#6b7280';
-    ctx.lineWidth = 2;
-    flowchartData.edges.forEach(edge => {
-      const fromNode = filteredNodes.find(n => n.id === edge.from);
-      const toNode = filteredNodes.find(n => n.id === edge.to);
+    // Apply view mode specific filtering and styling
+    let nodesToRender = filteredNodes;
+    let edgesToRender = flowchartData.edges;
+    
+    if (viewMode === 'focused') {
+      // Focused mode: Only show selected node and its direct connections
+      if (selectedNode) {
+        const connectedNodeIds = new Set<string>();
+        connectedNodeIds.add(selectedNode.id);
+        
+        // Find directly connected nodes
+        flowchartData.edges.forEach(edge => {
+          if (edge.from === selectedNode.id) {
+            connectedNodeIds.add(edge.to);
+          } else if (edge.to === selectedNode.id) {
+            connectedNodeIds.add(edge.from);
+          }
+        });
+        
+        nodesToRender = filteredNodes.filter(node => connectedNodeIds.has(node.id));
+        edgesToRender = flowchartData.edges.filter(edge => 
+          connectedNodeIds.has(edge.from) && connectedNodeIds.has(edge.to)
+        );
+      }
+    } else if (viewMode === 'detailed') {
+      // Detailed mode: Show all nodes but with enhanced information
+      nodesToRender = filteredNodes;
+      edgesToRender = flowchartData.edges;
+    } else {
+      // Architecture mode: Show high-level overview (simplified)
+      nodesToRender = filteredNodes.filter(node => 
+        ['entry', 'component', 'service', 'database', 'api'].includes(node.type)
+      );
+      edgesToRender = flowchartData.edges.filter(edge => {
+        const fromNode = nodesToRender.find(n => n.id === edge.from);
+        const toNode = nodesToRender.find(n => n.id === edge.to);
+        return fromNode && toNode;
+      });
+    }
+    
+    // Draw edges with improved curved lines and arrowheads
+    edgesToRender.forEach(edge => {
+      const fromNode = nodesToRender.find(n => n.id === edge.from);
+      const toNode = nodesToRender.find(n => n.id === edge.to);
       
       if (fromNode && toNode && fromNode.x && fromNode.y && toNode.x && toNode.y) {
         // Highlight edges connected to highlighted nodes
         const isHighlighted = highlightedNodes.includes(edge.from) || highlightedNodes.includes(edge.to);
+        const isSelected = selectedNode && (edge.from === selectedNode.id || edge.to === selectedNode.id);
         
-        ctx.strokeStyle = isHighlighted ? '#fbbf24' : '#6b7280';
-        ctx.lineWidth = isHighlighted ? 3 : 2;
+        // View mode specific edge styling
+        if (viewMode === 'focused') {
+          ctx.strokeStyle = isSelected ? '#fbbf24' : '#3b82f6';
+          ctx.lineWidth = isSelected ? 4 : 3;
+        } else if (viewMode === 'detailed') {
+          ctx.strokeStyle = isHighlighted ? '#fbbf24' : '#6b7280';
+          ctx.lineWidth = isHighlighted ? 3 : 2;
+        } else {
+          // Architecture mode
+          ctx.strokeStyle = isHighlighted ? '#fbbf24' : '#9ca3af';
+          ctx.lineWidth = isHighlighted ? 3 : 1;
+        }
         
+        // Calculate intelligent edge routing to minimize crossings
+        const edgePath = calculateOptimalEdgePath(fromNode, toNode, nodesToRender, edgesToRender);
+        
+        // Draw edge with optimal path
         ctx.beginPath();
-        ctx.moveTo(fromNode.x, fromNode.y);
-        ctx.lineTo(toNode.x, toNode.y);
+        ctx.moveTo(edgePath.start.x, edgePath.start.y);
+        
+        if (edgePath.controlPoints.length === 1) {
+          // Simple quadratic curve
+          ctx.quadraticCurveTo(
+            edgePath.controlPoints[0].x, 
+            edgePath.controlPoints[0].y,
+            edgePath.end.x, 
+            edgePath.end.y
+          );
+        } else if (edgePath.controlPoints.length === 2) {
+          // Bezier curve with two control points
+          ctx.bezierCurveTo(
+            edgePath.controlPoints[0].x, 
+            edgePath.controlPoints[0].y,
+            edgePath.controlPoints[1].x, 
+            edgePath.controlPoints[1].y,
+            edgePath.end.x, 
+            edgePath.end.y
+          );
+        } else {
+          // Straight line as fallback
+          ctx.lineTo(edgePath.end.x, edgePath.end.y);
+        }
+        
         ctx.stroke();
 
-        // Draw arrowhead
-        const angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
-        const arrowLength = 10;
+        // Draw improved arrowhead
+        const lastControlPoint = edgePath.controlPoints[edgePath.controlPoints.length - 1];
+        const angle = Math.atan2(
+          edgePath.end.y - (lastControlPoint ? lastControlPoint.y : edgePath.start.y),
+          edgePath.end.x - (lastControlPoint ? lastControlPoint.x : edgePath.start.x)
+        );
+        const arrowLength = 12;
+        const arrowWidth = 8;
+        
+        // Arrow position is already calculated in edgePath.end
+        const arrowX = edgePath.end.x;
+        const arrowY = edgePath.end.y;
+        
         ctx.beginPath();
-        ctx.moveTo(toNode.x, toNode.y);
+        ctx.moveTo(arrowX, arrowY);
         ctx.lineTo(
-          toNode.x - arrowLength * Math.cos(angle - Math.PI / 6),
-          toNode.y - arrowLength * Math.sin(angle - Math.PI / 6)
+          arrowX - arrowLength * Math.cos(angle - Math.PI / 6),
+          arrowY - arrowLength * Math.sin(angle - Math.PI / 6)
         );
-        ctx.moveTo(toNode.x, toNode.y);
         ctx.lineTo(
-          toNode.x - arrowLength * Math.cos(angle + Math.PI / 6),
-          toNode.y - arrowLength * Math.sin(angle + Math.PI / 6)
+          arrowX - arrowLength * Math.cos(angle + Math.PI / 6),
+          arrowY - arrowLength * Math.sin(angle + Math.PI / 6)
         );
-        ctx.stroke();
+        ctx.closePath();
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.fill();
+        
+        // Add edge label if present
+        if (edge.label) {
+          ctx.save();
+          ctx.font = '11px sans-serif';
+          ctx.fillStyle = '#374151';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          // Position label at the middle of the curve
+          let labelX, labelY;
+          if (edgePath.controlPoints.length > 0) {
+            // Use the first control point for simple curves
+            labelX = edgePath.controlPoints[0].x;
+            labelY = edgePath.controlPoints[0].y;
+          } else {
+            // Use midpoint for straight lines
+            labelX = (edgePath.start.x + edgePath.end.x) / 2;
+            labelY = (edgePath.start.y + edgePath.end.y) / 2;
+          }
+          
+          // Add background for better readability
+          const textWidth = ctx.measureText(edge.label).width;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.fillRect(labelX - textWidth / 2 - 4, labelY - 8, textWidth + 8, 16);
+          
+          ctx.fillStyle = '#374151';
+          ctx.fillText(edge.label, labelX, labelY);
+          ctx.restore();
+        }
       }
     });
 
-    // Draw nodes
-    filteredNodes.forEach(node => {
+    // Draw nodes (view mode specific styling)
+    nodesToRender.forEach(node => {
       if (!node.x || !node.y) return;
 
       const isSelected = selectedNode?.id === node.id;
       const isHighlighted = highlightedNodes.includes(node.id);
       const color = getNodeColor(node.type);
+      
+      // View mode specific node sizing and styling
+      let nodeWidth, nodeHeight, fontSize;
+      if (viewMode === 'focused') {
+        nodeWidth = isSelected ? 160 : 140;
+        nodeHeight = isSelected ? 80 : 70;
+        fontSize = isSelected ? 14 : 12;
+      } else if (viewMode === 'detailed') {
+        nodeWidth = 130;
+        nodeHeight = 65;
+        fontSize = 12;
+      } else {
+        // Architecture mode
+        nodeWidth = 110;
+        nodeHeight = 55;
+        fontSize = 11;
+      }
 
       // Node shadow
       ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = viewMode === 'focused' ? 15 : 10;
       ctx.shadowOffsetX = 2;
       ctx.shadowOffsetY = 2;
 
-      // Node background
-      ctx.fillStyle = isHighlighted ? '#fbbf24' : color;
-      ctx.strokeStyle = isSelected ? '#ffffff' : (isHighlighted ? '#f59e0b' : color);
-      ctx.lineWidth = isSelected ? 3 : (isHighlighted ? 3 : 2);
-
-      const nodeWidth = 120;
-      const nodeHeight = 60;
+      // Node background with view mode specific styling
+      if (viewMode === 'focused') {
+        ctx.fillStyle = isSelected ? '#fbbf24' : (isHighlighted ? '#60a5fa' : color);
+        ctx.strokeStyle = isSelected ? '#ffffff' : (isHighlighted ? '#3b82f6' : color);
+        ctx.lineWidth = isSelected ? 4 : (isHighlighted ? 3 : 2);
+      } else if (viewMode === 'detailed') {
+        ctx.fillStyle = isHighlighted ? '#fbbf24' : color;
+        ctx.strokeStyle = isSelected ? '#ffffff' : (isHighlighted ? '#f59e0b' : color);
+        ctx.lineWidth = isSelected ? 3 : (isHighlighted ? 3 : 2);
+      } else {
+        // Architecture mode
+        ctx.fillStyle = isHighlighted ? '#fbbf24' : color;
+        ctx.strokeStyle = isSelected ? '#ffffff' : (isHighlighted ? '#f59e0b' : color);
+        ctx.lineWidth = isSelected ? 3 : (isHighlighted ? 2 : 1);
+      }
       const radius = 8;
 
       // Draw rounded rectangle
@@ -1038,34 +1434,50 @@ export default function InteractiveFlowchartRenderer({
       // Reset shadow
       ctx.shadowColor = 'transparent';
 
-      // Node text
-      ctx.fillStyle = isHighlighted ? '#000000' : '#ffffff';
-      ctx.font = '12px sans-serif';
+      // Node text with view mode specific styling
+      ctx.fillStyle = (viewMode === 'focused' && isSelected) || isHighlighted ? '#000000' : '#ffffff';
+      ctx.font = `${fontSize}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
+      // View mode specific text content
+      let displayText = node.label;
+      if (viewMode === 'focused' && isSelected) {
+        // Show more detailed info for selected node in focused mode
+        if (node.type !== 'entry') {
+          displayText = `${node.label}\n(${node.type})`;
+        }
+      } else if (viewMode === 'architecture') {
+        // Simplified labels for architecture mode
+        displayText = node.label.length > 15 ? node.label.substring(0, 12) + '...' : node.label;
+      }
+      
       // Wrap text if too long
       const maxWidth = nodeWidth - 20;
-      const words = node.label.split(' ');
-      let line = '';
-      let y = node.y - 10;
+      const lines = displayText.split('\n');
       
-      for (let i = 0; i < words.length; i++) {
-        const testLine = line + words[i] + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && i > 0) {
-          ctx.fillText(line, node.x, y);
-          line = words[i] + ' ';
-          y += 16;
-        } else {
-          line = testLine;
+      lines.forEach((line, lineIndex) => {
+        const words = line.split(' ');
+        let textLine = '';
+        let y = node.y - (lines.length - 1) * 8 + lineIndex * 16;
+        
+        for (let i = 0; i < words.length; i++) {
+          const testLine = textLine + words[i] + ' ';
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth && i > 0) {
+            ctx.fillText(textLine, node.x, y);
+            textLine = words[i] + ' ';
+            y += 16;
+          } else {
+            textLine = testLine;
+          }
         }
-      }
-      ctx.fillText(line, node.x, y);
+        ctx.fillText(textLine, node.x, y);
+      });
     });
 
     ctx.restore();
-  }, [flowchartData, scale, offset, selectedNode, getFilteredNodes, highlightedNodes]);
+  }, [flowchartData, scale, offset, selectedNode, getFilteredNodes, highlightedNodes, viewMode]);
 
   useEffect(() => {
     drawFlowchart();
@@ -1296,6 +1708,7 @@ export default function InteractiveFlowchartRenderer({
                 size="sm"
                 className="justify-start"
                 onClick={() => setViewMode('architecture')}
+                title="Show high-level architecture overview with main components only"
               >
                 <Layers className="w-4 h-4 mr-2" />
                 Architecture Overview
@@ -1305,8 +1718,9 @@ export default function InteractiveFlowchartRenderer({
                 size="sm"
                 className="justify-start"
                 onClick={() => setViewMode('detailed')}
+                title="Show detailed view with all components and enhanced information"
               >
-                <BarChart3 className="w-4 h-4 mr-2" />
+                <ZoomIn className="w-4 h-4 mr-2" />
                 Detailed View
               </Button>
               <Button
@@ -1314,16 +1728,31 @@ export default function InteractiveFlowchartRenderer({
                 size="sm"
                 className="justify-start"
                 onClick={() => setViewMode('focused')}
+                title="Focus on selected component and its direct connections only"
+                disabled={!selectedNode}
               >
                 <Target className="w-4 h-4 mr-2" />
                 Focused Analysis
+                {!selectedNode && <span className="ml-auto text-xs text-muted-foreground">(Select a node)</span>}
               </Button>
+            </div>
+            
+            {/* View mode description */}
+            <div className="mt-3 p-2 bg-muted rounded text-xs">
+              {viewMode === 'architecture' && (
+                <p>🏗️ High-level overview showing main architectural components</p>
+              )}
+              {viewMode === 'detailed' && (
+                <p>🔍 Detailed view with all components and enhanced information</p>
+              )}
+              {viewMode === 'focused' && (
+                <p>🎯 {selectedNode ? `Focused on ${selectedNode.label} and its connections` : 'Select a node to focus analysis'}</p>
+              )}
             </div>
           </div>
 
-          {/* Filters */}
+          {/* Search and Filter Controls */}
           <div className="p-4 border-b">
-            <h3 className="text-sm font-medium mb-3">Filters</h3>
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Search Nodes</label>
