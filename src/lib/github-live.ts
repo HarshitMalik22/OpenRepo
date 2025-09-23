@@ -221,9 +221,9 @@ export class GitHubLiveService {
       };
       
       // Store in intelligent cache with different TTLs
-      cacheManager.setRepositoryBasic(fullName, basicData);
-      cacheManager.setRepositoryStats(fullName, statsData);
-      cacheManager.setRepositoryHealth(fullName, healthData);
+      await cacheManager.setRepositoryBasic(fullName, basicData);
+      await cacheManager.setRepositoryStats(fullName, statsData);
+      await cacheManager.setRepositoryHealth(fullName, healthData);
       
       // Also update legacy cache for compatibility
       this.activityCache.set(cacheKey, {

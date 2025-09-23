@@ -18,7 +18,7 @@ export async function ensureUser(clerkUser: {
 }) {
   const existingUser = await prisma.user.findUnique({
     where: { clerkId: clerkUser.id },
-    include: { preferences: true }
+    include: { preferences: true, userPreferences: true }
   });
 
   if (existingUser) {
@@ -46,6 +46,7 @@ export async function getUserWithPreferences(clerkId: string) {
     where: { clerkId },
     include: { 
       preferences: true,
+      userPreferences: true,
       interactions: {
         orderBy: { timestamp: 'desc' },
         take: 50

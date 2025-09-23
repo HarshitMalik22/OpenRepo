@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import ClerkProviderWrapper from '@/components/clerk-provider';
+import { ReactQueryProvider } from '@/components/providers/react-query-provider';
 
 export const metadata: Metadata = {
   title: 'OpenSauce',
@@ -30,14 +31,16 @@ export default function RootLayout({
           <link rel="apple-touch-icon" href="/logos/opensauce-logo.png" />
         </head>
         <body suppressHydrationWarning={true}>
-          <div className="font-body antialiased min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-            <Toaster />
-          </div>
+          <ReactQueryProvider>
+            <div className="font-body antialiased min-h-screen flex flex-col">
+              <Header />
+              <main className="flex-grow">
+                {children}
+              </main>
+              <Footer />
+              <Toaster />
+            </div>
+          </ReactQueryProvider>
         </body>
       </html>
     </ClerkProviderWrapper>

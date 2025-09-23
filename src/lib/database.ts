@@ -10,7 +10,7 @@ export async function createOrUpdateUser(clerkUser: any) {
 
 export async function getUserPreferencesFromDB(clerkId: string) {
   const user = await getUserWithPreferences(clerkId);
-  return user?.preferences;
+  return user?.userPreferences;
 }
 
 export async function saveUserPreferencesToDB(clerkId: string, preferences: UserPreferences) {
