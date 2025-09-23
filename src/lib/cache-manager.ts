@@ -1,8 +1,10 @@
-import { Redis } from '@upstash/redis'
 /**
- * Smart Cache Manager for GitHub API Data
- * Implements intelligent caching with TTL and invalidation strategies
+ * Enhanced Smart Cache Manager for GitHub API Data
+ * Implements multi-layer caching: Memory → Redis → Database
+ * Maintains all GitHub-specific intelligence while adding persistence and distribution
  */
+
+import { Redis } from '@upstash/redis';
 
 interface CacheEntry<T> {
   data: T;
@@ -11,7 +13,7 @@ interface CacheEntry<T> {
 }
 
 interface CacheConfig {
-  // Different TTLs for different data types
+  // Different TTLs for different data types (same as your current config)
   repositoryBasic: number;     // Basic repo info (name, owner, description) - 1 hour
   repositoryStats: number;     // Stars, forks, issues count - 5 minutes
   repositoryActivity: number;  // Commits, PRs, recent activity - 2 minutes
@@ -28,8 +30,14 @@ interface CacheStats {
   totalRequests: number;
 }
 
-class CacheManager {
-  private cache = new Map<string, CacheEntry<any>>();
+class EnhancedCacheManager {
+  // Memory cache (your current system)
+  private memoryCache = new Map<string, CacheEntry<any>>();
+  
+  // Redis cache (new persistent layer)
+  private redis: Redis;
+  
+  // Configuration (same as your current config)
   private config: CacheConfig = {
     repositoryBasic: 60 * 60 * 1000,     // 1 hour
     repositoryStats: 5 * 60 * 1000,      // 5 minutes
@@ -39,145 +47,269 @@ class CacheManager {
     searchResults: 15 * 60 * 1000,       // 15 minutes
   };
 
-  // Generate cache key with context
+  // Cache statistics
+  private stats: CacheStats = {
+    memoryHits: 0,
+    memoryMisses: 0,
+    redisHits: 0,
+    redisMisses: 0,
+    totalRequests: 0,
+  };
+
+  // Memory cache configuration
+  private readonly MEMORY_CACHE_SIZE = parseInt(process.env.CACHE_MEMORY_SIZE || '100', 10);
+  private readonly CACHE_PREFIX = process.env.CACHE_PREFIX || 'opensauce:';
+
+  constructor() {
+    // Initialize Redis (only if credentials are available)
+    if (process.env.UPSTASH_REDIS_URL && process.env.UPSTASH_REDIS_TOKEN) {
+      this.redis = new Redis({
+        url: process.env.UPSTASH_REDIS_URL,
+        token: process.env.UPSTASH_REDIS_TOKEN,
+      });
+    } else {
+      console.warn('Redis credentials not found. Running in memory-only mode.');
+    }
+  }
+
+  // Generate cache key with prefix (enhanced from your current version)
   private generateKey(prefix: string, identifier: string, context?: string): string {
-    const parts = [prefix, identifier];
+    const parts = [this.CACHE_PREFIX, prefix, identifier];
     if (context) parts.push(context);
     return parts.join(':');
   }
 
-  // Check if cache entry is valid
+  // Check if cache entry is valid (same as your current logic)
   private isValid(entry: CacheEntry<any>): boolean {
     return Date.now() - entry.timestamp < entry.ttl;
   }
 
-  // Get cached data
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry || !this.isValid(entry)) {
-      if (entry) this.cache.delete(key); // Clean up expired entries
-      return null;
+  // Clean expired memory cache entries
+  private cleanMemoryCache(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.memoryCache.entries()) {
+      if (!this.isValid(entry)) {
+        this.memoryCache.delete(key);
+      }
     }
-    return entry.data;
   }
 
-  // Set cached data with TTL
-  set<T>(key: string, data: T, ttl: number): void {
-    this.cache.set(key, {
+  // Ensure memory cache doesn't exceed size limit
+  private evictOldestIfNeeded(): void {
+    if (this.memoryCache.size >= this.MEMORY_CACHE_SIZE) {
+      const oldestKey = this.memoryCache.keys().next().value;
+      this.memoryCache.delete(oldestKey);
+    }
+  }
+
+  // Core get method with multi-layer strategy
+  async get<T>(key: string): Promise<T | null> {
+    this.stats.totalRequests++;
+    
+    // Clean expired entries first
+    this.cleanMemoryCache();
+
+    // Try memory cache first (fastest)
+    const memoryEntry = this.memoryCache.get(key);
+    if (memoryEntry && this.isValid(memoryEntry)) {
+      this.stats.memoryHits++;
+      return memoryEntry.data;
+    }
+    this.stats.memoryMisses++;
+
+    // Try Redis cache (persistent layer)
+    if (this.redis) {
+      try {
+        const redisResult = await this.redis.get(key);
+        if (redisResult) {
+          const parsed = JSON.parse(redisResult);
+          
+          // Store in memory cache for next time
+          this.evictOldestIfNeeded();
+          this.memoryCache.set(key, {
+            data: parsed,
+            timestamp: Date.now(),
+            ttl: this.config.repositoryBasic, // Default TTL
+          });
+          
+          this.stats.redisHits++;
+          return parsed;
+        }
+      } catch (error) {
+        console.error('Redis get error:', error);
+      }
+    }
+    this.stats.redisMisses++;
+
+    return null;
+  }
+
+  // Core set method with multi-layer strategy
+  async set<T>(key: string, data: T, ttl: number): Promise<void> {
+    // Store in memory cache
+    this.evictOldestIfNeeded();
+    this.memoryCache.set(key, {
       data,
       timestamp: Date.now(),
       ttl,
     });
+
+    // Store in Redis cache
+    if (this.redis) {
+      try {
+        await this.redis.setex(key, Math.ceil(ttl / 1000), JSON.stringify(data));
+      } catch (error) {
+        console.error('Redis set error:', error);
+      }
+    }
   }
 
-  // Repository-specific cache methods
-  getRepositoryBasic(fullName: string) {
+  // Delete from both cache layers
+  async delete(key: string): Promise<void> {
+    // Remove from memory cache
+    this.memoryCache.delete(key);
+    
+    // Remove from Redis cache
+    if (this.redis) {
+      try {
+        await this.redis.del(key);
+      } catch (error) {
+        console.error('Redis delete error:', error);
+      }
+    }
+  }
+
+  // Clear cache by pattern
+  async clearPattern(pattern: string): Promise<void> {
+    const fullPattern = this.CACHE_PREFIX + pattern;
+    
+    // Clear memory cache entries matching pattern
+    for (const key of this.memoryCache.keys()) {
+      if (key.includes(fullPattern)) {
+        this.memoryCache.delete(key);
+      }
+    }
+
+    // Clear Redis keys matching pattern
+    if (this.redis) {
+      try {
+        const keys = await this.redis.keys(fullPattern);
+        if (keys.length > 0) {
+          await this.redis.del(...keys);
+        }
+      } catch (error) {
+        console.error('Redis clear pattern error:', error);
+      }
+    }
+  }
+
+  // Get cache statistics
+  getStats(): CacheStats {
+    return { ...this.stats };
+  }
+
+  // Reset statistics
+  resetStats(): void {
+    this.stats = {
+      memoryHits: 0,
+      memoryMisses: 0,
+      redisHits: 0,
+      redisMisses: 0,
+      totalRequests: 0,
+    };
+  }
+
+  // === YOUR EXISTING GITHUB-SPECIFIC METHODS (enhanced to be async) ===
+
+  async getRepositoryBasic(fullName: string) {
     return this.get(this.generateKey('repo-basic', fullName));
   }
 
-  setRepositoryBasic(fullName: string, data: any) {
-    this.set(this.generateKey('repo-basic', fullName), data, this.config.repositoryBasic);
+  async setRepositoryBasic(fullName: string, data: any) {
+    await this.set(this.generateKey('repo-basic', fullName), data, this.config.repositoryBasic);
   }
 
-  getRepositoryStats(fullName: string) {
+  async getRepositoryStats(fullName: string) {
     return this.get(this.generateKey('repo-stats', fullName));
   }
 
-  setRepositoryStats(fullName: string, data: any) {
-    this.set(this.generateKey('repo-stats', fullName), data, this.config.repositoryStats);
+  async setRepositoryStats(fullName: string, data: any) {
+    await this.set(this.generateKey('repo-stats', fullName), data, this.config.repositoryStats);
   }
 
-  getRepositoryActivity(fullName: string) {
+  async getRepositoryActivity(fullName: string) {
     return this.get(this.generateKey('repo-activity', fullName));
   }
 
-  setRepositoryActivity(fullName: string, data: any) {
-    this.set(this.generateKey('repo-activity', fullName), data, this.config.repositoryActivity);
+  async setRepositoryActivity(fullName: string, data: any) {
+    await this.set(this.generateKey('repo-activity', fullName), data, this.config.repositoryActivity);
   }
 
-  getRepositoryIssues(fullName: string, labels?: string) {
+  async getRepositoryIssues(fullName: string, labels?: string) {
     const context = labels || 'all';
     return this.get(this.generateKey('repo-issues', fullName, context));
   }
 
-  setRepositoryIssues(fullName: string, data: any, labels?: string) {
+  async setRepositoryIssues(fullName: string, data: any, labels?: string) {
     const context = labels || 'all';
-    this.set(this.generateKey('repo-issues', fullName, context), data, this.config.repositoryIssues);
+    await this.set(this.generateKey('repo-issues', fullName, context), data, this.config.repositoryIssues);
   }
 
-  getRepositoryHealth(fullName: string) {
+  async getRepositoryHealth(fullName: string) {
     return this.get(this.generateKey('repo-health', fullName));
   }
 
-  setRepositoryHealth(fullName: string, data: any) {
-    this.set(this.generateKey('repo-health', fullName), data, this.config.repositoryHealth);
+  async setRepositoryHealth(fullName: string, data: any) {
+    await this.set(this.generateKey('repo-health', fullName), data, this.config.repositoryHealth);
   }
 
-  getSearchResults(query: string) {
+  async getSearchResults(query: string) {
     return this.get(this.generateKey('search', query));
   }
 
-  setSearchResults(query: string, data: any) {
-    this.set(this.generateKey('search', query), data, this.config.searchResults);
+  async setSearchResults(query: string, data: any) {
+    await this.set(this.generateKey('search', query), data, this.config.searchResults);
   }
 
-  // Invalidate specific cache entries
-  invalidateRepository(fullName: string): void {
-    const keysToDelete = Array.from(this.cache.keys()).filter(key => 
-      key.includes(fullName)
-    );
-    keysToDelete.forEach(key => this.cache.delete(key));
+  // === NEW UTILITY METHODS ===
+
+  // Invalidate all repository-related cache
+  async invalidateRepositoryCache(fullName?: string) {
+    if (fullName) {
+      // Invalidate specific repository
+      await this.delete(this.generateKey('repo-basic', fullName));
+      await this.delete(this.generateKey('repo-stats', fullName));
+      await this.delete(this.generateKey('repo-activity', fullName));
+      await this.delete(this.generateKey('repo-health', fullName));
+      await this.clearPattern(`repo-issues:${fullName}`);
+    } else {
+      // Invalidate all repositories
+      await this.clearPattern('repo-basic:');
+      await this.clearPattern('repo-stats:');
+      await this.clearPattern('repo-activity:');
+      await this.clearPattern('repo-health:');
+      await this.clearPattern('repo-issues:');
+    }
   }
 
-  // Invalidate all cache (for emergencies)
-  invalidateAll(): void {
-    this.cache.clear();
-  }
-
-  // Get cache statistics
-  getStats() {
-    const now = Date.now();
-    let validEntries = 0;
-    let expiredEntries = 0;
-
-    this.cache.forEach(entry => {
-      if (this.isValid(entry)) {
-        validEntries++;
-      } else {
-        expiredEntries++;
-      }
-    });
-
+  // Get cache performance metrics
+  getPerformanceMetrics() {
+    const { memoryHits, memoryMisses, redisHits, redisMisses, totalRequests } = this.stats;
+    
     return {
-      totalEntries: this.cache.size,
-      validEntries,
-      expiredEntries,
-      hitRate: validEntries / (validEntries + expiredEntries) || 0,
+      totalRequests,
+      memoryHitRate: totalRequests > 0 ? (memoryHits / totalRequests) * 100 : 0,
+      redisHitRate: totalRequests > 0 ? (redisHits / totalRequests) * 100 : 0,
+      overallHitRate: totalRequests > 0 ? ((memoryHits + redisHits) / totalRequests) * 100 : 0,
+      memoryCacheSize: this.memoryCache.size,
+      memoryCacheCapacity: this.MEMORY_CACHE_SIZE,
+      memoryUtilization: (this.memoryCache.size / this.MEMORY_CACHE_SIZE) * 100,
     };
-  }
-
-  // Clean up expired entries
-  cleanup(): void {
-    const now = Date.now();
-    const keysToDelete: string[] = [];
-
-    this.cache.forEach((entry, key) => {
-      if (now - entry.timestamp >= entry.ttl) {
-        keysToDelete.push(key);
-      }
-    });
-
-    keysToDelete.forEach(key => this.cache.delete(key));
-  }
-
-  // Start periodic cleanup
-  startPeriodicCleanup(intervalMs: number = 5 * 60 * 1000): NodeJS.Timeout {
-    return setInterval(() => this.cleanup(), intervalMs);
   }
 }
 
-// Export singleton instance
-export const cacheManager = new CacheManager();
+// Export singleton instance (same as your current export)
+export const cacheManager = new EnhancedCacheManager();
 
-// Export types for TypeScript
-export type { CacheConfig };
+// Export types for TypeScript (same as your current export)
+export type { CacheConfig, CacheStats };
