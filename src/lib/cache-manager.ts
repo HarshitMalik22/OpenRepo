@@ -35,7 +35,7 @@ class EnhancedCacheManager {
   private memoryCache = new Map<string, CacheEntry<any>>();
   
   // Redis cache (new persistent layer)
-  private redis: Redis;
+  private redis: Redis | null = null;
   
   // Configuration (same as your current config)
   private config: CacheConfig = {
@@ -98,7 +98,9 @@ class EnhancedCacheManager {
   private evictOldestIfNeeded(): void {
     if (this.memoryCache.size >= this.MEMORY_CACHE_SIZE) {
       const oldestKey = this.memoryCache.keys().next().value;
-      this.memoryCache.delete(oldestKey);
+      if (oldestKey) {
+        this.memoryCache.delete(oldestKey);
+      }
     }
   }
 
@@ -120,8 +122,8 @@ class EnhancedCacheManager {
     // Try Redis cache (persistent layer)
     if (this.redis) {
       try {
-        const redisResult = await this.redis.get(key);
-        if (redisResult) {
+        const redisResult = await this.redis!.get(key);
+        if (redisResult && typeof redisResult === 'string') {
           const parsed = JSON.parse(redisResult);
           
           // Store in memory cache for next time
