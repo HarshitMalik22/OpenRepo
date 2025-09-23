@@ -1,3 +1,4 @@
+import { Redis } from '@upstash/redis'
 /**
  * Smart Cache Manager for GitHub API Data
  * Implements intelligent caching with TTL and invalidation strategies
@@ -17,6 +18,14 @@ interface CacheConfig {
   repositoryIssues: number;    // Issues list - 10 minutes
   repositoryHealth: number;    // Health score and metrics - 30 minutes
   searchResults: number;       // Search results - 15 minutes
+}
+
+interface CacheStats {
+  memoryHits: number;
+  memoryMisses: number;
+  redisHits: number;
+  redisMisses: number;
+  totalRequests: number;
 }
 
 class CacheManager {

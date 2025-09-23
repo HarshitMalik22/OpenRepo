@@ -5,33 +5,19 @@ let communityStatsCache: any | null = null;
 
 import { enhanceRepository, getPersonalizedRecommendations, filterRepositories } from './recommendation-engine';
 import { enhancedRecommendationEngine } from './enhanced-recommendation-engine';
-import { cachePopularRepository, getCachedPopularRepositories, updateCommunityStats } from './database';
+import { getCachedPopularRepositories, updateCommunityStats } from './database';
+import { getGitHubHeaders } from './github-headers';
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats } from './types';
 
-// Validate GitHub API configuration
-function isGitHubConfigured(): boolean {
-  return !!process.env.GITHUB_TOKEN;
+// Only log configuration status on server side
+if (typeof window === 'undefined') {
+  import('./github-config').then(({ logGitHubConfigStatus }) => {
+    logGitHubConfigStatus().catch(console.error);
+  });
 }
 
-// Get GitHub API headers with authentication if available
-function getGitHubHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Accept': 'application/vnd.github.v3+json',
-  };
-  
-  if (isGitHubConfigured()) {
-    headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
-  }
-  
-  return headers;
-}
 
-// Log configuration status
-if (!isGitHubConfigured()) {
-  console.warn('GITHUB_TOKEN environment variable is not set. GitHub API requests will be unauthenticated and rate-limited.');
-}
-
-// Fetches a list of popular repositories from the GitHub API
+// Fetches a list of popular repositories from the GitHub API with rate limit handling
 export async function getPopularRepos(useCache = true): Promise<Repository[]> {
   if (useCache && repoCache) {
     return repoCache;
@@ -50,6 +36,7 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
       console.error('Failed to get cached repositories:', error);
     }
   }
+  
   try {
     // Fetch multiple queries to get tons of diverse repositories
     const queries = [
@@ -94,59 +81,133 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
       'topic:opensource&sort=stars&order=desc&per_page=25'
     ];
 
-    const promises = queries.map(query => 
-      fetch(`https://api.github.com/search/repositories?q=${query}`, {
-        headers: getGitHubHeaders(),
-        next: {
-          revalidate: 3600,
-        }
-      })
-    );
-
-    const responses = await Promise.all(promises);
+    // Implement rate limit aware fetching with exponential backoff
     const allRepos: any[] = [];
     const seenIds = new Set();
-    console.log(`Processing ${responses.length} API responses...`);
-
-    for (let i = 0; i < responses.length; i++) {
-      const response = responses[i];
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`GitHub API response not OK for query ${i}:`, errorText);
-        console.error(`Query was: ${queries[i]}`);
-        continue;
+    let rateLimitHit = false;
+    
+    for (let i = 0; i < queries.length; i++) {
+      if (rateLimitHit) {
+        console.log(`Rate limit hit, stopping further queries. Got ${allRepos.length} repositories so far.`);
+        break;
       }
       
-      const data = await response.json();
-      console.log(`Query ${i} returned ${data.items?.length || 0} repositories`);
+      const query = queries[i];
+      let retryCount = 0;
+      const maxRetries = 3;
+      let success = false;
       
-      // Deduplicate repositories
-      data.items?.forEach((repo: any) => {
-        if (!seenIds.has(repo.id)) {
-          seenIds.add(repo.id);
-          allRepos.push(repo);
+      while (retryCount < maxRetries && !success) {
+        try {
+          const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+          if (retryCount > 0) {
+            console.log(`Retrying query ${i} after ${delay}ms (attempt ${retryCount + 1})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+          
+          const response = await fetch(`https://api.github.com/search/repositories?q=${query}`, {
+            headers: await getGitHubHeaders(),
+            next: {
+              revalidate: 3600,
+            }
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            const errorData = JSON.parse(errorText);
+            
+            // Check for rate limit error
+            if (response.status === 403 && errorData.message?.includes('rate limit exceeded')) {
+              console.error(`GitHub API rate limit exceeded for query ${i}:`, errorData.message);
+              console.error(`Query was: ${query}`);
+              
+              // Check if we have a token configured
+              const { getGitHubConfigStatus } = await import('./github-config');
+              const configStatus = await getGitHubConfigStatus();
+              if (!configStatus.hasToken) {
+                console.warn('Rate limit exceeded. Consider adding GITHUB_TOKEN environment variable for higher rate limits.');
+              }
+              
+              rateLimitHit = true;
+              break;
+            }
+            
+            // For other errors, log and continue to next query
+            console.error(`GitHub API response not OK for query ${i}:`, errorText);
+            console.error(`Query was: ${query}`);
+            
+            // If it's a server error, retry
+            if (response.status >= 500 && retryCount < maxRetries - 1) {
+              retryCount++;
+              continue;
+            }
+            
+            break;
+          }
+          
+          const data = await response.json();
+          console.log(`Query ${i} returned ${data.items?.length || 0} repositories`);
+          
+          // Deduplicate repositories
+          data.items?.forEach((repo: any) => {
+            if (!seenIds.has(repo.id)) {
+              seenIds.add(repo.id);
+              allRepos.push(repo);
+            }
+          });
+          
+          success = true;
+        } catch (error) {
+          console.error(`Error fetching query ${i}:`, error);
+          if (retryCount < maxRetries - 1) {
+            retryCount++;
+          } else {
+            break;
+          }
         }
-      });
+      }
     }
     
     console.log(`Total unique repositories found: ${allRepos.length}`);
 
+    // If we got no repositories due to rate limiting, return cached data if available
+    if (allRepos.length === 0 && repoCache) {
+      console.log('No repositories fetched due to rate limiting, returning cached data');
+      return repoCache;
+    }
+    
     // Enhance repositories with additional metadata
     const enhancedRepos = allRepos.map((repo: any) => enhanceRepository(repo));
     
-    // Cache repositories in database for future use
-    try {
-      await Promise.all(enhancedRepos.map(repo => cachePopularRepository(repo)));
-      console.log('Successfully cached repositories in database');
-    } catch (error) {
-      console.error('Failed to cache repositories in database:', error);
+    // Cache repositories in database for future use (only if we have data)
+    if (enhancedRepos.length > 0) {
+      try {
+        // Call server-side API to cache repositories
+        const cacheResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/repositories/cache`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ repositories: enhancedRepos }),
+        });
+        
+        if (cacheResponse.ok) {
+          const cacheResult = await cacheResponse.json();
+          console.log(`Successfully cached ${cacheResult.cached} repositories in database`);
+        } else {
+          console.error('Failed to cache repositories via API');
+        }
+      } catch (error) {
+        console.error('Failed to cache repositories in database:', error);
+      }
     }
     
     repoCache = enhancedRepos;
     return enhancedRepos;
   } catch (error) {
     console.error('Failed to fetch popular repos:', error);
-    return [];
+    // Return cached data if available, otherwise empty array
+    return repoCache || [];
   }
 }
 

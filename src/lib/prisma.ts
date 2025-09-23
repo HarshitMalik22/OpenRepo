@@ -45,7 +45,7 @@ export async function getUserWithPreferences(clerkId: string) {
   return await prisma.user.findUnique({
     where: { clerkId },
     include: { 
-      userPreferences: true,
+      preferences: true,
       interactions: {
         orderBy: { timestamp: 'desc' },
         take: 50

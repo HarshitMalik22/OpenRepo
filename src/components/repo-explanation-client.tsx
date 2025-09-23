@@ -220,7 +220,7 @@ const getResourceIcon = (type: string) => {
 
 export default function RepoExplanationClient({ repository }: RepoExplanationClientProps) {
     const [isClient, setIsClient] = useState(false);
-    const { user } = useUser();
+    const [user, setUser] = useState<any>(null);
     const [aiData, setAiData] = useState<RenderInteractiveFlowchartOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -231,6 +231,20 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
     useEffect(() => {
         setIsClient(true);
     }, []);
+
+    // Only use Clerk hooks on client side
+    useEffect(() => {
+        if (isClient) {
+            try {
+                const { useUser } = require('@clerk/nextjs');
+                const { user: clerkUser } = useUser();
+                setUser(clerkUser);
+            } catch (error) {
+                console.warn('Clerk not available:', error);
+                setUser(null);
+            }
+        }
+    }, [isClient]);
 
     useEffect(() => {
         if (!isClient || !repository || !isExplanationVisible) return;
