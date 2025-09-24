@@ -309,6 +309,119 @@ export async function getRepo(fullName: string, useCache = true): Promise<Reposi
   }
 }
 
+// Fetch repository file structure and content
+export async function getRepositoryContent(owner: string, repo: string, path: string = '', useCache = true): Promise<any> {
+  const cacheKey = `${owner}/${repo}/${path}`;
+  
+  try {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      headers: getGitHubHeaders()
+    });
+
+    if (!response.ok) {
+      console.error(`GitHub API response not OK for ${owner}/${repo}/${path}:`, await response.text());
+      return null;
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`Failed to fetch repository content for ${owner}/${repo}/${path}:`, error);
+    return null;
+  }
+}
+
+// Fetch repository structure recursively
+export async function getRepositoryStructure(owner: string, repo: string, path: string = '', maxDepth: number = 3): Promise<any[]> {
+  if (maxDepth <= 0) return [];
+  
+  try {
+    const contents = await getRepositoryContent(owner, repo, path);
+    if (!contents || !Array.isArray(contents)) return [];
+
+    const structure = [];
+    
+    for (const item of contents) {
+      if (item.type === 'dir') {
+        // Recursively fetch directory contents
+        const subContents = await getRepositoryStructure(owner, repo, item.path, maxDepth - 1);
+        structure.push({
+          name: item.name,
+          path: item.path,
+          type: 'directory',
+          children: subContents
+        });
+      } else if (item.type === 'file') {
+        // Fetch file content for key files (small files only)
+        let content = null;
+        if (item.size < 50000) { // Only fetch files smaller than 50KB
+          try {
+            const fileResponse = await fetch(item.download_url, {
+              headers: getGitHubHeaders()
+            });
+            if (fileResponse.ok) {
+              content = await fileResponse.text();
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch file content for ${item.path}:`, error);
+          }
+        }
+        
+        structure.push({
+          name: item.name,
+          path: item.path,
+          type: 'file',
+          size: item.size,
+          language: getLanguageFromExtension(item.name),
+          content: content
+        });
+      }
+    }
+    
+    return structure;
+  } catch (error) {
+    console.error(`Failed to fetch repository structure for ${owner}/${repo}:`, error);
+    return [];
+  }
+}
+
+// Helper function to get language from file extension
+function getLanguageFromExtension(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const languageMap: Record<string, string> = {
+    'js': 'JavaScript',
+    'ts': 'TypeScript',
+    'jsx': 'JavaScript',
+    'tsx': 'TypeScript',
+    'py': 'Python',
+    'java': 'Java',
+    'cpp': 'C++',
+    'c': 'C',
+    'go': 'Go',
+    'rs': 'Rust',
+    'php': 'PHP',
+    'rb': 'Ruby',
+    'swift': 'Swift',
+    'kt': 'Kotlin',
+    'scala': 'Scala',
+    'html': 'HTML',
+    'css': 'CSS',
+    'scss': 'SCSS',
+    'json': 'JSON',
+    'xml': 'XML',
+    'yaml': 'YAML',
+    'yml': 'YAML',
+    'md': 'Markdown',
+    'sql': 'SQL',
+    'sh': 'Shell',
+    'dockerfile': 'Docker',
+    'vue': 'Vue',
+    'svelte': 'Svelte'
+  };
+  
+  return languageMap[ext || ''] || 'Unknown';
+}
+
 // Fetch real community statistics from GitHub API
 export async function getCommunityStats(useCache = true): Promise<CommunityStats> {
   if (useCache && communityStatsCache) {

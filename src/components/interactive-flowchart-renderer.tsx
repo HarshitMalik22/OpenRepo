@@ -1160,6 +1160,182 @@ export default function InteractiveFlowchartRenderer({
     return icons[type] || icons.component;
   };
 
+  // Enhanced shape drawing functions for proper flowchart appearance
+  const drawRectangle = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number = 8) => {
+    ctx.beginPath();
+    ctx.roundRect(x - width/2, y - height/2, width, height, radius);
+  };
+
+  const drawDiamond = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) => {
+    ctx.beginPath();
+    ctx.moveTo(x, y - height/2); // Top
+    ctx.lineTo(x + width/2, y); // Right
+    ctx.lineTo(x, y + height/2); // Bottom
+    ctx.lineTo(x - width/2, y); // Left
+    ctx.closePath();
+  };
+
+  const drawCylinder = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) => {
+    const radius = width / 2;
+    const ellipseHeight = height * 0.15;
+    
+    // Top ellipse
+    ctx.beginPath();
+    ctx.ellipse(x, y - height/2 + ellipseHeight/2, radius, ellipseHeight/2, 0, 0, 2 * Math.PI);
+    
+    // Left side
+    ctx.lineTo(x - radius, y + height/2 - ellipseHeight/2);
+    
+    // Bottom ellipse (back half)
+    ctx.ellipse(x, y + height/2 - ellipseHeight/2, radius, ellipseHeight/2, 0, Math.PI, 2 * Math.PI, true);
+    
+    // Right side
+    ctx.lineTo(x + radius, y - height/2 + ellipseHeight/2);
+    
+    // Top ellipse (front half)
+    ctx.ellipse(x, y - height/2 + ellipseHeight/2, radius, ellipseHeight/2, 0, 0, Math.PI);
+    
+    // Draw the visible bottom ellipse
+    ctx.moveTo(x - radius, y + height/2 - ellipseHeight/2);
+    ctx.ellipse(x, y + height/2 - ellipseHeight/2, radius, ellipseHeight/2, 0, 0, Math.PI);
+  };
+
+  const drawParallelogram = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, skew: number = 15) => {
+    ctx.beginPath();
+    ctx.moveTo(x - width/2 + skew, y - height/2); // Top left
+    ctx.lineTo(x + width/2 + skew, y - height/2); // Top right
+    ctx.lineTo(x + width/2 - skew, y + height/2); // Bottom right
+    ctx.lineTo(x - width/2 - skew, y + height/2); // Bottom left
+    ctx.closePath();
+  };
+
+  const drawCircle = (ctx: CanvasRenderingContext2D, x: number, y: number, radius: number) => {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  };
+
+  const drawHexagon = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) => {
+    const radius = Math.min(width, height) / 2;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i - Math.PI / 2;
+      const px = x + radius * Math.cos(angle);
+      const py = y + radius * Math.sin(angle);
+      if (i === 0) {
+        ctx.moveTo(px, py);
+      } else {
+        ctx.lineTo(px, py);
+      }
+    }
+    ctx.closePath();
+  };
+
+  const drawRoundedSidesRectangle = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number = 20) => {
+    ctx.beginPath();
+    ctx.moveTo(x - width/2 + radius, y - height/2); // Top left start
+    ctx.lineTo(x + width/2 - radius, y - height/2); // Top right start
+    ctx.quadraticCurveTo(x + width/2, y - height/2, x + width/2, y - height/2 + radius); // Top right curve
+    ctx.lineTo(x + width/2, y + height/2 - radius); // Bottom right start
+    ctx.quadraticCurveTo(x + width/2, y + height/2, x + width/2 - radius, y + height/2); // Bottom right curve
+    ctx.lineTo(x - width/2 + radius, y + height/2); // Bottom left start
+    ctx.quadraticCurveTo(x - width/2, y + height/2, x - width/2, y + height/2 - radius); // Bottom left curve
+    ctx.lineTo(x - width/2, y - height/2 + radius); // Top left start
+    ctx.quadraticCurveTo(x - width/2, y - height/2, x - width/2 + radius, y - height/2); // Top left curve
+    ctx.closePath();
+  };
+
+  const drawNodeShape = (ctx: CanvasRenderingContext2D, node: FlowchartNode, x: number, y: number, width: number, height: number) => {
+    switch (node.type) {
+      case 'entry':
+        // Terminal/Start shape - rounded rectangle with more rounded corners
+        drawRectangle(ctx, x, y, width, height, Math.min(width, height) * 0.3);
+        break;
+      case 'component':
+        // Process shape - standard rectangle
+        drawRectangle(ctx, x, y, width, height, 8);
+        break;
+      case 'module':
+        // Predefined process - rectangle with double sides
+        drawRoundedSidesRectangle(ctx, x, y, width, height, 12);
+        break;
+      case 'service':
+        // Service - hexagon shape
+        drawHexagon(ctx, x, y, width, height);
+        break;
+      case 'database':
+        // Data storage - cylinder shape
+        drawCylinder(ctx, x, y, width, height);
+        break;
+      case 'external':
+        // External entity - parallelogram
+        drawParallelogram(ctx, x, y, width, height, 20);
+        break;
+      case 'config':
+        // Configuration - parallelogram (input/output)
+        drawParallelogram(ctx, x, y, width, height, 15);
+        break;
+      case 'api':
+        // API endpoint - diamond (decision-like)
+        drawDiamond(ctx, x, y, width, height);
+        break;
+      case 'hook':
+        // Hook - circle
+        drawCircle(ctx, x, y, Math.min(width, height) / 2);
+        break;
+      case 'util':
+        // Utility - standard rectangle
+        drawRectangle(ctx, x, y, width, height, 6);
+        break;
+      case 'test':
+        // Test - inverted parallelogram
+        drawParallelogram(ctx, x, y, width, height, -15);
+        break;
+      default:
+        // Default to rectangle
+        drawRectangle(ctx, x, y, width, height, 8);
+        break;
+    }
+  };
+
+  const getNodeTextPosition = (node: FlowchartNode, x: number, y: number, width: number, height: number) => {
+    switch (node.type) {
+      case 'database':
+        // For cylinder, center text in the middle
+        return { x, y };
+      case 'hook':
+        // For circle, center text
+        return { x, y };
+      case 'api':
+        // For diamond, center text
+        return { x, y };
+      default:
+        // For most shapes, center text
+        return { x, y };
+    }
+  };
+
+  const getNodeTextBounds = (node: FlowchartNode, width: number, height: number) => {
+    switch (node.type) {
+      case 'database':
+        // Cylinder has less usable width due to curves
+        return { width: width * 0.8, height: height * 0.6 };
+      case 'hook':
+        // Circle has less usable space
+        return { width: width * 0.7, height: height * 0.7 };
+      case 'api':
+        // Diamond has less usable space
+        return { width: width * 0.7, height: height * 0.7 };
+      case 'external':
+      case 'config':
+      case 'test':
+        // Parallelograms have slightly less space
+        return { width: width * 0.85, height: height * 0.8 };
+      default:
+        // Rectangles and hexagons use full space
+        return { width: width * 0.9, height: height * 0.8 };
+    }
+  };
+
   // Initialize flowchart data with better error handling
   useEffect(() => {
     console.log('InteractiveFlowchartRenderer received chart:', chart);
@@ -1273,25 +1449,50 @@ export default function InteractiveFlowchartRenderer({
         const isHighlighted = highlightedNodes.includes(edge.from) || highlightedNodes.includes(edge.to);
         const isSelected = selectedNode && (edge.from === selectedNode.id || edge.to === selectedNode.id);
         
-        // View mode specific edge styling
-        if (viewMode === 'focused') {
-          ctx.strokeStyle = isSelected ? '#fbbf24' : '#3b82f6';
-          ctx.lineWidth = isSelected ? 4 : 3;
-        } else if (viewMode === 'detailed') {
-          ctx.strokeStyle = isHighlighted ? '#fbbf24' : '#6b7280';
-          ctx.lineWidth = isHighlighted ? 3 : 2;
-        } else {
-          // Architecture mode
-          ctx.strokeStyle = isHighlighted ? '#fbbf24' : '#9ca3af';
-          ctx.lineWidth = isHighlighted ? 3 : 1;
-        }
-        
         // Calculate intelligent edge routing to minimize crossings
         const edgePath = calculateOptimalEdgePath(fromNode, toNode, nodesToRender, edgesToRender);
         
-        // Draw edge with optimal path
+        // Enhanced view mode specific edge styling with gradients
+        let strokeColor, lineWidth;
+        if (viewMode === 'focused') {
+          strokeColor = isSelected ? '#f59e0b' : '#3b82f6';
+          lineWidth = isSelected ? 4 : 3;
+        } else if (viewMode === 'detailed') {
+          strokeColor = isHighlighted ? '#f59e0b' : '#6b7280';
+          lineWidth = isHighlighted ? 3 : 2;
+        } else {
+          // Architecture mode
+          strokeColor = isHighlighted ? '#f59e0b' : '#9ca3af';
+          lineWidth = isHighlighted ? 3 : 1;
+        }
+        
+        // Create gradient for edge line
+        const edgeGradient = ctx.createLinearGradient(
+          edgePath.start.x, edgePath.start.y,
+          edgePath.end.x, edgePath.end.y
+        );
+        edgeGradient.addColorStop(0, strokeColor);
+        edgeGradient.addColorStop(0.5, isSelected || isHighlighted ? '#fbbf24' : strokeColor);
+        edgeGradient.addColorStop(1, strokeColor);
+        
+        ctx.strokeStyle = edgeGradient;
+        ctx.lineWidth = lineWidth;
+        
+        // Add shadow for selected/highlighted edges
+        if (isSelected || isHighlighted) {
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+          ctx.shadowBlur = 3;
+          ctx.shadowOffsetX = 1;
+          ctx.shadowOffsetY = 1;
+        }
+        
+        // Draw edge with optimal path and anti-aliasing
         ctx.beginPath();
         ctx.moveTo(edgePath.start.x, edgePath.start.y);
+        
+        // Enable anti-aliasing for smoother lines
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         
         if (edgePath.controlPoints.length === 1) {
           // Simple quadratic curve
@@ -1318,19 +1519,34 @@ export default function InteractiveFlowchartRenderer({
         
         ctx.stroke();
 
-        // Draw improved arrowhead
+        // Draw enhanced arrowhead with better styling
         const lastControlPoint = edgePath.controlPoints[edgePath.controlPoints.length - 1];
         const angle = Math.atan2(
           edgePath.end.y - (lastControlPoint ? lastControlPoint.y : edgePath.start.y),
           edgePath.end.x - (lastControlPoint ? lastControlPoint.x : edgePath.start.x)
         );
-        const arrowLength = 12;
-        const arrowWidth = 8;
+        
+        // Dynamic arrow sizing based on view mode and selection
+        const baseArrowLength = viewMode === 'architecture' ? 10 : 14;
+        const baseArrowWidth = viewMode === 'architecture' ? 6 : 10;
+        const arrowLength = isSelected ? baseArrowLength * 1.3 : baseArrowLength;
+        const arrowWidth = isSelected ? baseArrowWidth * 1.3 : baseArrowWidth;
         
         // Arrow position is already calculated in edgePath.end
         const arrowX = edgePath.end.x;
         const arrowY = edgePath.end.y;
         
+        ctx.save();
+        
+        // Add shadow for selected arrows
+        if (isSelected) {
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+          ctx.shadowBlur = 4;
+          ctx.shadowOffsetX = 1;
+          ctx.shadowOffsetY = 1;
+        }
+        
+        // Draw filled arrowhead
         ctx.beginPath();
         ctx.moveTo(arrowX, arrowY);
         ctx.lineTo(
@@ -1342,8 +1558,25 @@ export default function InteractiveFlowchartRenderer({
           arrowY - arrowLength * Math.sin(angle + Math.PI / 6)
         );
         ctx.closePath();
-        ctx.fillStyle = ctx.strokeStyle;
+        
+        // Fill with gradient for better visual appeal
+        const arrowGradient = ctx.createLinearGradient(
+          arrowX, arrowY,
+          arrowX - arrowLength * Math.cos(angle),
+          arrowY - arrowLength * Math.sin(angle)
+        );
+        arrowGradient.addColorStop(0, strokeColor);
+        arrowGradient.addColorStop(1, isSelected ? '#f59e0b' : '#60a5fa');
+        
+        ctx.fillStyle = arrowGradient;
         ctx.fill();
+        
+        // Add subtle stroke for definition
+        ctx.strokeStyle = isSelected ? '#d97706' : '#3b82f6';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        ctx.restore();
         
         // Add edge label if present
         if (edge.label) {
@@ -1402,19 +1635,68 @@ export default function InteractiveFlowchartRenderer({
         fontSize = 11;
       }
 
-      // Node shadow
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-      ctx.shadowBlur = viewMode === 'focused' ? 15 : 10;
-      ctx.shadowOffsetX = 2;
-      ctx.shadowOffsetY = 2;
+      // Enhanced node shadow with state-specific effects
+      if (isSelected) {
+        // Pulsing glow effect for selected nodes
+        const pulseIntensity = 0.3 + 0.2 * Math.sin(Date.now() * 0.003);
+        ctx.shadowColor = `rgba(251, 191, 36, ${pulseIntensity})`;
+        ctx.shadowBlur = 20 + pulseIntensity * 10;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      } else if (isHighlighted) {
+        // Softer glow for highlighted nodes
+        ctx.shadowColor = 'rgba(96, 165, 250, 0.4)';
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+      } else {
+        // Standard shadow for normal nodes
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+        ctx.shadowBlur = viewMode === 'focused' ? 12 : 8;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+      }
 
-      // Node background with view mode specific styling
+      // Node background with enhanced view mode specific styling
       if (viewMode === 'focused') {
-        ctx.fillStyle = isSelected ? '#fbbf24' : (isHighlighted ? '#60a5fa' : color);
+        if (isSelected) {
+          // Gradient fill for selected nodes
+          const gradient = ctx.createRadialGradient(
+            node.x, node.y, 0,
+            node.x, node.y, Math.max(nodeWidth, nodeHeight) / 2
+          );
+          gradient.addColorStop(0, '#fde047');
+          gradient.addColorStop(1, '#fbbf24');
+          ctx.fillStyle = gradient;
+        } else if (isHighlighted) {
+          // Gradient fill for highlighted nodes
+          const gradient = ctx.createRadialGradient(
+            node.x, node.y, 0,
+            node.x, node.y, Math.max(nodeWidth, nodeHeight) / 2
+          );
+          gradient.addColorStop(0, '#93c5fd');
+          gradient.addColorStop(1, '#60a5fa');
+          ctx.fillStyle = gradient;
+        } else {
+          ctx.fillStyle = color;
+        }
+        
         ctx.strokeStyle = isSelected ? '#ffffff' : (isHighlighted ? '#3b82f6' : color);
         ctx.lineWidth = isSelected ? 4 : (isHighlighted ? 3 : 2);
       } else if (viewMode === 'detailed') {
-        ctx.fillStyle = isHighlighted ? '#fbbf24' : color;
+        if (isHighlighted) {
+          // Subtle gradient for highlighted nodes
+          const gradient = ctx.createLinearGradient(
+            node.x - nodeWidth/2, node.y - nodeHeight/2,
+            node.x + nodeWidth/2, node.y + nodeHeight/2
+          );
+          gradient.addColorStop(0, '#fde047');
+          gradient.addColorStop(1, '#fbbf24');
+          ctx.fillStyle = gradient;
+        } else {
+          ctx.fillStyle = color;
+        }
+        
         ctx.strokeStyle = isSelected ? '#ffffff' : (isHighlighted ? '#f59e0b' : color);
         ctx.lineWidth = isSelected ? 3 : (isHighlighted ? 3 : 2);
       } else {
@@ -1423,22 +1705,55 @@ export default function InteractiveFlowchartRenderer({
         ctx.strokeStyle = isSelected ? '#ffffff' : (isHighlighted ? '#f59e0b' : color);
         ctx.lineWidth = isSelected ? 3 : (isHighlighted ? 2 : 1);
       }
-      const radius = 8;
-
-      // Draw rounded rectangle
-      ctx.beginPath();
-      ctx.roundRect(node.x - nodeWidth/2, node.y - nodeHeight/2, nodeWidth, nodeHeight, radius);
+      // Draw proper flowchart shape based on node type
+      drawNodeShape(ctx, node, node.x, node.y, nodeWidth, nodeHeight);
       ctx.fill();
       ctx.stroke();
+
+      // Add selection ring for selected nodes
+      if (isSelected) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(251, 191, 36, 0.6)';
+        ctx.shadowBlur = 8;
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        
+        // Draw selection ring slightly larger than the node
+        const ringPadding = 8;
+        drawNodeShape(ctx, node, node.x, node.y, nodeWidth + ringPadding * 2, nodeHeight + ringPadding * 2);
+        ctx.stroke();
+        
+        ctx.restore();
+      }
 
       // Reset shadow
       ctx.shadowColor = 'transparent';
 
-      // Node text with view mode specific styling
-      ctx.fillStyle = (viewMode === 'focused' && isSelected) || isHighlighted ? '#000000' : '#ffffff';
+      // Enhanced node text with view mode specific styling
+      if (isSelected) {
+        // Text shadow for selected nodes
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 2;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+        ctx.fillStyle = '#000000';
+      } else if (isHighlighted) {
+        ctx.fillStyle = '#000000';
+      } else {
+        ctx.fillStyle = '#ffffff';
+      }
+      
+      // Enhanced font styling
       ctx.font = `${fontSize}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      
+      // Add text stroke for better readability on colored backgrounds
+      if (isSelected || isHighlighted) {
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      }
       
       // View mode specific text content
       let displayText = node.label;
@@ -1452,27 +1767,39 @@ export default function InteractiveFlowchartRenderer({
         displayText = node.label.length > 15 ? node.label.substring(0, 12) + '...' : node.label;
       }
       
+      // Get text position and bounds based on node shape
+      const textPosition = getNodeTextPosition(node, node.x, node.y, nodeWidth, nodeHeight);
+      const textBounds = getNodeTextBounds(node, nodeWidth, nodeHeight);
+      const maxWidth = textBounds.width;
+      
       // Wrap text if too long
-      const maxWidth = nodeWidth - 20;
       const lines = displayText.split('\n');
       
       lines.forEach((line, lineIndex) => {
         const words = line.split(' ');
         let textLine = '';
-        let y = node.y - (lines.length - 1) * 8 + lineIndex * 16;
+        let y = textPosition.y - (lines.length - 1) * 8 + lineIndex * 16;
         
         for (let i = 0; i < words.length; i++) {
           const testLine = textLine + words[i] + ' ';
           const metrics = ctx.measureText(testLine);
           if (metrics.width > maxWidth && i > 0) {
-            ctx.fillText(textLine, node.x, y);
+            // Draw stroke first for selected/highlighted nodes
+            if (isSelected || isHighlighted) {
+              ctx.strokeText(textLine, textPosition.x, y);
+            }
+            ctx.fillText(textLine, textPosition.x, y);
             textLine = words[i] + ' ';
             y += 16;
           } else {
             textLine = testLine;
           }
         }
-        ctx.fillText(textLine, node.x, y);
+        // Draw stroke first for selected/highlighted nodes
+        if (isSelected || isHighlighted) {
+          ctx.strokeText(textLine, textPosition.x, y);
+        }
+        ctx.fillText(textLine, textPosition.x, y);
       });
     });
 
@@ -1554,6 +1881,147 @@ export default function InteractiveFlowchartRenderer({
     setScale(newScale);
   };
 
+  // Shape-aware click detection functions
+  const isPointInRectangle = (px: number, py: number, x: number, y: number, width: number, height: number, radius: number = 8) => {
+    // Simple rectangular bounds check for performance
+    if (px < x - width/2 || px > x + width/2 || py < y - height/2 || py > y + height/2) {
+      return false;
+    }
+    
+    // For rounded rectangles, check distance from corners
+    if (radius > 0) {
+      const corners = [
+        { x: x - width/2 + radius, y: y - height/2 + radius },
+        { x: x + width/2 - radius, y: y - height/2 + radius },
+        { x: x - width/2 + radius, y: y + height/2 - radius },
+        { x: x + width/2 - radius, y: y + height/2 - radius }
+      ];
+      
+      for (const corner of corners) {
+        const dist = Math.sqrt((px - corner.x) ** 2 + (py - corner.y) ** 2);
+        if (dist > radius) {
+          // Point is in the corner area but outside the rounded corner
+          const inCornerArea = 
+            (px < x - width/2 + radius && py < y - height/2 + radius) ||
+            (px > x + width/2 - radius && py < y - height/2 + radius) ||
+            (px < x - width/2 + radius && py > y + height/2 - radius) ||
+            (px > x + width/2 - radius && py > y + height/2 - radius);
+          
+          if (inCornerArea) {
+            return false;
+          }
+        }
+      }
+    }
+    
+    return true;
+  };
+
+  const isPointInDiamond = (px: number, py: number, x: number, y: number, width: number, height: number) => {
+    // Transform point to diamond coordinate system
+    const dx = (px - x) / (width / 2);
+    const dy = (py - y) / (height / 2);
+    
+    // Check if point is inside diamond using Manhattan distance
+    return Math.abs(dx) + Math.abs(dy) <= 1;
+  };
+
+  const isPointInCylinder = (px: number, py: number, x: number, y: number, width: number, height: number) => {
+    // Check if point is within the main rectangular body
+    if (px < x - width/2 || px > x + width/2 || py < y - height/2 || py > y + height/2) {
+      return false;
+    }
+    
+    // For simplicity, treat cylinder as rectangle for click detection
+    // Could be enhanced with elliptical top/bottom detection if needed
+    return true;
+  };
+
+  const isPointInParallelogram = (px: number, py: number, x: number, y: number, width: number, height: number, skew: number = 15) => {
+    // Transform point to parallelogram coordinate system
+    const relX = px - x;
+    const relY = py - y;
+    
+    // Check if point is inside parallelogram using edge equations
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+    
+    // Calculate the four edges
+    const topEdge = relY <= -halfHeight + (skew / halfWidth) * (relX + skew);
+    const bottomEdge = relY >= halfHeight - (skew / halfWidth) * (relX - skew);
+    const leftEdge = relX >= -halfWidth + (skew / halfHeight) * (relY + skew);
+    const rightEdge = relX <= halfWidth - (skew / halfHeight) * (relY - skew);
+    
+    return topEdge && bottomEdge && leftEdge && rightEdge;
+  };
+
+  const isPointInCircle = (px: number, py: number, x: number, y: number, radius: number) => {
+    const distance = Math.sqrt((px - x) ** 2 + (py - y) ** 2);
+    return distance <= radius;
+  };
+
+  const isPointInHexagon = (px: number, py: number, x: number, y: number, width: number, height: number) => {
+    const radius = Math.min(width, height) / 2;
+    const distance = Math.sqrt((px - x) ** 2 + (py - y) ** 2);
+    
+    // Quick distance check
+    if (distance > radius) {
+      return false;
+    }
+    
+    // Check if point is within hexagon using angle-based approach
+    const angle = Math.atan2(py - y, px - x);
+    const normalizedAngle = ((angle + Math.PI / 2) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    const sector = Math.floor(normalizedAngle / (Math.PI / 3));
+    const sectorAngle = normalizedAngle - sector * (Math.PI / 3);
+    
+    // Distance to hexagon edge at this angle
+    const maxDistance = radius * Math.cos(Math.PI / 6) / Math.cos(sectorAngle - Math.PI / 6);
+    
+    return distance <= maxDistance;
+  };
+
+  const isPointInNodeShape = (px: number, py: number, node: FlowchartNode, width: number, height: number) => {
+    switch (node.type) {
+      case 'entry':
+        // Terminal/Start shape - rounded rectangle with more rounded corners
+        return isPointInRectangle(px, py, node.x, node.y, width, height, Math.min(width, height) * 0.3);
+      case 'component':
+        // Process shape - standard rectangle
+        return isPointInRectangle(px, py, node.x, node.y, width, height, 8);
+      case 'module':
+        // Predefined process - rectangle with double sides
+        return isPointInRectangle(px, py, node.x, node.y, width, height, 12);
+      case 'service':
+        // Service - hexagon shape
+        return isPointInHexagon(px, py, node.x, node.y, width, height);
+      case 'database':
+        // Data storage - cylinder shape
+        return isPointInCylinder(px, py, node.x, node.y, width, height);
+      case 'external':
+        // External entity - parallelogram
+        return isPointInParallelogram(px, py, node.x, node.y, width, height, 20);
+      case 'config':
+        // Configuration - parallelogram (input/output)
+        return isPointInParallelogram(px, py, node.x, node.y, width, height, 15);
+      case 'api':
+        // API endpoint - diamond (decision-like)
+        return isPointInDiamond(px, py, node.x, node.y, width, height);
+      case 'hook':
+        // Hook - circle
+        return isPointInCircle(px, py, node.x, node.y, Math.min(width, height) / 2);
+      case 'util':
+        // Utility - standard rectangle
+        return isPointInRectangle(px, py, node.x, node.y, width, height, 6);
+      case 'test':
+        // Test - inverted parallelogram
+        return isPointInParallelogram(px, py, node.x, node.y, width, height, -15);
+      default:
+        // Default to rectangle
+        return isPointInRectangle(px, py, node.x, node.y, width, height, 8);
+    }
+  };
+
   const handleCanvasClick = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1562,17 +2030,25 @@ export default function InteractiveFlowchartRenderer({
     const x = (e.clientX - rect.left - offset.x) / scale;
     const y = (e.clientY - rect.top - offset.y) / scale;
 
-    // Find clicked node
+    // Find clicked node using shape-aware detection
     const clickedNode = flowchartData.nodes.find(node => {
       if (!node.x || !node.y) return false;
-      const nodeWidth = 120;
-      const nodeHeight = 60;
-      return (
-        x >= node.x - nodeWidth/2 &&
-        x <= node.x + nodeWidth/2 &&
-        y >= node.y - nodeHeight/2 &&
-        y <= node.y + nodeHeight/2
-      );
+      
+      // Use view mode specific sizing
+      let nodeWidth, nodeHeight;
+      if (viewMode === 'focused') {
+        nodeWidth = selectedNode?.id === node.id ? 160 : 140;
+        nodeHeight = selectedNode?.id === node.id ? 80 : 70;
+      } else if (viewMode === 'detailed') {
+        nodeWidth = 130;
+        nodeHeight = 65;
+      } else {
+        // Architecture mode
+        nodeWidth = 110;
+        nodeHeight = 55;
+      }
+      
+      return isPointInNodeShape(x, y, node, nodeWidth, nodeHeight);
     });
 
     if (clickedNode) {

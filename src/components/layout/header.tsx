@@ -24,9 +24,6 @@ export default function Header() {
           <Link href="/repos" className="text-muted-foreground hover:text-foreground transition-colors">
             Discover
           </Link>
-          <Link href="/contribute" className="text-muted-foreground hover:text-foreground transition-colors">
-            Contribute
-          </Link>
           <Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
             Profile
           </Link>
@@ -37,17 +34,11 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-4">
           <ClerkComponentsWrapper>
             <SignedOut>
-              <Button variant="ghost" asChild>
-                <Link href="/contribute">Start Contributing</Link>
-              </Button>
               <SignInButton mode="modal">
                 <Button>Sign In</Button>
               </SignInButton>
             </SignedOut>
             <SignedIn>
-              <Button variant="ghost" asChild>
-                <Link href="/contribute">Start Contributing</Link>
-              </Button>
               <UserButton afterSignOutUrl="/" />
             </SignedIn>
           </ClerkComponentsWrapper>

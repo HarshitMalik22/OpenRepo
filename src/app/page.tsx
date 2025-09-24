@@ -59,8 +59,8 @@ export default async function Home() {
             Smarter. Faster.
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mt-6 leading-relaxed">
-            Discover, analyze, and contribute to open-source projects with AI-powered recommendations, 
-            guided workflows, and advanced filtering. Your journey to becoming an open source contributor starts here.
+            Discover and analyze open-source projects with AI-powered recommendations, 
+            advanced filtering, and comprehensive insights. Your journey to exploring open source starts here.
           </p>
           <div className="mt-10 flex flex-col items-center gap-8 animate-slide-up">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -68,12 +68,6 @@ export default async function Home() {
                 <Link href="/onboarding">
                   Get Started
                   <ArrowRight className="h-5 w-5" />
-                </Link>
-              </Button>
-              <Button asChild variant="glass" size="lg" className="gap-2">
-                <Link href="/contribute">
-                  Start Contributing
-                  <BookOpen className="h-5 w-5" />
                 </Link>
               </Button>
             </div>
@@ -248,8 +242,8 @@ export default async function Home() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                Never contributed before? Follow our step-by-step guide that walks you through 
-                the entire contribution process, from finding issues to submitting pull requests.
+                New to open source? Explore our comprehensive analysis tools that help you understand 
+                project structure, code quality, and contribution opportunities.
               </p>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
@@ -265,12 +259,6 @@ export default async function Home() {
                   <span>Progress tracking</span>
                 </div>
               </div>
-              <Button variant="outline" className="w-full mt-4" asChild>
-                <Link href="/contribute">
-                  Start Contributing
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
-              </Button>
             </CardContent>
           </Card>
 
@@ -355,21 +343,15 @@ export default async function Home() {
             <CardContent className="p-8">
               <h3 className="text-xl font-semibold mb-4">Ready to Make Your Mark?</h3>
               <p className="text-muted-foreground mb-6">
-                Join thousands of developers who have successfully contributed to open source projects 
+                Join thousands of developers who explore open source projects 
                 through OpenSauce. Whether you're a beginner or an experienced developer, we have 
-                the perfect project waiting for you.
+                the perfect projects waiting for you.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild size="lg" className="shadow-glass hover:shadow-glass-lg">
                   <Link href="/onboarding">
                     Get Started
                     <ArrowRight className="h-5 w-5 ml-2" />
-                  </Link>
-                </Button>
-                <Button asChild variant="glass" size="lg">
-                  <Link href="/contribute">
-                    Browse Projects
-                    <Target className="h-5 w-5 ml-2" />
                   </Link>
                 </Button>
               </div>

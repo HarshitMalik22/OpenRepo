@@ -11,11 +11,16 @@
 
 import {ai, isAIConfigured} from '@/ai/genkit';
 import {z} from 'genkit';
+import { getRepositoryStructure } from '@/lib/github';
+import { extractOwnerAndRepo } from '@/lib/utils';
 
 const RenderInteractiveFlowchartInputSchema = z.object({
   repoUrl: z.string().describe('The URL of the repository to explain.'),
   techStack: z.array(z.string()).describe('The tech stack used in the repository.'),
   goal: z.string().describe('The learning goal of the user.'),
+  repositoryStructure: z.array(z.any()).optional().describe('The actual repository structure with files and folders.'),
+  owner: z.string().optional().describe('The repository owner.'),
+  repo: z.string().optional().describe('The repository name.'),
 });
 export type RenderInteractiveFlowchartInput = z.infer<typeof RenderInteractiveFlowchartInputSchema>;
 
@@ -117,28 +122,51 @@ const renderInteractiveFlowchartPrompt = ai.definePrompt({
   name: 'renderInteractiveFlowchartPrompt',
   input: {schema: RenderInteractiveFlowchartInputSchema},
   output: {schema: RenderInteractiveFlowchartOutputSchema},
-  prompt: `You are an AI expert in explaining open-source repositories with VSCode extension-level depth analysis. Given the following repository URL, tech stack, and learning goal, generate a comprehensive Mermaid.js flowchart diagram and detailed explanation of the repository's architecture.
+  prompt: `You are an AI expert in explaining open-source repositories with VSCode extension-level depth analysis. Given the following repository URL, tech stack, learning goal, and ACTUAL repository structure, generate a comprehensive Mermaid.js flowchart diagram and detailed explanation of the repository's REAL architecture.
 
 Repository URL: {{{repoUrl}}}
+Repository Owner: {{{owner}}}
+Repository Name: {{{repo}}}
 Tech Stack: {{#each techStack}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
 Learning Goal: {{{goal}}}
+
+## ACTUAL REPOSITORY STRUCTURE (Real Data):
+{{#if repositoryStructure}}
+  {{#each repositoryStructure}}
+    - {{this.name}} ({{this.type}}){{#if this.language}} - {{this.language}}{{/if}}{{#if this.path}} - Path: {{this.path}}{{/if}}
+    {{#if this.children}}
+      {{#each this.children}}
+        - {{this.name}} ({{this.type}}){{#if this.language}} - {{this.language}}{{/if}}{{#if this.path}} - Path: {{this.path}}{{/if}}
+      {{/each}}
+    {{/if}}
+  {{/each}}
+{{/if}}
+
+## CRITICAL INSTRUCTIONS:
+1. **BASE THE FLOWCHART ON THE ACTUAL REPOSITORY STRUCTURE** - Use the real file and folder structure shown above to create an accurate flowchart
+2. **ANALYZE REAL COMPONENTS** - Identify actual entry points, services, utilities, databases, and external APIs from the real repository structure
+3. **USE REAL FILE PATHS** - Reference actual file paths and component names from the repository
+4. **CREATE ACCURATE ARCHITECTURE** - Generate a flowchart that reflects the true architecture of this specific repository, not a generic template
 
 Ensure the flowchart and explanation are tailored to the specified tech stack and learning goal.
 
 ## VSCode Extension-Level Analysis Requirements:
 
-### 1. Flowchart Structure (Mermaid.js)
-Output the flowchart as a Mermaid.js diagram with these advanced requirements:
+### 1. Flowchart Structure (Enhanced Mermaid.js)
+Output the flowchart as a Mermaid.js diagram with these enhanced requirements for visual differentiation:
 - Use "graph TD" (top-down) as the diagram type
-- Use comprehensive node shapes and types:
-  * [text] for components
-  * (text) for modules/hooks
-  * {text} for databases/APIs
-  * >text] for entry points
-  * [[text]] for utilities
-  * [(text)] for external services
-  * [/text/] for configuration files
-  * [\text\] for test files
+- Use DISTINCTIVE node shapes for different component types:
+  * [text] for standard components and services
+  * >text] for entry points and main controllers
+  * {text} for databases and data stores
+  * [[text]] for utilities and helper functions
+  * [(text)] for external APIs and third-party services
+  * (text) for modules, hooks, and internal functions
+  * [/text/] for configuration files and settings
+  * [\text\] for test files and testing components
+  * <<text>> for interfaces and abstract types
+  * {{text}} for state management and stores
+  * ((text)) for logging and monitoring
 - Use --> for arrows between nodes with descriptive labels when helpful
 - Each node should have a clear, descriptive label indicating its purpose
 - Organize nodes in logical architectural layers (entry → components → services → data)
@@ -208,7 +236,7 @@ Each resource must have these fields:
 
 Example output structure:
 {
-  "flowchartMermaid": "graph TD\n    AppEntry[App Entry Point] --> AuthService[Auth Service]\n    AuthService --> UserAPI[User API]\n    UserAPI --> PostgreSQL[(PostgreSQL)]\n    AuthService --> JWTUtil[[JWT Utility]]\n    UserAPI --> Cache[Redis Cache]",
+  "flowchartMermaid": "graph TD\n    AppEntry>App Entry Point] --> MainController[Main Controller]\n    MainController --> AuthService[Auth Service]\n    MainController --> UserAPI[User API]\n    UserAPI --> PostgreSQL[(PostgreSQL)]\n    AuthService --> JWTUtil[[JWT Utility]]\n    UserAPI --> Cache[Redis Cache]\n    MainController --> Logger((Logger))\n    UserAPI --> ErrorHandler[Error Handler]\n    ErrorHandler --> LogService[[Log Service]]\n    MainController --> Config[/Config/]\n    AuthService --> StateStore{{State Store}}\n    UserAPI --> ExternalAPI[(External API]]",
   "explanation": [
     {
       "component": "Auth Service",
@@ -246,7 +274,30 @@ const renderInteractiveFlowchartFlow = ai.defineFlow(
   async input => {
     console.log('Executing AI flow with input:', input);
     try {
-      const {output} = await renderInteractiveFlowchartPrompt(input);
+      // Extract owner and repo from URL
+      const repoInfo = extractOwnerAndRepo(input.repoUrl);
+      if (!repoInfo) {
+        throw new Error('Invalid repository URL format');
+      }
+      
+      console.log('Extracted repo info:', repoInfo);
+      
+      // Fetch actual repository structure and content
+      console.log('Fetching repository structure...');
+      const repoStructure = await getRepositoryStructure(repoInfo.owner, repoInfo.repo, '', 3);
+      console.log('Repository structure fetched:', repoStructure?.length || 0, 'items');
+      
+      // Create enhanced input with real repository data
+      const enhancedInput = {
+        ...input,
+        repositoryStructure: repoStructure,
+        owner: repoInfo.owner,
+        repo: repoInfo.repo
+      };
+      
+      console.log('Enhanced input prepared for AI');
+      
+      const {output} = await renderInteractiveFlowchartPrompt(enhancedInput);
       console.log('AI flow output received:', output);
       
       if (!output) {
