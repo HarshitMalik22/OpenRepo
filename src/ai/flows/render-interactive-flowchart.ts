@@ -165,7 +165,7 @@ Output the flowchart as a Mermaid.js diagram with these enhanced requirements fo
   * [/text/] for configuration files and settings
   * [\text\] for test files and testing components
   * <<text>> for interfaces and abstract types
-  * {{text}} for state management and stores
+  * \{\{text\}\} for state management and stores
   * ((text)) for logging and monitoring
 - Use --> for arrows between nodes with descriptive labels when helpful
 - Each node should have a clear, descriptive label indicating its purpose
@@ -236,7 +236,7 @@ Each resource must have these fields:
 
 Example output structure:
 {
-  "flowchartMermaid": "graph TD\n    AppEntry>App Entry Point] --> MainController[Main Controller]\n    MainController --> AuthService[Auth Service]\n    MainController --> UserAPI[User API]\n    UserAPI --> PostgreSQL[(PostgreSQL)]\n    AuthService --> JWTUtil[[JWT Utility]]\n    UserAPI --> Cache[Redis Cache]\n    MainController --> Logger((Logger))\n    UserAPI --> ErrorHandler[Error Handler]\n    ErrorHandler --> LogService[[Log Service]]\n    MainController --> Config[/Config/]\n    AuthService --> StateStore{{State Store}}\n    UserAPI --> ExternalAPI[(External API]]",
+  "flowchartMermaid": "graph TD\n    AppEntry>App Entry Point] --> MainController[Main Controller]\n    MainController --> AuthService[Auth Service]\n    MainController --> UserAPI[User API]\n    UserAPI --> PostgreSQL[(PostgreSQL)]\n    AuthService --> JWTUtil[[JWT Utility]]\n    UserAPI --> Cache[Redis Cache]\n    MainController --> Logger((Logger))\n    UserAPI --> ErrorHandler[Error Handler]\n    ErrorHandler --> LogService[[Log Service]]\n    MainController --> Config[/Config/]\n    AuthService --> StateStore\\{\\{State Store\\}\\}\n    UserAPI --> ExternalAPI[(External API)]",
   "explanation": [
     {
       "component": "Auth Service",
@@ -262,7 +262,7 @@ Example output structure:
     { "type": "video", "title": "JWT Authentication Explained", "url": "https://youtube.com/watch?v=..." },
     { "type": "tool", "title": "VSCode REST Client", "url": "https://marketplace.visualstudio.com/..." }
   ]
-}`,
+}`
 });
 
 const renderInteractiveFlowchartFlow = ai.defineFlow(
@@ -311,3 +311,4 @@ const renderInteractiveFlowchartFlow = ai.defineFlow(
     }
   }
 );
+

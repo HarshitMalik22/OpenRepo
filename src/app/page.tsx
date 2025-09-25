@@ -23,6 +23,7 @@ import { getPopularRepos } from '@/lib/github';
 import GithubRepoSearch from '@/components/github-repo-search';
 import EnhancedRepoCard from '@/components/enhanced-repo-card';
 import RepositoryImage from '@/components/repository-image';
+import GitHubStatusIndicator from '@/components/github-status-indicator';
 import type { Repository } from '@/lib/types';
 
 export default async function Home() {
@@ -50,6 +51,11 @@ export default async function Home() {
 
   return (
     <div className="space-y-32 mb-32 min-h-screen">
+      {/* GitHub Status Indicator */}
+      <div className="container mx-auto pt-8">
+        <GitHubStatusIndicator />
+      </div>
+      
       {/* Hero Section */}
       <section className="container mx-auto text-center py-24 md:py-40 relative overflow-hidden">
         <div className="relative z-10 animate-fade-in">

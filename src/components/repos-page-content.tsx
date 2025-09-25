@@ -49,6 +49,8 @@ function ReposPageContentClient() {
   const [userStats, setUserStats] = useState<any>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [filterError, setFilterError] = useState<string | null>(null);
   
   const [filters, setFilters] = useState<RepositoryFilters>({
     searchQuery: '',
@@ -173,18 +175,39 @@ function ReposPageContentClient() {
 
   useEffect(() => {
     const applyFilters = async () => {
-      if (Object.keys(filters).some(key => {
+      const hasActiveFilters = Object.keys(filters).some(key => {
         const value = filters[key as keyof RepositoryFilters];
         return Array.isArray(value) ? value.length > 0 : Boolean(value);
-      })) {
+      });
+      
+      if (!hasActiveFilters) {
+        setFilteredRepos(allRepos);
+        setFilterError(null);
+        return;
+      }
+      
+      setIsFiltering(true);
+      setFilterError(null);
+      
+      try {
         const filtered = await getFilteredRepos(filters);
         setFilteredRepos(filtered);
-      } else {
+        
+        if (filtered.length === 0) {
+          setFilterError('No repositories match your filters. Try adjusting your criteria.');
+        }
+      } catch (error) {
+        console.error('Filtering error:', error);
+        setFilterError('Failed to apply filters. Showing all repositories instead.');
         setFilteredRepos(allRepos);
+      } finally {
+        setIsFiltering(false);
       }
     };
     
-    applyFilters();
+    // Add debounce to avoid excessive API calls
+    const timeoutId = setTimeout(applyFilters, 300);
+    return () => clearTimeout(timeoutId);
   }, [filters, allRepos]);
 
   const handleFiltersChange = (newFilters: RepositoryFilters) => {
@@ -416,10 +439,32 @@ function ReposPageContentClient() {
             </Button>
           </div>
           
+          {/* Loading and Error States */}
+          {isFiltering && (
+            <div className="flex items-center justify-center py-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                <span>Applying filters...</span>
+              </div>
+            </div>
+          )}
+          
+          {filterError && (
+            <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm">{filterError}</span>
+              </div>
+            </div>
+          )}
+          
           <EnhancedRepoFilters
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onClearFilters={handleClearFilters}
+            disabled={isFiltering}
           />
         </div>
       </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import type { Repository } from '@/lib/types';
-import { renderInteractiveFlowchart, type RenderInteractiveFlowchartOutput } from '@/ai/flows/render-interactive-flowchart';
+import { dynamicArchitectureAnalysis, type DynamicArchitectureAnalysisOutput } from '@/ai/flows/dynamic-architecture-analysis';
 import { saveRepositoryAnalysisClient, getRepositoryAnalysisClient, trackUserInteractionClient } from '@/lib/database-client';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Video, BookOpen, FileCode, AlertTriangle, BrainCircuit, ExternalLink } from 'lucide-react';
-import InteractiveFlowchartRenderer from '@/components/interactive-flowchart-renderer';
+import DynamicFlowchartRenderer from '@/components/dynamic-flowchart-renderer';
 import EnhancedComponentExplorer from '@/components/enhanced-component-explorer';
 import SmartLoadingStates from '@/components/smart-loading-states';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +32,7 @@ const getResourceIcon = (type: string) => {
 export default function RepoExplanationClient({ repository }: RepoExplanationClientProps) {
     const [isClient, setIsClient] = useState(false);
     const [user, setUser] = useState<any>(null);
-    const [aiData, setAiData] = useState<RenderInteractiveFlowchartOutput | null>(null);
+    const [aiData, setAiData] = useState<DynamicArchitectureAnalysisOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isExplanationVisible, setIsExplanationVisible] = useState(false);
@@ -43,13 +43,18 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
         setIsClient(true);
     }, []);
 
-    // Only use Clerk hooks on client side
+    // Check Clerk availability on client side
     useEffect(() => {
         if (isClient) {
             try {
-                const { useUser } = require('@clerk/nextjs');
-                const { user: clerkUser } = useUser();
-                setUser(clerkUser);
+                // Check if Clerk is available by checking for the auth object
+                const clerkAuth = (window as any)?.Clerk?.session;
+                if (clerkAuth) {
+                    // Clerk is available, we'll get user info when needed
+                    setUser({ id: 'clerk-user', isAuthenticated: true });
+                } else {
+                    setUser(null);
+                }
             } catch (error) {
                 console.warn('Clerk not available:', error);
                 setUser(null);
@@ -72,10 +77,10 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                         if (cachedAnalysis) {
                             console.log('Using cached analysis from database');
                             setAiData({
-                                flowchartMermaid: (cachedAnalysis.content as any).flowchartMermaid,
-                                explanation: (cachedAnalysis.content as any).explanation,
-                                resources: (cachedAnalysis.content as any).resources,
-                                architectureInsights: (cachedAnalysis.content as any).insights,
+                                flowchartData: (cachedAnalysis.content as any).flowchartData,
+                                architectureInsights: (cachedAnalysis.content as any).architectureInsights,
+                                mermaidChart: (cachedAnalysis.content as any).mermaidChart,
+                                analysisSummary: (cachedAnalysis.content as any).analysisSummary,
                             });
                             setIsLoading(false);
                             return;
@@ -97,35 +102,51 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                 
                 // Call AI service with timeout
                 const timeoutPromise = new Promise((_, reject) => {
-                  setTimeout(() => reject(new Error('AI service timeout')), 30000); // 30 second timeout
+                  setTimeout(() => reject(new Error('AI service timeout')), 60000); // 60 second timeout
                 });
                 
                 try {
                   console.log('Starting AI service call...');
                   const startTime = Date.now();
                   
-                  const aiPromise = renderInteractiveFlowchart({
+                  const aiPromise = dynamicArchitectureAnalysis({
                     repoUrl: repository.html_url,
                     techStack,
-                    goal
+                    goal,
+                    includeMetrics: true,
+                    optimizeLayout: true
                   });
                   
-                  const data = await Promise.race([aiPromise, timeoutPromise]) as RenderInteractiveFlowchartOutput;
+                  const data = await Promise.race([aiPromise, timeoutPromise]) as DynamicArchitectureAnalysisOutput;
                   
                   const endTime = Date.now();
                   console.log(`AI analysis generated successfully in ${endTime - startTime}ms:`, data);
                   
                   // Validate the AI response
-                  if (!data || !data.flowchartMermaid || !data.explanation) {
+                  if (!data || !data.flowchartData || !data.architectureInsights) {
                     throw new Error('Invalid AI response format');
                   }
                   
                   setAiData(data);
                   
+                  // Automatically show the analysis after successful generation
+                  setIsExplanationVisible(true);
+                  
                   // Save analysis to database if user is authenticated
                   if (user) {
                     try {
-                      await saveRepositoryAnalysisClient(user.id, repository.full_name, aiData);
+                      // Transform the AI data to match the expected database format
+                      const transformedAnalysis = {
+                        flowchartMermaid: data.mermaidChart || '',
+                        explanation: {
+                          flowchartData: data.flowchartData,
+                          architectureInsights: data.architectureInsights,
+                          analysisSummary: data.analysisSummary
+                        },
+                        resources: data.architectureInsights?.complexityAnalysis?.refactoringSuggestions || []
+                      };
+                      
+                      await saveRepositoryAnalysisClient(user.id, repository.full_name, transformedAnalysis);
                       console.log('Analysis saved to database');
                     } catch (dbError) {
                       console.error('Failed to save analysis to database:', dbError);
@@ -157,7 +178,7 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
 
         // Track user interaction
         if (user) {
-            trackUserInteractionClient(user.id, repository.full_name, 'view_ai_analysis', {}).catch(console.error);
+            trackUserInteractionClient(user.id, repository.full_name, 'analyze', 1, {}).catch(console.error);
         }
         generateExplanation();
     }, [repository, isClient, isExplanationVisible, user]);
@@ -172,6 +193,20 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
                         The repository information is not available. Please try again or select a different repository.
                     </AlertDescription>
                 </Alert>
+            </div>
+        );
+    }
+    
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                    <h3 className="text-lg font-semibold">Generating Repository Analysis</h3>
+                    <p className="text-muted-foreground">
+                        Analyzing code structure and generating interactive flowchart...
+                    </p>
+                </div>
             </div>
         );
     }
@@ -277,27 +312,50 @@ export default function RepoExplanationClient({ repository }: RepoExplanationCli
         );
     }
 
+    // Map architecture node types to component explorer types
+    const mapNodeType = (nodeType: string): 'component' | 'service' | 'config' | 'hook' | 'module' | 'utility' => {
+        switch (nodeType) {
+            case 'component':
+            case 'entry':
+            case 'api':
+                return 'component';
+            case 'service':
+            case 'database':
+                return 'service';
+            case 'config':
+                return 'config';
+            case 'hook':
+                return 'hook';
+            case 'external':
+            case 'util':
+                return 'utility';
+            case 'test':
+            default:
+                return 'module';
+        }
+    };
+
     // Transform AI data to enhanced component format
-    const enhancedComponents = aiData.explanation.map((item, index) => ({
-        id: `component-${index}`,
-        name: item.component,
-        type: 'component' as const,
-        description: item.description,
+    const enhancedComponents = (aiData.flowchartData?.nodes || []).map((node, index) => ({
+        id: node.id,
+        name: node.label,
+        type: mapNodeType(node.type),
+        description: `Component of type ${node.type} located at ${node.filePath || 'unknown path'}`,
         codeSnippet: {
             language: 'typescript',
-            code: `// Example implementation for ${item.component}
-function ${item.component.replace(/\s+/g, '')}() {
-    // Implementation details
-    console.log('${item.description}');
+            code: `// Implementation for ${node.label}
+function ${node.label.replace(/\s+/g, '')}() {
+    // Component implementation
+    console.log('${node.type} component: ${node.label}');
     
     return {
         status: 'active',
-        type: '${item.component.toLowerCase()}'
+        type: '${node.type}'
     };
 }`,
             highlightedLines: [2, 3, 4]
         },
-        filePath: `src/components/${item.component.toLowerCase().replace(/\s+/g, '-')}.tsx`,
+        filePath: node.filePath || `src/components/${node.label.toLowerCase().replace(/\s+/g, '-')}.tsx`,
         lineNumbers: {
             start: 1,
             end: 10
@@ -312,7 +370,7 @@ function ${item.component.replace(/\s+/g, '')}() {
             reason: 'Core functionality component'
         },
         relatedComponents: [],
-        tags: [item.component.toLowerCase(), 'core', 'essential']
+        tags: [node.label.toLowerCase(), 'core', 'essential']
     }));
 
     return (
@@ -338,12 +396,14 @@ function ${item.component.replace(/\s+/g, '')}() {
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="flowchart">Interactive Flowchart</TabsTrigger>
                     <TabsTrigger value="components">Component Explorer</TabsTrigger>
-                    <TabsTrigger value="resources">Learning Resources</TabsTrigger>
+                    <TabsTrigger value="insights">Architecture Insights</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="flowchart" className="space-y-6">
-                    <InteractiveFlowchartRenderer
-                        chart={aiData.flowchartMermaid}
+                    <DynamicFlowchartRenderer
+                        flowchartData={aiData.flowchartData || { nodes: [], connections: [] }}
+                        architectureInsights={aiData.architectureInsights || {}}
+                        analysisSummary={aiData.analysisSummary || ''}
                         repository={repository}
                         onNodeClick={(node) => {
                             setSelectedNode(node);
@@ -369,44 +429,105 @@ function ${item.component.replace(/\s+/g, '')}() {
                     />
                 </TabsContent>
 
-                <TabsContent value="resources" className="space-y-6">
+                <TabsContent value="insights" className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Learning Resources</CardTitle>
+                            <CardTitle>Architecture Insights</CardTitle>
                             <CardDescription>
-                                Curated resources to help you understand this repository better
+                                AI-powered analysis of repository architecture and recommendations
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {aiData.resources.map((resource, index) => (
-                                    <Card key={index} className="hover:shadow-md transition-shadow">
-                                        <CardContent className="p-4">
-                                            <div className="flex items-start gap-3">
-                                                <div className="p-2 bg-primary/10 rounded-lg">
-                                                    {getResourceIcon(resource.type)}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h3 className="font-medium mb-1">{resource.title}</h3>
-                                                    <Badge variant="outline" className="mb-2">
-                                                        {resource.type}
-                                                    </Badge>
-                                                    <Button 
-                                                        variant="outline" 
-                                                        size="sm" 
-                                                        className="w-full"
-                                                        asChild
-                                                    >
-                                                        <a href={resource.url} target="_blank" rel="noopener noreferrer">
-                                                            <ExternalLink className="w-4 h-4 mr-2" />
-                                                            Open Resource
-                                                        </a>
-                                                    </Button>
-                                                </div>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 className="font-medium mb-2">Complexity Analysis</h4>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-sm text-muted-foreground">High Complexity Components</span>
+                                            <Badge variant={(aiData.architectureInsights?.complexityAnalysis?.highComplexityComponents?.length || 0) > 3 ? 'destructive' : 'secondary'}>
+                                                {aiData.architectureInsights?.complexityAnalysis?.highComplexityComponents?.length || 0}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm text-muted-foreground">Refactoring Suggestions</span>
+                                            <Badge variant="outline">
+                                                {aiData.architectureInsights?.complexityAnalysis?.refactoringSuggestions?.length || 0}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 className="font-medium mb-2">Architecture Overview</h4>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-sm text-muted-foreground">Design Patterns</span>
+                                            <Badge variant="default">
+                                                {aiData.architectureInsights?.designPatterns?.length || 0}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm text-muted-foreground">External Dependencies</span>
+                                            <Badge variant="outline">
+                                                {aiData.architectureInsights?.integrations?.length || 0}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 className="font-medium mb-2">Refactoring Suggestions</h4>
+                                <div className="space-y-2">
+                                    {(aiData.architectureInsights?.complexityAnalysis?.refactoringSuggestions || []).map((suggestion, index) => (
+                                        <div key={index} className="text-sm p-2 border rounded-lg">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-medium">{suggestion.component}</span>
+                                                <Badge variant={suggestion.priority === 'high' ? 'destructive' : suggestion.priority === 'medium' ? 'default' : 'secondary'}>
+                                                    {suggestion.priority}
+                                                </Badge>
                                             </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
+                                            <div className="flex items-start gap-2">
+                                                <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                                                {suggestion.suggestion}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 className="font-medium mb-2">Design Patterns</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {(aiData.architectureInsights?.designPatterns || []).map((pattern, index) => (
+                                        <Badge key={index} variant="outline">
+                                            {pattern}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 className="font-medium mb-2">Architecture Insights</h4>
+                                <div className="space-y-3 text-sm">
+                                    <div>
+                                        <strong>Data Flow:</strong> {aiData.architectureInsights?.dataFlow || 'Not analyzed'}
+                                    </div>
+                                    <div>
+                                        <strong>Error Handling:</strong> {aiData.architectureInsights?.errorHandling || 'Not analyzed'}
+                                    </div>
+                                    <div>
+                                        <strong>Scalability:</strong> {aiData.architectureInsights?.scalability || 'Not analyzed'}
+                                    </div>
+                                    <div>
+                                        <strong>Performance:</strong> {aiData.architectureInsights?.performance || 'Not analyzed'}
+                                    </div>
+                                    <div>
+                                        <strong>Security:</strong> {aiData.architectureInsights?.security || 'Not analyzed'}
+                                    </div>
+                                    <div>
+                                        <strong>Deployment:</strong> {aiData.architectureInsights?.deployment || 'Not analyzed'}
+                                    </div>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

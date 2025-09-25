@@ -32,9 +32,9 @@ export default function RootLayout({
         </head>
         <body suppressHydrationWarning={true}>
           <ReactQueryProvider>
-            <div className="font-body antialiased min-h-screen flex flex-col">
+            <div className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning={true}>
               <Header />
-              <main className="flex-grow">
+              <main>
                 {children}
               </main>
               <Footer />

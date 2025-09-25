@@ -255,10 +255,80 @@ export function getUserStats(userId: string) {
   return enhancedRecommendationEngine.getUserStats(userId);
 }
 
-// Get filtered repositories based on filters
+// Client-side cache for filtered results
+const filterCache = new Map<string, { repositories: Repository[]; timestamp: number }>();
+const FILTER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Generate cache key from filters
+function getFilterCacheKey(filters: RepositoryFilters): string {
+  return JSON.stringify(filters);
+}
+
+// Check if cache is valid
+function isCacheValid(timestamp: number): boolean {
+  return Date.now() - timestamp < FILTER_CACHE_TTL;
+}
+
+// Get filtered repositories based on filters with client-side caching
 export async function getFilteredRepos(filters: RepositoryFilters): Promise<Repository[]> {
-  const allRepos = await getPopularRepos();
-  return filterRepositories(allRepos, filters);
+  const cacheKey = getFilterCacheKey(filters);
+  
+  // Check cache first
+  const cached = filterCache.get(cacheKey);
+  if (cached && isCacheValid(cached.timestamp)) {
+    console.log('Using cached filtered results');
+    return cached.repositories;
+  }
+  
+  try {
+    const response = await fetch('/api/repositories/filter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(filters),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const repositories = data.repositories || [];
+    
+    // Cache the results
+    filterCache.set(cacheKey, {
+      repositories,
+      timestamp: Date.now()
+    });
+    
+    // Clean up old cache entries
+    if (filterCache.size > 20) {
+      const now = Date.now();
+      for (const [key, value] of filterCache.entries()) {
+        if (!isCacheValid(value.timestamp)) {
+          filterCache.delete(key);
+        }
+      }
+    }
+    
+    if (data.isFallback) {
+      console.warn('Using fallback results due to filtering error:', data.error);
+    }
+    
+    return repositories;
+  } catch (error) {
+    console.error('Error filtering repositories:', error);
+    
+    // Fallback: try to get unfiltered repositories
+    try {
+      const repos = await getPopularRepos(true);
+      return repos.slice(0, 20); // Limit to avoid overwhelming the UI
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError);
+      return [];
+    }
+  }
 }
 
 // Fetches details for a single repository from the GitHub API with enhanced data
@@ -312,26 +382,69 @@ export async function getRepo(fullName: string, useCache = true): Promise<Reposi
 // Fetch repository file structure and content
 export async function getRepositoryContent(owner: string, repo: string, path: string = '', useCache = true): Promise<any> {
   const cacheKey = `${owner}/${repo}/${path}`;
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  
+  console.log(`Fetching GitHub content: ${url}`);
   
   try {
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-      headers: getGitHubHeaders()
+    const headers = getGitHubHeaders();
+    console.log('GitHub headers:', JSON.stringify(headers, null, 2));
+    
+    const response = await fetch(url, {
+      headers
     });
 
+    console.log(`GitHub API response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      console.error(`GitHub API response not OK for ${owner}/${repo}/${path}:`, await response.text());
-      return null;
+      const errorText = await response.text();
+      const errorData = {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: errorText
+      };
+      
+      console.error(`GitHub API response not OK for ${owner}/${repo}/${path}:`, errorData);
+      
+      // Handle specific error cases
+      if (response.status === 403) {
+        // Rate limit exceeded
+        const resetTime = response.headers.get('X-RateLimit-Reset');
+        const resetDate = resetTime ? new Date(parseInt(resetTime) * 1000).toLocaleString() : 'unknown';
+        const errorMessage = `GitHub API rate limit exceeded. Try again after ${resetDate}. Consider adding a GITHUB_TOKEN environment variable for higher rate limits.`;
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+      } else if (response.status === 404) {
+        // Repository not found
+        throw new Error(`Repository ${owner}/${repo} not found or is private.`);
+      } else if (response.status === 401) {
+        // Authentication failed
+        throw new Error(`GitHub authentication failed. Check your GITHUB_TOKEN environment variable.`);
+      } else {
+        // Other errors
+        throw new Error(`GitHub API error (${response.status}): ${response.statusText}`);
+      }
     }
 
     const data = await response.json();
+    console.log(`GitHub API response successful for ${owner}/${repo}/${path}:`, {
+      type: Array.isArray(data) ? 'array' : typeof data,
+      length: Array.isArray(data) ? data.length : 'N/A'
+    });
+    
     return data;
   } catch (error) {
-    console.error(`Failed to fetch repository content for ${owner}/${repo}/${path}:`, error);
+    console.error(`Failed to fetch repository content for ${owner}/${repo}/${path}:`, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      url
+    });
     return null;
   }
 }
 
-// Fetch repository structure recursively
+// Fetch repository structure recursively with optimized performance
 export async function getRepositoryStructure(owner: string, repo: string, path: string = '', maxDepth: number = 3): Promise<any[]> {
   if (maxDepth <= 0) return [];
   
@@ -341,20 +454,33 @@ export async function getRepositoryStructure(owner: string, repo: string, path: 
 
     const structure = [];
     
-    for (const item of contents) {
+    // Process items in parallel for better performance
+    const processingPromises = contents.map(async (item) => {
       if (item.type === 'dir') {
-        // Recursively fetch directory contents
-        const subContents = await getRepositoryStructure(owner, repo, item.path, maxDepth - 1);
-        structure.push({
-          name: item.name,
-          path: item.path,
-          type: 'directory',
-          children: subContents
-        });
+        // Limit directory depth to prevent excessive API calls
+        if (maxDepth > 1) {
+          const subContents = await getRepositoryStructure(owner, repo, item.path, maxDepth - 1);
+          return {
+            name: item.name,
+            path: item.path,
+            type: 'dir',
+            children: subContents
+          };
+        } else {
+          // For deeper levels, just return directory info without contents
+          return {
+            name: item.name,
+            path: item.path,
+            type: 'dir',
+            children: []
+          };
+        }
       } else if (item.type === 'file') {
-        // Fetch file content for key files (small files only)
+        // Always include file metadata, but only fetch content for relevant files
         let content = null;
-        if (item.size < 50000) { // Only fetch files smaller than 50KB
+        const isRelevantFile = isRelevantFileForAnalysis(item.name);
+        
+        if (isRelevantFile && item.size && item.size < 100000) { // Increased size limit to 100KB
           try {
             const fileResponse = await fetch(item.download_url, {
               headers: getGitHubHeaders()
@@ -367,22 +493,63 @@ export async function getRepositoryStructure(owner: string, repo: string, path: 
           }
         }
         
-        structure.push({
+        return {
           name: item.name,
           path: item.path,
           type: 'file',
           size: item.size,
           language: getLanguageFromExtension(item.name),
-          content: content
-        });
+          content: content,
+          relevant: isRelevantFile
+        };
+      }
+      return null;
+    });
+    
+    const results = await Promise.all(processingPromises);
+    
+    // Filter out null results and return structure
+    return results.filter(item => item !== null);
+  } catch (error) {
+    console.error(`Failed to fetch repository structure for ${owner}/${repo}:`, error);
+    
+    // Re-throw specific errors with more context
+    if (error instanceof Error) {
+      if (error.message.includes('rate limit exceeded')) {
+        throw new Error(`Repository analysis failed due to GitHub API rate limits. ${error.message}`);
+      } else if (error.message.includes('not found or is private')) {
+        throw new Error(`Repository analysis failed: ${error.message}`);
+      } else if (error.message.includes('authentication failed')) {
+        throw new Error(`Repository analysis failed: ${error.message}`);
       }
     }
     
-    return structure;
-  } catch (error) {
-    console.error(`Failed to fetch repository structure for ${owner}/${repo}:`, error);
+    // For other errors, return empty structure to allow analysis to continue with limited data
+    console.warn(`Returning empty structure due to error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return [];
   }
+}
+
+// Helper function to determine if a file is relevant for analysis
+function isRelevantFileForAnalysis(filename: string): boolean {
+  const relevantExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.go', '.rs', '.json', '.md', '.html', '.css', '.scss', '.yml', '.yaml'];
+  const irrelevantPatterns = [
+    'node_modules', '.git', 'dist', 'build', 'coverage', 
+    '.min.', '.bundle.', 'vendor/',
+    'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml'
+  ];
+  
+  // Always include important configuration and documentation files
+  const importantFiles = [
+    'package.json', 'tsconfig.json', 'jest.config.js', 'webpack.config.js',
+    'vite.config.js', 'next.config.js', 'nuxt.config.js', 'tailwind.config.js',
+    'README.md', 'LICENSE', '.env.example', 'Dockerfile', 'docker-compose.yml'
+  ];
+  
+  // Include if it has a relevant extension OR is an important file
+  return (relevantExtensions.some(ext => filename.endsWith(ext)) ||
+          importantFiles.some(important => filename === important)) &&
+         !irrelevantPatterns.some(pattern => filename.includes(pattern));
 }
 
 // Helper function to get language from file extension

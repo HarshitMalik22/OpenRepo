@@ -34,12 +34,14 @@ interface EnhancedRepoFiltersProps {
   filters: RepositoryFilters;
   onFiltersChange: (filters: RepositoryFilters) => void;
   onClearFilters: () => void;
+  disabled?: boolean;
 }
 
 export default function EnhancedRepoFilters({ 
   filters, 
   onFiltersChange, 
-  onClearFilters 
+  onClearFilters,
+  disabled = false
 }: EnhancedRepoFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -87,6 +89,7 @@ export default function EnhancedRepoFilters({
           value={filters.searchQuery || ''}
           onChange={(e) => updateFilter('searchQuery', e.target.value)}
           className="pl-10"
+          disabled={disabled}
         />
       </div>
 
@@ -95,7 +98,7 @@ export default function EnhancedRepoFilters({
         {/* Tech Stack Filter */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" disabled={disabled}>
               <Target className="w-4 h-4 mr-2" />
               Tech Stack 
               <ChevronDown className="ml-2 h-4 w-4" />
@@ -122,7 +125,7 @@ export default function EnhancedRepoFilters({
         {/* Competition Level Filter */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" disabled={disabled}>
               <Trophy className="w-4 h-4 mr-2" />
               Competition 
               <ChevronDown className="ml-2 h-4 w-4" />
@@ -152,7 +155,7 @@ export default function EnhancedRepoFilters({
         {/* Activity Level Filter */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" disabled={disabled}>
               <Activity className="w-4 h-4 mr-2" />
               Activity 
               <ChevronDown className="ml-2 h-4 w-4" />
@@ -182,7 +185,7 @@ export default function EnhancedRepoFilters({
         {/* AI Domain Filter */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" disabled={disabled}>
               <Zap className="w-4 h-4 mr-2" />
               AI Domain 
               <ChevronDown className="ml-2 h-4 w-4" />

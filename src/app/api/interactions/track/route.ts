@@ -14,7 +14,10 @@ export async function POST(request: NextRequest) {
     
     const interaction = await trackUserInteraction(userId, repoFullName, type, score, metadata);
     
-    return NextResponse.json(interaction);
+    return NextResponse.json({
+      success: true,
+      result: interaction
+    });
   } catch (error) {
     console.error('Error tracking user interaction:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

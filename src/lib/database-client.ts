@@ -55,14 +55,14 @@ export async function saveRepositoryAnalysisClient(userId: string, repoFullName:
   }
 }
 
-export async function trackUserInteractionClient(userId: string, repoFullName: string, action: string, metadata?: any) {
+export async function trackUserInteractionClient(userId: string, repoFullName: string, type: 'view' | 'like' | 'dislike' | 'contribute' | 'analyze' | 'search' | 'filter', score?: number, metadata?: any) {
   try {
     const response = await fetch('/api/interactions/track', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ repoFullName, action, metadata }),
+      body: JSON.stringify({ repoFullName, type, score, metadata }),
       cache: 'no-store',
     });
 

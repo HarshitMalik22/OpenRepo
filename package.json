@@ -16,6 +16,10 @@
     "db:cleanup": "tsx scripts/database-cleanup.ts"
   },
   "dependencies": {
+    "@babel/generator": "^7.28.3",
+    "@babel/parser": "^7.28.4",
+    "@babel/traverse": "^7.28.4",
+    "@babel/types": "^7.28.4",
     "@clerk/nextjs": "^6.32.0",
     "@genkit-ai/googleai": "^1.14.1",
     "@genkit-ai/next": "^1.14.1",

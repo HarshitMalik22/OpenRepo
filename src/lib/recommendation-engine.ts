@@ -1,27 +1,40 @@
 import type { Repository, UserPreferences, RecommendationScore, CompetitionLevel, ActivityLevel, AIDomain, ContributionDifficulty } from './types';
 
-// Tech stack mapping for better matching
+// Tech stack mapping for better matching - expanded to be more inclusive
 const techStackMappings: Record<string, string[]> = {
-  'react': ['react', 'jsx', 'tsx', 'nextjs', 'gatsby', 'remix'],
-  'vue': ['vue', 'nuxt', 'vuex'],
-  'angular': ['angular', 'ng', 'typescript'],
-  'nodejs': ['nodejs', 'javascript', 'typescript', 'express', 'nest', 'koa'],
-  'python': ['python', 'django', 'flask', 'fastapi', 'pytorch', 'tensorflow'],
-  'django': ['django', 'python'],
-  'flask': ['flask', 'python'],
-  'fastapi': ['fastapi', 'python'],
-  'tensorflow': ['tensorflow', 'ml', 'ai', 'python'],
-  'pytorch': ['pytorch', 'ml', 'ai', 'python'],
-  'rust': ['rust', 'cargo', 'actix', 'rocket'],
-  'go': ['go', 'golang', 'gin', 'echo'],
-  'typescript': ['typescript', 'ts', 'javascript'],
-  'nextjs': ['nextjs', 'react', 'vercel'],
-  'svelte': ['svelte', 'sveltekit'],
-  'tailwind': ['tailwind', 'css', 'styling'],
-  'docker': ['docker', 'container', 'devops'],
-  'kubernetes': ['kubernetes', 'k8s', 'container', 'orchestration'],
-  'graphql': ['graphql', 'gql', 'api', 'query'],
-  'ml': ['machine-learning', 'ai', 'ml', 'tensorflow', 'pytorch', 'sklearn'],
+  'react': ['react', 'jsx', 'tsx', 'nextjs', 'gatsby', 'remix', 'react-native', 'reactjs', 'create-react-app'],
+  'vue': ['vue', 'nuxt', 'vuex', 'vuejs', 'vue-router', 'vite'],
+  'angular': ['angular', 'ng', 'typescript', 'angularjs', 'ionic'],
+  'nodejs': ['nodejs', 'javascript', 'typescript', 'express', 'nest', 'koa', 'hapi', 'fastify', 'npm', 'yarn'],
+  'python': ['python', 'django', 'flask', 'fastapi', 'pytorch', 'tensorflow', 'pandas', 'numpy', 'scipy', 'selenium', 'requests'],
+  'django': ['django', 'python', 'djangorestframework', 'django-rest-framework'],
+  'flask': ['flask', 'python', 'flask-sqlalchemy', 'flask-restful'],
+  'fastapi': ['fastapi', 'python', 'uvicorn', 'pydantic'],
+  'tensorflow': ['tensorflow', 'ml', 'ai', 'python', 'keras', 'tensorboard'],
+  'pytorch': ['pytorch', 'ml', 'ai', 'python', 'torch', 'torchvision', 'torchaudio'],
+  'rust': ['rust', 'cargo', 'actix', 'rocket', 'tokio', 'serde'],
+  'go': ['go', 'golang', 'gin', 'echo', 'gorilla', 'grpc', 'protobuf'],
+  'typescript': ['typescript', 'ts', 'javascript', 'js', 'deno', 'node'],
+  'nextjs': ['nextjs', 'react', 'vercel', 'next', 'next-auth'],
+  'svelte': ['svelte', 'sveltekit', 'sapper', 'sveltejs'],
+  'tailwind': ['tailwind', 'css', 'styling', 'postcss', 'windicss'],
+  'docker': ['docker', 'container', 'devops', 'compose', 'kubernetes', 'podman'],
+  'kubernetes': ['kubernetes', 'k8s', 'container', 'orchestration', 'helm', 'istio', 'minikube'],
+  'graphql': ['graphql', 'gql', 'api', 'query', 'apollo', 'relay', 'prisma'],
+  'ml': ['machine-learning', 'ai', 'ml', 'tensorflow', 'pytorch', 'sklearn', 'scikit-learn', 'pandas', 'numpy'],
+  'java': ['java', 'spring', 'hibernate', 'maven', 'gradle', 'quarkus', 'micronaut'],
+  'javascript': ['javascript', 'js', 'nodejs', 'npm', 'yarn', 'webpack', 'babel', 'vite'],
+  'php': ['php', 'laravel', 'symfony', 'wordpress', 'drupal', 'composer'],
+  'ruby': ['ruby', 'rails', 'sinatra', 'rack', 'bundler', 'gem'],
+  'c++': ['c++', 'cpp', 'stl', 'boost', 'cmake', 'makefile'],
+  'c#': ['c#', 'csharp', '.net', 'aspnet', 'entity-framework', 'nuget'],
+  'swift': ['swift', 'ios', 'macos', 'xcode', 'uikit', 'swiftui'],
+  'kotlin': ['kotlin', 'android', 'jetpack', 'gradle', 'ktor'],
+  'android': ['android', 'kotlin', 'java', 'jetpack', 'gradle', 'sdk'],
+  'ios': ['ios', 'swift', 'objective-c', 'xcode', 'uikit', 'swiftui'],
+  'aws': ['aws', 'amazon', 'ec2', 's3', 'lambda', 'cloudformation', 'dynamodb'],
+  'blockchain': ['blockchain', 'ethereum', 'bitcoin', 'solidity', 'web3', 'defi'],
+  'ai': ['ai', 'artificial-intelligence', 'machine-learning', 'ml', 'deep-learning', 'neural-network'],
 };
 
 // AI domain classification based on repository characteristics
@@ -236,62 +249,175 @@ export const getPersonalizedRecommendations = (
 };
 
 // Filter repositories based on filters
-export const filterRepositories = (
+export function filterRepositories(
   repositories: Repository[], 
   filters: Partial<import('./types').RepositoryFilters>
-): Repository[] => {
-  console.log('Filtering repositories with filters:', filters);
-  console.log('Total repositories before filtering:', repositories.length);
+): Repository[] {
+  console.log('🔍 [FILTER] Starting filter process with filters:', filters);
+  console.log(`📊 [FILTER] Total repositories before filtering: ${repositories.length}`);
+  
+  // If no filters are applied, return all repositories
+  const hasActiveFilters = Object.values(filters).some(value => 
+    Array.isArray(value) ? value.length > 0 : Boolean(value)
+  );
+  
+  if (!hasActiveFilters) {
+    console.log('⚡ [FILTER] No active filters, returning all repositories');
+    return repositories;
+  }
+  
+  console.log('✅ [FILTER] Active filters detected, starting filtering process');
   
   const filtered = repositories.filter(repo => {
-    // Tech stack filter
+    let matchScore = 0;
+    let requiredMatches = 0;
+    
+    // Tech stack filter (optional but increases score)
     if (filters.techStack && filters.techStack.length > 0) {
-      const repoText = `${repo.name} ${repo.description || ''} ${repo.topics.join(' ')}`.toLowerCase();
+      requiredMatches++;
+      const repoText = `${repo.name} ${repo.description || ''} ${repo.topics.join(' ')} ${repo.language || ''}`.toLowerCase();
+      
       const hasMatchingTech = filters.techStack.some(tech => {
         const techLower = tech.toLowerCase();
         const hasDirectMatch = repoText.includes(techLower);
         const hasMappedMatch = techStackMappings[techLower]?.some(keyword => repoText.includes(keyword));
-        const match = hasDirectMatch || hasMappedMatch;
         
-        if (match) {
-          console.log(`Tech stack match found for ${tech} in repo: ${repo.name}`);
+        // Add partial matching for better results
+        const hasPartialMatch = techLower.length > 3 && 
+          repoText.split(' ').some(word => word.includes(techLower.substring(0, 4)) || 
+                                  techLower.includes(word.substring(0, Math.min(4, word.length))));
+        
+        const finalMatch = hasDirectMatch || hasMappedMatch || hasPartialMatch;
+        
+        // Debug logging for tech stack matching
+        if (finalMatch) {
+          console.log(`✅ [FILTER] Tech match found: ${tech} for repo ${repo.name} (direct: ${hasDirectMatch}, mapped: ${hasMappedMatch}, partial: ${hasPartialMatch})`);
         }
         
-        return match;
+        return finalMatch;
       });
-      if (!hasMatchingTech) return false;
+      
+      if (hasMatchingTech) {
+        matchScore++;
+        console.log(`🎯 [FILTER] Tech stack score increased for ${repo.name}, current score: ${matchScore}/${requiredMatches}`);
+      }
     }
 
-    // Competition level filter
+    // Competition level filter (optional but increases score)
     if (filters.competitionLevel && filters.competitionLevel.length > 0) {
-      if (!filters.competitionLevel.includes(repo.competition_level)) return false;
+      requiredMatches++;
+      if (filters.competitionLevel.includes(repo.competition_level)) {
+        matchScore++;
+      }
     }
 
-    // Activity level filter
+    // Activity level filter (optional but increases score)
     if (filters.activityLevel && filters.activityLevel.length > 0) {
-      if (!filters.activityLevel.includes(repo.activity_level)) return false;
+      requiredMatches++;
+      if (filters.activityLevel.includes(repo.activity_level)) {
+        matchScore++;
+      }
     }
 
-    // AI domain filter
+    // AI domain filter (optional but increases score)
     if (filters.aiDomain && filters.aiDomain.length > 0) {
-      if (!filters.aiDomain.includes(repo.ai_domain)) return false;
+      requiredMatches++;
+      if (filters.aiDomain.includes(repo.ai_domain)) {
+        matchScore++;
+      }
     }
 
-    // Language filter
+    // Language filter (optional but increases score)
     if (filters.language && filters.language.length > 0) {
-      if (!repo.language || !filters.language.includes(repo.language.toLowerCase())) return false;
+      requiredMatches++;
+      if (repo.language && filters.language.some(lang => 
+        lang.toLowerCase() === repo.language?.toLowerCase()
+      )) {
+        matchScore++;
+      }
     }
 
-    // Search query filter
-    if (filters.searchQuery) {
-      const query = filters.searchQuery.toLowerCase();
-      const searchText = `${repo.name} ${repo.description || ''} ${repo.topics.join(' ')}`.toLowerCase();
-      if (!searchText.includes(query)) return false;
+    // Search query filter (required if present)
+    if (filters.searchQuery && filters.searchQuery.trim()) {
+      const query = filters.searchQuery.toLowerCase().trim();
+      const searchText = `${repo.name} ${repo.description || ''} ${repo.topics.join(' ')} ${repo.language || ''}`.toLowerCase();
+      
+      // Use fuzzy matching for search query
+      const searchTerms = query.split(' ').filter(term => term.length > 0);
+      const matches = searchTerms.filter(term => searchText.includes(term));
+      
+      // Require at least 50% of search terms to match
+      if (matches.length < Math.ceil(searchTerms.length * 0.5)) {
+        return false;
+      }
+    }
+
+    // For other filters, require at least 15% match rate to be much more forgiving
+    if (requiredMatches > 0) {
+      const matchRate = matchScore / requiredMatches;
+      const passesFilter = matchRate >= 0.15; // 15% match rate required - much more forgiving
+      
+      if (passesFilter) {
+        console.log(`✅ [FILTER] ${repo.name} passes filter with score ${matchScore}/${requiredMatches} (${(matchRate * 100).toFixed(1)}%)`);
+      } else {
+        console.log(`❌ [FILTER] ${repo.name} fails filter with score ${matchScore}/${requiredMatches} (${(matchRate * 100).toFixed(1)}%)`);
+      }
+      
+      return passesFilter;
     }
 
     return true;
   });
   
-  console.log('Total repositories after filtering:', filtered.length);
+  console.log(`📊 [FILTER] Filtered down to ${filtered.length} repositories`);
+  
+  // Log filtered repositories for debugging
+  if (filtered.length > 0 && filtered.length <= 10) {
+    console.log('📋 [FILTER] Filtered repositories:');
+    filtered.forEach((repo, i) => {
+      console.log(`  ${i + 1}. ${repo.name} (${repo.language}) - ${repo.topics.slice(0, 3).join(', ')}`);
+    });
+  }
+  
+  // Sort by match score (best matches first)
+  filtered.sort((a, b) => {
+    let scoreA = 0;
+    let scoreB = 0;
+    
+    // Calculate scores for sorting
+    if (filters.techStack?.length) {
+      const textA = `${a.name} ${a.description || ''} ${a.topics.join(' ')} ${a.language || ''}`.toLowerCase();
+      const textB = `${b.name} ${b.description || ''} ${b.topics.join(' ')} ${b.language || ''}`.toLowerCase();
+      
+      filters.techStack.forEach(tech => {
+        const techLower = tech.toLowerCase();
+        if (textA.includes(techLower) || techStackMappings[techLower]?.some(keyword => textA.includes(keyword))) scoreA++;
+        if (textB.includes(techLower) || techStackMappings[techLower]?.some(keyword => textB.includes(keyword))) scoreB++;
+      });
+    }
+    
+    return scoreB - scoreA;
+  });
+  
+  console.log(`📊 [FILTER] Final count after sorting: ${filtered.length} repositories`);
+  
+  // Ensure we always return a reasonable number of results
+  if (filtered.length < 20 && repositories.length > 0) {
+    const needed = 20 - filtered.length;
+    const fallbackRepos = repositories
+      .filter(repo => !filtered.some(filteredRepo => filteredRepo.id === repo.id))
+      .slice(0, needed);
+    
+    console.log(`⚠️ [FILTER] Only ${filtered.length} repositories found, adding ${fallbackRepos.length} fallback repositories`);
+    filtered.push(...fallbackRepos);
+  }
+  
+  // Final fallback if somehow we still have no results
+  if (filtered.length === 0 && repositories.length > 0) {
+    console.log('⚠️ [FILTER] No matches found, returning top 20 repositories as fallback');
+    return repositories.slice(0, 20);
+  }
+  
+  console.log(`🎉 [FILTER] Final result: ${filtered.length} repositories`);
   return filtered;
 };
