@@ -273,6 +273,29 @@ Guidelines for diagram components and relationships:
 
 IMPORTANT!!: Please orient and draw the diagram as vertically as possible. You must avoid long horizontal lists of nodes and sections!
 
+CRITICAL - COLOR APPLICATION INSTRUCTIONS:
+You MUST apply the appropriate color classes to ALL nodes in your diagram. Here's how to apply colors:
+- Frontend components (React, Vue, Angular, HTML, CSS, UI components): Use :::frontend
+- Backend components (API servers, business logic, controllers): Use :::backend  
+- Database components (PostgreSQL, MongoDB, MySQL, data stores): Use :::database
+- API endpoints/routes: Use :::api
+- Services/Microservices: Use :::service
+- External/Third-party services: Use :::external
+- Core libraries/modules: Use :::core
+- Utility/helper functions: Use :::util
+- Configuration files: Use :::config
+- Test files/modules: Use :::test
+
+Example: 
+- FrontendComponent["Frontend Component"]:::frontend
+- BackendService["Backend Service"]:::backend
+- Database[(Database)]:::database
+
+At the end of your diagram, add class statements to apply styles:
+class FrontendComponent1,FrontendComponent2 frontend
+class BackendService1,BackendService2 backend
+etc.
+
 You must include click events for components of the diagram that have been specified in the provided <component_mapping>:
 - Do not try to include the full url. This will be processed by another program afterwards. All you need to do is include the path.
 - For example:
@@ -322,9 +345,21 @@ flowchart TD
     click A1 "example/example.js"
     %% and a lot more...
 
-    %% Styles
-    classDef frontend %%...
-    %% and a lot more...
+    %% Styles - IMPORTANT: Add these colors to make the diagram visually appealing!
+    classDef frontend fill:#90EE90,stroke:#333,stroke-width:2px,color:#000
+    classDef backend fill:#ADD8E6,stroke:#333,stroke-width:2px,color:#000
+    classDef database fill:#F0E68C,stroke:#333,stroke-width:2px,color:#000
+    classDef api fill:#FFB6C1,stroke:#333,stroke-width:2px,color:#000
+    classDef service fill:#DDA0DD,stroke:#333,stroke-width:2px,color:#000
+    classDef external fill:#FFA07A,stroke:#333,stroke-width:2px,color:#000
+    classDef core fill:#98FB98,stroke:#333,stroke-width:2px,color:#000
+    classDef util fill:#F0E68C,stroke:#333,stroke-width:2px,color:#000
+    classDef config fill:#D3D3D3,stroke:#333,stroke-width:2px,color:#000
+    classDef test fill:#FFFFE0,stroke:#333,stroke-width:2px,color:#000
+    
+    %% Apply styles to nodes based on their type
+    %% Example: class Node1,Node2,Node3 frontend
+    %% Make sure to apply appropriate classes to your nodes!
 \`\`\`
 
 EXTREMELY Important notes on syntax!!! (PAY ATTENTION TO THIS):
@@ -635,12 +670,28 @@ function processClickEvents(diagram: string, owner: string, repo: string): strin
 }
 
 const getFallbackMermaidChart = () => {
-  return `graph TD
-    A[Repository Analysis] --> B[Architecture Overview]
-    B --> C[Component Structure]
-    C --> D[Data Flow]
-    D --> E[Dependencies]
+  return `flowchart TD
+    A["Repository Analysis"]:::core
+    B["Architecture Overview"]:::backend
+    C["Component Structure"]:::frontend
+    D["Data Flow"]:::service
+    E["Dependencies"]:::external
     
-    classDef default fill:#3b82f6,stroke:#1e40af,stroke-width:2px,color:#fff
-    class A,B,C,D,E default`;
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    
+    %% Styles
+    classDef core fill:#98FB98,stroke:#333,stroke-width:2px,color:#000
+    classDef backend fill:#ADD8E6,stroke:#333,stroke-width:2px,color:#000
+    classDef frontend fill:#90EE90,stroke:#333,stroke-width:2px,color:#000
+    classDef service fill:#DDA0DD,stroke:#333,stroke-width:2px,color:#000
+    classDef external fill:#FFA07A,stroke:#333,stroke-width:2px,color:#000
+    
+    class A core
+    class B backend
+    class C frontend
+    class D service
+    class E external`;
 };
