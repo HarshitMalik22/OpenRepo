@@ -184,6 +184,30 @@ model RepositoryAnalysis {
   @@map("repository_analyses")
 }
 
+model RepositoryDiagramCache {
+  id                  String   @id @default(cuid())
+  repoFullName        String   @unique
+  repoUrl             String
+  owner               String
+  name                String
+  diagramMermaid      String
+  explanation         Json
+  architectureInsights Json?
+  analysisSummary     Json?
+  repositoryStructure Json?
+  lastCommitSha       String?
+  generatedAt         DateTime @default(now())
+  expiresAt           DateTime?
+  version             String   @default("1.0")
+  isPublic            Boolean  @default(true)
+  accessCount         Int      @default(0)
+  lastAccessedAt      DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("repository_diagram_cache")
+}
+
 model CommunityStats {
   id                      String   @id @default(cuid())
   totalQueries            Int      @default(0)

@@ -16,6 +16,9 @@ import { isAIConfigured, createLangChainModel, RepositoryAnalysisOutputSchema } 
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { REPOSITORY_ANALYSIS_SYSTEM_PROMPT, REPOSITORY_ANALYSIS_HUMAN_TEMPLATE, formatArchitectureData } from '@/ai/prompts/repository-analysis-prompt';
+import { diagramCache } from '@/lib/diagram-cache';
+import { getGitHubHeaders } from '@/lib/github-headers';
+import { validateCachedDiagram } from '@/lib/cache-invalidation';
 
 const DynamicArchitectureAnalysisInputSchema = z.object({
   repoUrl: z.string().describe('The URL of the repository to analyze.'),
@@ -121,7 +124,61 @@ export async function dynamicArchitectureAnalysis(input: DynamicArchitectureAnal
       throw new Error('Invalid repository URL format');
     }
     
-    console.log(`Analyzing repository: ${repoInfo.owner}/${repoInfo.repo}`);
+    const repoFullName = `${repoInfo.owner}/${repoInfo.repo}`;
+    console.log(`Analyzing repository: ${repoFullName}`);
+    
+    // Check cache first with validation
+    console.log('Checking for cached diagram with validation...');
+    const cacheValidation = await validateCachedDiagram(repoFullName);
+    
+    if (cacheValidation.isValid) {
+      console.log(`✅ Cache is valid: ${cacheValidation.reason}`);
+      const cachedResult = await diagramCache.getCachedDiagram(repoFullName);
+      
+      if (cachedResult.found && cachedResult.data) {
+        console.log(`✅ Found cached diagram from ${cachedResult.fromCache}`);
+        
+        // Parse the cached data back to the expected format
+        const cachedDiagram = cachedResult.data;
+      
+      // Reconstruct flowchart data from cached diagram
+      const flowchartData = {
+        nodes: [], // Will be populated from mermaid chart parsing if needed
+        connections: [],
+        layers: {},
+        metrics: {
+          averageComplexity: 0,
+          coupling: 0,
+          cohesion: 0,
+        }
+      };
+      
+      return {
+        flowchartData,
+        mermaidChart: cachedDiagram.diagramMermaid,
+        architectureInsights: cachedDiagram.architectureInsights || {
+          summary: cachedDiagram.explanation?.summary || 'Cached repository analysis',
+          keyComponents: cachedDiagram.explanation?.keyComponents || [],
+          designPatterns: cachedDiagram.explanation?.designPatterns || [],
+          architecturalOverview: cachedDiagram.explanation?.architecturalOverview || '',
+          detailedDataFlow: cachedDiagram.explanation?.detailedDataFlow || '',
+          keyPatterns: cachedDiagram.explanation?.keyPatterns || [],
+          technicalInsights: cachedDiagram.explanation?.technicalInsights || [],
+          complexityAssessment: cachedDiagram.explanation?.complexityAssessment || '',
+          recommendations: cachedDiagram.explanation?.recommendations || [],
+          useCases: cachedDiagram.explanation?.useCases || [],
+          enhancedIntegrations: cachedDiagram.explanation?.enhancedIntegrations || [],
+        },
+        analysisSummary: cachedDiagram.analysisSummary || 'Analysis loaded from cache'
+      };
+    } else {
+      console.log(`❌ Cache invalid or not found: ${cacheValidation.reason}`);
+      if (cacheValidation.shouldRegenerate) {
+        console.log('🔄 Cache was invalidated due to repository update, regenerating...');
+      }
+    }
+    
+    console.log('❌ No valid cached diagram found, generating new analysis...');
     
     // Step 1: Perform real code analysis
     console.log('Step 1: Performing real code analysis...');
@@ -153,6 +210,47 @@ export async function dynamicArchitectureAnalysis(input: DynamicArchitectureAnal
       console.log('Step 6: Generating Mermaid chart...');
       const mermaidChart = generateMermaidChart(flowchartData);
       
+      console.log('Step 7: Caching generated diagram...');
+      try {
+        // Get the latest commit SHA for cache invalidation
+        const latestCommitSha = await getLatestCommitSha(repoInfo.owner, repoInfo.repo);
+        
+        await diagramCache.cacheDiagram({
+          repoFullName,
+          repoUrl: input.repoUrl,
+          owner: repoInfo.owner,
+          name: repoInfo.repo,
+          diagramMermaid: mermaidChart,
+          explanation: {
+            summary: enhancedInsights.summary,
+            keyComponents: enhancedInsights.keyComponents,
+            designPatterns: enhancedInsights.designPatterns,
+            architecturalOverview: enhancedInsights.architecturalOverview,
+            detailedDataFlow: enhancedInsights.detailedDataFlow,
+            keyPatterns: enhancedInsights.keyPatterns,
+            technicalInsights: enhancedInsights.technicalInsights,
+            complexityAssessment: enhancedInsights.complexityAssessment,
+            recommendations: enhancedInsights.recommendations,
+            useCases: enhancedInsights.useCases,
+            enhancedIntegrations: enhancedInsights.enhancedIntegrations,
+          },
+          architectureInsights: enhancedInsights,
+          analysisSummary,
+          repositoryStructure: {
+            totalFiles: architectureAnalysis.nodes.length,
+            totalLines: architectureAnalysis.nodes.reduce((sum: number, node: any) => sum + (node.metadata?.linesOfCode || 0), 0),
+            nodes: architectureAnalysis.nodes.length,
+            edges: architectureAnalysis.edges.length,
+            layers: Object.keys(architectureAnalysis.layers || {}).length
+          },
+          lastCommitSha: latestCommitSha || undefined
+        });
+        console.log('✅ Diagram cached successfully');
+      } catch (cacheError) {
+        console.error('Error caching diagram:', cacheError);
+        // Don't throw error - caching failure shouldn't break the analysis
+      }
+      
       console.log('Dynamic architecture analysis completed successfully');
       
       return {
@@ -165,6 +263,7 @@ export async function dynamicArchitectureAnalysis(input: DynamicArchitectureAnal
     } catch (analysisError) {
       console.error('Error during code analysis:', analysisError);
       throw new Error(`Failed to analyze repository: ${analysisError instanceof Error ? analysisError.message : 'Unknown error'}`);
+    }
     }
     
   } catch (error) {
@@ -494,4 +593,32 @@ function generateMermaidChart(flowchartData: any): string {
   });
   
   return mermaid;
+}
+
+/**
+ * Get the latest commit SHA for a repository
+ * Used for cache invalidation when repository is updated
+ */
+export async function getLatestCommitSha(owner: string, repo: string): Promise<string | null> {
+  try {
+    const headers = getGitHubHeaders();
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`, {
+      headers
+    });
+    
+    if (!response.ok) {
+      console.warn(`Failed to fetch latest commit: ${response.status} ${response.statusText}`);
+      return null;
+    }
+    
+    const commits = await response.json();
+    if (Array.isArray(commits) && commits.length > 0) {
+      return commits[0].sha;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error fetching latest commit SHA:', error);
+    return null;
+  }
 }

@@ -47,45 +47,26 @@ export const CacheTTL = {
 export class ClientRedisCache {
   // Get cached data - always returns null on client side
   async get<T>(key: string): Promise<T | null> {
-    if (typeof window !== 'undefined') {
-      // Client side - no cache access
-      return null;
-    }
-    
-    // Server side - import actual Redis cache
-    const { redisCache } = await import('./redis-cache');
-    return redisCache.get<T>(key);
+    // Client side - no cache access
+    return null;
   }
 
   // Set cached data - no-op on client side
   async set<T>(key: string, data: T, ttl: number = CacheTTL.popularRepos): Promise<void> {
-    if (typeof window === 'undefined') {
-      // Server side - import actual Redis cache
-      const { redisCache } = await import('./redis-cache');
-      await redisCache.set(key, data, ttl);
-    }
     // Client side - no-op
+    return;
   }
 
   // Delete cached data - no-op on client side
   async del(key: string): Promise<number> {
-    if (typeof window === 'undefined') {
-      // Server side - import actual Redis cache
-      const { redisCache } = await import('./redis-cache');
-      return redisCache.del(key);
-    }
+    // Client side - no-op
     return 0;
   }
 
   // Check if key exists - always returns 0 on client side
   async exists(key: string): Promise<number> {
-    if (typeof window !== 'undefined') {
-      return 0;
-    }
-    
-    // Server side - import actual Redis cache
-    const { redisCache } = await import('./redis-cache');
-    return redisCache.exists(key);
+    // Client side - no-op
+    return 0;
   }
 
   // Get cache statistics
@@ -94,16 +75,11 @@ export class ClientRedisCache {
     keyCount: number;
     memoryUsage?: string;
   }> {
-    if (typeof window !== 'undefined') {
-      return {
-        connected: false,
-        keyCount: 0
-      };
-    }
-    
-    // Server side - import actual Redis cache
-    const { redisCache } = await import('./redis-cache');
-    return redisCache.getStats();
+    // Client side - return disconnected stats
+    return {
+      connected: false,
+      keyCount: 0
+    };
   }
 }
 
