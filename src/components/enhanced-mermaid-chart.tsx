@@ -68,30 +68,56 @@ const EnhancedMermaidChart = ({ chart, zoomingEnabled = true }: EnhancedMermaidC
 
       const initializePanZoom = async () => {
         const svgElement = containerRef.current?.querySelector("svg");
-        if (svgElement && zoomingEnabled) {
+        if (!svgElement || !zoomingEnabled) return;
+        
+        try {
           // Remove any max-width constraints
           svgElement.style.maxWidth = "none";
           svgElement.style.width = "100%";
           svgElement.style.height = "100%";
-
-          if (zoomingEnabled) {
+          
+          // Clean up any existing pan-zoom instances
+          const existingPanZoom = (svgElement as any).__panZoomInstance;
+          if (existingPanZoom) {
             try {
-              // Dynamically import svg-pan-zoom only when needed in the browser
-              const svgPanZoom = (await import("svg-pan-zoom")).default;
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-              svgPanZoom(svgElement, {
-                zoomEnabled: true,
-                controlIconsEnabled: true,
-                fit: true,
-                center: true,
-                minZoom: 0.1,
-                maxZoom: 10,
-                zoomScaleSensitivity: 0.3,
-              });
-            } catch (error) {
-              console.error("Failed to load svg-pan-zoom:", error);
+              existingPanZoom.destroy();
+            } catch (e) {
+              // Ignore cleanup errors
             }
           }
+          
+          // Dynamically import svg-pan-zoom only when needed in the browser
+          let svgPanZoom;
+          try {
+            const module = await import("svg-pan-zoom");
+            svgPanZoom = module.default;
+            if (!svgPanZoom || typeof svgPanZoom !== 'function') {
+              throw new Error('svg-pan-zoom module is not properly loaded');
+            }
+          } catch (importError) {
+            console.error('Failed to import svg-pan-zoom:', importError);
+            return; // Exit early if import fails
+          }
+          
+          // Initialize with better error handling
+          const panZoomInstance = svgPanZoom(svgElement, {
+            zoomEnabled: true,
+            controlIconsEnabled: true,
+            fit: true,
+            center: true,
+            minZoom: 0.1,
+            maxZoom: 10,
+            zoomScaleSensitivity: 0.3,
+            // Add event listeners to prevent extension conflicts
+            eventsListenerElement: svgElement,
+          });
+          
+          // Store instance for cleanup
+          (svgElement as any).__panZoomInstance = panZoomInstance;
+          
+        } catch (error) {
+          console.error("Failed to initialize svg-pan-zoom:", error);
+          // Continue without pan-zoom if it fails
         }
       };
 
@@ -100,6 +126,21 @@ const EnhancedMermaidChart = ({ chart, zoomingEnabled = true }: EnhancedMermaidC
       setTimeout(() => {
         void initializePanZoom();
       }, 100);
+
+      // Cleanup function
+      return () => {
+        const svgElement = containerRef.current?.querySelector("svg");
+        if (svgElement) {
+          const existingPanZoom = (svgElement as any).__panZoomInstance;
+          if (existingPanZoom) {
+            try {
+              existingPanZoom.destroy();
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+          }
+        }
+      };
     } catch (err) {
       console.error('Mermaid initialization error:', err);
       setError('Failed to initialize chart');
