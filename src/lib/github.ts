@@ -7,7 +7,7 @@ import { enhanceRepository, getPersonalizedRecommendations, filterRepositories }
 import { enhancedRecommendationEngine } from './enhanced-recommendation-engine';
 import { getCachedPopularRepositories, updateCommunityStats } from './database';
 import { getGitHubHeaders, getGitHubHeadersForContext } from './github-headers';
-import { redisCache, CacheKeys, CacheTTL } from './redis-cache';
+import { redisCache, CacheKeys, CacheTTL } from './redis-cache-client';
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats } from './types';
 
 // Only log configuration status on server side

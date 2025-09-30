@@ -1,5 +1,9 @@
 import Redis from 'ioredis';
-import 'server-only';
+
+// Ensure this module is only used on the server side
+if (typeof window !== 'undefined') {
+  throw new Error('Redis cache can only be used on the server side');
+}
 
 let redisClient: Redis | null = null;
 

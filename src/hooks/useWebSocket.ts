@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { WebSocketEvents, WebSocketRooms } from '@/lib/websocket-manager';
+import { WebSocketEvents, WebSocketRooms } from '@/lib/websocket-types';
 
 interface UseWebSocketOptions {
   autoConnect?: boolean;
