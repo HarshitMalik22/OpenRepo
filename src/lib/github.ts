@@ -7,6 +7,7 @@ import { enhanceRepository, getPersonalizedRecommendations, filterRepositories }
 import { enhancedRecommendationEngine } from './enhanced-recommendation-engine';
 import { getCachedPopularRepositories, updateCommunityStats } from './database';
 import { getGitHubHeaders, getGitHubHeadersForContext } from './github-headers';
+import { redisCache, CacheKeys, CacheTTL } from './redis-cache';
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats } from './types';
 
 // Only log configuration status on server side
@@ -20,22 +21,44 @@ if (typeof window === 'undefined') {
 // Fetches a list of popular repositories from the GitHub API with rate limit handling
 export async function getPopularRepos(useCache = true): Promise<Repository[]> {
   if (useCache && repoCache) {
+    console.log(`Using in-memory cache: ${repoCache.length} repositories`);
     return repoCache;
   }
 
-  // Try to get cached repositories from database first
+    // REDIS CACHE LAYER: Check Redis first (1 hour TTL)
+  if (useCache) {
+    try {
+      const redisCachedRepos = await redisCache.get<Repository[]>(CacheKeys.repositories.popular);
+      if (redisCachedRepos && redisCachedRepos.length >= 100) {
+        console.log(`🚀 REDIS CACHE: Using ${redisCachedRepos.length} repositories from Redis`);
+        repoCache = redisCachedRepos;
+        return redisCachedRepos;
+      }
+    } catch (error) {
+      console.error('Failed to get cached repositories from Redis:', error);
+    }
+  }
+
+  // DATABASE-FIRST STRATEGY: Check database cache first (6 hour TTL)
   if (useCache) {
     try {
       const cachedRepos = await getCachedPopularRepositories();
-      if (cachedRepos.length > 0) {
-        console.log(`Using ${cachedRepos.length} cached repositories from database`);
+      if (cachedRepos.length >= 100) { // Minimum threshold for database cache
+        console.log(`✅ DATABASE-FIRST: Using ${cachedRepos.length} cached repositories from database`);
         repoCache = cachedRepos;
+        // Store in Redis for faster future access
+        await redisCache.set(CacheKeys.repositories.popular, cachedRepos, CacheTTL.popularRepos);
         return cachedRepos;
+      } else {
+        console.log(`⚠️  Database cache insufficient (${cachedRepos.length} repos), fetching from GitHub API`);
       }
     } catch (error) {
-      console.error('Failed to get cached repositories:', error);
+      console.error('Failed to get cached repositories from database:', error);
     }
   }
+
+  // FALLBACK: Only fetch from GitHub API if database cache is empty/insufficient
+  console.log('🔄 GitHub API fallback: Fetching fresh repositories...');
   
   try {
     // Fetch multiple queries to get tons of diverse repositories
@@ -204,6 +227,15 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
     }
     
     repoCache = enhancedRepos;
+    
+    // Store in Redis cache for fast future access
+    try {
+      await redisCache.set(CacheKeys.repositories.popular, enhancedRepos, CacheTTL.popularRepos);
+      console.log(`🚀 Stored ${enhancedRepos.length} repositories in Redis cache`);
+    } catch (error) {
+      console.error('Failed to store repositories in Redis cache:', error);
+    }
+    
     return enhancedRepos;
   } catch (error) {
     console.error('Failed to fetch popular repos:', error);
@@ -596,6 +628,20 @@ export async function getCommunityStats(useCache = true): Promise<CommunityStats
     return communityStatsCache;
   }
 
+  // REDIS CACHE LAYER: Check Redis first (5 minutes TTL)
+  if (useCache) {
+    try {
+      const redisCachedStats = await redisCache.get<CommunityStats>(CacheKeys.community.stats);
+      if (redisCachedStats) {
+        console.log('🚀 REDIS CACHE: Using community stats from Redis');
+        communityStatsCache = redisCachedStats;
+        return redisCachedStats;
+      }
+    } catch (error) {
+      console.error('Failed to get community stats from Redis:', error);
+    }
+  }
+
   // Try to get stats from database first
   try {
     const dbStats = await updateCommunityStats();
@@ -608,6 +654,8 @@ export async function getCommunityStats(useCache = true): Promise<CommunityStats
         averageSatisfaction: dbStats.averageSatisfaction,
       };
       communityStatsCache = stats;
+      // Store in Redis for faster future access
+      await redisCache.set(CacheKeys.community.stats, stats, CacheTTL.communityStats);
       return stats;
     }
   } catch (error) {
@@ -644,6 +692,15 @@ export async function getCommunityStats(useCache = true): Promise<CommunityStats
     };
 
     communityStatsCache = stats;
+    
+    // Store in Redis cache for fast future access
+    try {
+      await redisCache.set(CacheKeys.community.stats, stats, CacheTTL.communityStats);
+      console.log('🚀 Stored community stats in Redis cache');
+    } catch (error) {
+      console.error('Failed to store community stats in Redis cache:', error);
+    }
+    
     return stats;
   } catch (error) {
     console.error('Failed to fetch community stats:', error);

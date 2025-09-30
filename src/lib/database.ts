@@ -358,54 +358,68 @@ export async function cachePopularRepository(repository: Repository) {
 }
 
 export async function getCachedPopularRepositories(): Promise<Repository[]> {
-  const cached = await prisma.popularRepository.findMany({
-    where: {
-      lastFetched: {
-        gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-      }
-    },
-    orderBy: { stars: 'desc' }
-  });
-
-  return cached.map(repo => ({
-    id: Math.abs(repo.fullName.split('').reduce((hash, char) => {
-      return char.charCodeAt(0) + ((hash << 5) - hash);
-    }, 0)),
-    name: repo.name,
-    full_name: repo.fullName,
-    owner: {
-      login: repo.fullName.split('/')[0],
-      avatar_url: `https://github.com/${repo.fullName.split('/')[0]}.png`
-    },
-    html_url: `https://github.com/${repo.fullName}`,
-    description: repo.description,
-    stargazers_count: repo.stars,
-    watchers_count: repo.stars,
-    forks_count: repo.forks,
-    open_issues_count: repo.openIssues,
-    language: repo.language,
-    topics: repo.topics,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    competition_level: repo.competitionLevel as any,
-    activity_level: repo.activityLevel as any,
-    ai_domain: repo.aiDomain as any,
-    contribution_difficulty: {
-      level: repo.difficultyLevel as any,
-      score: repo.difficultyScore,
-      factors: {
-        codeComplexity: repo.difficultyScore * 0.8,
-        communitySize: repo.stars / 1000,
-        documentationQuality: repo.documentationScore,
-        issueResolutionTime: repo.issueResponseRate,
+  try {
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000); // 6 hour TTL for better performance
+    
+    const cached = await prisma.popularRepository.findMany({
+      where: {
+        lastFetched: {
+          gte: sixHoursAgo
+        },
+        stars: {
+          gte: 100 // Only cache repositories with 100+ stars
+        }
       },
-      goodFirstIssues: Math.floor(repo.openIssues * 0.1),
-      helpWantedIssues: Math.floor(repo.openIssues * 0.15),
-    },
-    last_analyzed: repo.lastFetched.toISOString(),
-    contributor_count: repo.contributorCount,
-    recent_commits: repo.recentCommits,
-    issue_response_rate: repo.issueResponseRate,
-    documentation_score: repo.documentationScore,
-  }));
+      orderBy: { stars: 'desc' },
+      take: 1000 // Limit to top 1000 repositories
+    });
+    
+    console.log(`📊 Database cache query returned ${cached.length} repositories (TTL: 6 hours)`);
+    
+    return cached.map(repo => ({
+      id: Math.abs(repo.fullName.split('').reduce((hash, char) => {
+        return char.charCodeAt(0) + ((hash << 5) - hash);
+      }, 0)),
+      name: repo.name,
+      full_name: repo.fullName,
+      owner: {
+        login: repo.fullName.split('/')[0],
+        avatar_url: `https://github.com/${repo.fullName.split('/')[0]}.png`
+      },
+      html_url: `https://github.com/${repo.fullName}`,
+      description: repo.description,
+      stargazers_count: repo.stars,
+      watchers_count: repo.stars,
+      forks_count: repo.forks,
+      open_issues_count: repo.openIssues,
+      language: repo.language,
+      topics: repo.topics,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      competition_level: repo.competitionLevel as any,
+      activity_level: repo.activityLevel as any,
+      ai_domain: repo.aiDomain as any,
+      contribution_difficulty: {
+        level: repo.difficultyLevel as any,
+        score: repo.difficultyScore,
+        factors: {
+          codeComplexity: repo.difficultyScore * 0.8,
+          communitySize: repo.stars / 1000,
+          documentationQuality: repo.documentationScore,
+          issueResolutionTime: repo.issueResponseRate,
+        },
+        goodFirstIssues: Math.floor(repo.openIssues * 0.1),
+        helpWantedIssues: Math.floor(repo.openIssues * 0.15),
+      },
+      last_analyzed: repo.lastFetched.toISOString(),
+      contributor_count: repo.contributorCount,
+      recent_commits: repo.recentCommits,
+      issue_response_rate: repo.issueResponseRate,
+      documentation_score: repo.documentationScore,
+    }));
+    
+  } catch (error) {
+    console.error('❌ Error fetching cached repositories from database:', error);
+    return [];
+  }
 }
