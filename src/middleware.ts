@@ -10,8 +10,8 @@ export default clerkMiddleware(async (auth, req) => {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const secretKey = process.env.CLERK_SECRET_KEY;
   
-  // Debug logging in development
-  if (process.env.NODE_ENV === 'development') {
+  // Debug logging in development (disabled to reduce noise)
+  if (process.env.NODE_ENV === 'development' && false) {
     console.log('Middleware Debug:');
     console.log('- Publishable Key present:', !!publishableKey);
     console.log('- Secret Key present:', !!secretKey);

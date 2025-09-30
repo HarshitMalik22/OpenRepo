@@ -97,27 +97,28 @@ export async function validateGitHubToken(token: string): Promise<{ isValid: boo
 }
 
 /**
- * Log configuration status on startup
+ * Log configuration status on startup (disabled to reduce noise)
  */
 export async function logGitHubConfigStatus(): Promise<void> {
   try {
     const status = await getGitHubConfigStatus();
     
-    console.log('GitHub API Configuration Status:');
-    console.log('- Token configured:', status.hasToken);
-    if (status.hasToken && status.tokenPrefix) {
-      console.log('- Token prefix:', status.tokenPrefix);
-    }
-    if (status.rateLimitInfo) {
-      console.log('- Rate limit:', `${status.rateLimitInfo.remaining}/${status.rateLimitInfo.limit}`);
-      console.log('- Rate limit reset:', status.rateLimitInfo.reset);
-    }
-    
-    if (status.warnings.length > 0) {
-      console.warn('GitHub API Configuration Warnings:');
-      status.warnings.forEach(warning => console.warn('- ' + warning));
-    }
+    // Disabled to reduce console noise - uncomment for debugging
+    // console.log('GitHub API Configuration Status:');
+    // console.log('- Token configured:', status.hasToken);
+    // if (status.hasToken && status.tokenPrefix) {
+    //   console.log('- Token prefix:', status.tokenPrefix);
+    // }
+    // if (status.rateLimitInfo) {
+    //   console.log('- Rate limit:', `${status.rateLimitInfo.remaining}/${status.rateLimitInfo.limit}`);
+    //   console.log('- Rate limit reset:', status.rateLimitInfo.reset);
+    // }
+    // 
+    // if (status.warnings.length > 0) {
+    //   console.warn('GitHub API Configuration Warnings:');
+    //   status.warnings.forEach(warning => console.warn('- ' + warning));
+    // }
   } catch (error) {
-    console.error('Failed to check GitHub API configuration:', error);
+    // console.error('Failed to check GitHub API configuration:', error);
   }
 }

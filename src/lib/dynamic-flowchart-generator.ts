@@ -24,6 +24,16 @@ export interface FlowchartNode {
   };
 }
 
+export interface LayerInfo {
+  y: number;
+  height: number;
+  layerIndex: number;
+  label: string;
+  color: string;
+  borderColor: string;
+  backgroundColor: string;
+}
+
 export interface FlowchartConnection {
   from: string;
   to: string;
@@ -36,11 +46,11 @@ export interface DynamicFlowchart {
   nodes: FlowchartNode[];
   connections: FlowchartConnection[];
   layers: {
-    entry: { y: number; height: number };
-    presentation: { y: number; height: number };
-    business: { y: number; height: number };
-    data: { y: number; height: number };
-    infrastructure: { y: number; height: number };
+    entry: LayerInfo;
+    presentation: LayerInfo;
+    business: LayerInfo;
+    data: LayerInfo;
+    infrastructure: LayerInfo;
   };
   metrics: {
     totalNodes: number;
@@ -60,7 +70,11 @@ export class DynamicFlowchartGenerator {
 
   generateFlowchart(analysis: ArchitectureAnalysis): DynamicFlowchart {
     const nodes = this.generateNodes(analysis);
-    const connections = this.generateConnections(analysis);
+    let connections = this.generateConnections(analysis);
+    
+    // Optimize connection paths with smart routing
+    connections = this.optimizeConnectionPaths(connections, nodes);
+    
     const layers = this.calculateLayerPositions();
     const metrics = this.calculateFlowchartMetrics(analysis);
 
@@ -75,45 +89,191 @@ export class DynamicFlowchartGenerator {
   private generateNodes(analysis: ArchitectureAnalysis): FlowchartNode[] {
     const nodes: FlowchartNode[] = [];
     const layerGroups = this.groupNodesByLayer(analysis);
+    const layerPositions = this.calculateLayerPositions();
     
-    // Calculate positions for each layer
-    let currentY = this.margin;
+    // Build dependency graph for hierarchical layout
+    const dependencyGraph = this.buildDependencyGraph(analysis);
+    const nodeHierarchy = this.calculateNodeHierarchy(analysis, dependencyGraph);
     
+    // Position nodes using hierarchical layout
     Object.entries(layerGroups).forEach(([layerType, layerNodes]) => {
-      const layerHeight = this.calculateLayerHeight(layerNodes.length);
+      const layerInfo = layerPositions[layerType as keyof typeof layerPositions];
+      if (!layerInfo || layerNodes.length === 0) return;
       
-      layerNodes.forEach((node, index) => {
-        const flowchartNode: FlowchartNode = {
-          id: node.id,
-          label: node.name,
-          type: this.mapNodeType(node.type),
-          x: this.calculateNodeXPosition(index, layerNodes.length),
-          y: currentY + (index * (this.nodeHeight + this.nodeSpacing)),
-          width: this.nodeWidth,
-          height: this.nodeHeight,
-          layer: this.getLayerIndex(layerType),
-          filePath: node.filePath,
-          complexity: node.complexity,
-          importance: this.calculateImportance(node, analysis),
-          metadata: {
-            linesOfCode: node.linesOfCode,
-            language: node.language,
-            patterns: node.metadata.patterns,
-            dependencies: node.dependencies,
-            dependents: node.dependents,
-            isEntry: node.metadata.isEntry,
-            isAsync: node.metadata.isAsync,
-            hasErrorHandling: node.metadata.hasErrorHandling
-          }
-        };
-        
-        nodes.push(flowchartNode);
-      });
+      // Sort nodes by hierarchy level and importance
+      const sortedNodes = this.sortNodesByHierarchy(layerNodes, nodeHierarchy);
       
-      currentY += layerHeight + this.layerSpacing;
+      // Apply hierarchical layout within layer
+      const positionedNodes = this.applyHierarchicalLayout(
+        sortedNodes, 
+        layerInfo, 
+        nodeHierarchy,
+        analysis
+      );
+      
+      nodes.push(...positionedNodes);
     });
 
     return nodes;
+  }
+
+  // Advanced layout methods
+  private buildDependencyGraph(analysis: ArchitectureAnalysis): Map<string, Set<string>> {
+    const graph = new Map<string, Set<string>>();
+    
+    // Initialize graph with all nodes
+    analysis.nodes.forEach(node => {
+      graph.set(node.id, new Set());
+    });
+    
+    // Add dependencies
+    analysis.edges.forEach(edge => {
+      if (edge.type === 'import' || edge.type === 'dependency') {
+        const dependencies = graph.get(edge.from) || new Set();
+        dependencies.add(edge.to);
+        graph.set(edge.from, dependencies);
+      }
+    });
+    
+    return graph;
+  }
+
+  private calculateNodeHierarchy(analysis: ArchitectureAnalysis, dependencyGraph: Map<string, Set<string>>): Map<string, number> {
+    const hierarchy = new Map<string, number>();
+    const visited = new Set<string>();
+    
+    // Calculate hierarchy levels using topological sort
+    const calculateLevel = (nodeId: string): number => {
+      if (visited.has(nodeId)) return hierarchy.get(nodeId) || 0;
+      visited.add(nodeId);
+      
+      const dependencies = dependencyGraph.get(nodeId) || new Set();
+      let maxDependencyLevel = 0;
+      
+      dependencies.forEach(depId => {
+        const depLevel = calculateLevel(depId);
+        maxDependencyLevel = Math.max(maxDependencyLevel, depLevel);
+      });
+      
+      const level = maxDependencyLevel + 1;
+      hierarchy.set(nodeId, level);
+      return level;
+    };
+    
+    // Calculate levels for all nodes
+    analysis.nodes.forEach(node => {
+      if (!visited.has(node.id)) {
+        calculateLevel(node.id);
+      }
+    });
+    
+    return hierarchy;
+  }
+
+  private sortNodesByHierarchy(nodes: ArchitectureNode[], nodeHierarchy: Map<string, number>): ArchitectureNode[] {
+    return nodes.sort((a, b) => {
+      // Sort by hierarchy level first
+      const levelA = nodeHierarchy.get(a.id) || 0;
+      const levelB = nodeHierarchy.get(b.id) || 0;
+      
+      if (levelA !== levelB) return levelA - levelB;
+      
+      // Then sort by importance
+      const importanceA = this.calculateImportance(a, { nodes: nodes, edges: [], layers: { entry: [], presentation: [], business: [], data: [], infrastructure: [] }, metrics: { totalFiles: 0, totalLines: 0, averageComplexity: 0, coupling: 0, cohesion: 0 } });
+      const importanceB = this.calculateImportance(b, { nodes: nodes, edges: [], layers: { entry: [], presentation: [], business: [], data: [], infrastructure: [] }, metrics: { totalFiles: 0, totalLines: 0, averageComplexity: 0, coupling: 0, cohesion: 0 } });
+      
+      if (importanceA !== importanceB) return importanceB - importanceA;
+      
+      // Finally sort by name
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  private applyHierarchicalLayout(
+    nodes: ArchitectureNode[], 
+    layerInfo: { y: number; height: number }, 
+    nodeHierarchy: Map<string, number>,
+    analysis: ArchitectureAnalysis
+  ): FlowchartNode[] {
+    const flowchartNodes: FlowchartNode[] = [];
+    
+    // Group nodes by hierarchy level
+    const levelGroups = new Map<number, ArchitectureNode[]>();
+    nodes.forEach(node => {
+      const level = nodeHierarchy.get(node.id) || 0;
+      if (!levelGroups.has(level)) {
+        levelGroups.set(level, []);
+      }
+      levelGroups.get(level)!.push(node);
+    });
+    
+    // Position each level group
+    let currentY = layerInfo.y + 20;
+    const maxLevels = Math.max(...levelGroups.keys());
+    const levelHeight = (layerInfo.height - 40) / (maxLevels + 1);
+    
+    Array.from(levelGroups.keys()).sort((a, b) => a - b).forEach(level => {
+      const levelNodes = levelGroups.get(level)!;
+      const levelY = currentY;
+      
+      // Position nodes within this level
+      const positionedInLevel = this.positionNodesInLevel(levelNodes, levelY, analysis);
+      flowchartNodes.push(...positionedInLevel);
+      
+      currentY += levelHeight;
+    });
+    
+    return flowchartNodes;
+  }
+
+  private positionNodesInLevel(nodes: ArchitectureNode[], levelY: number, analysis: ArchitectureAnalysis): FlowchartNode[] {
+    const flowchartNodes: FlowchartNode[] = [];
+    
+    if (nodes.length === 1) {
+      // Single node - center it
+      const node = nodes[0];
+      flowchartNodes.push(this.createFlowchartNode(node, 500 - this.nodeWidth / 2, levelY, analysis));
+    } else {
+      // Multiple nodes - distribute them evenly
+      const totalWidth = nodes.length * this.nodeWidth + (nodes.length - 1) * this.nodeSpacing;
+      const startX = (1000 - totalWidth) / 2;
+      
+      nodes.forEach((node, index) => {
+        const x = startX + index * (this.nodeWidth + this.nodeSpacing);
+        flowchartNodes.push(this.createFlowchartNode(node, x, levelY, analysis));
+      });
+    }
+    
+    return flowchartNodes;
+  }
+
+  private createFlowchartNode(node: ArchitectureNode, x: number, y: number, analysis: ArchitectureAnalysis): FlowchartNode {
+    return {
+      id: node.id,
+      label: node.name,
+      type: this.mapNodeType(node.type),
+      x: Math.max(x, this.margin), // Ensure positive X
+      y: Math.max(y, this.margin), // Ensure positive Y
+      width: this.nodeWidth,
+      height: this.nodeHeight,
+      layer: this.determineNodeLayer(node, analysis) === 'entry' ? 0 :
+             this.determineNodeLayer(node, analysis) === 'presentation' ? 1 :
+             this.determineNodeLayer(node, analysis) === 'business' ? 2 :
+             this.determineNodeLayer(node, analysis) === 'data' ? 3 : 4,
+      filePath: node.filePath,
+      complexity: node.complexity,
+      importance: this.calculateImportance(node, analysis),
+      metadata: {
+        linesOfCode: node.linesOfCode,
+        language: node.language,
+        patterns: node.metadata.patterns,
+        dependencies: node.dependencies,
+        dependents: node.dependents,
+        isEntry: node.metadata.isEntry,
+        isAsync: node.metadata.isAsync,
+        hasErrorHandling: node.metadata.hasErrorHandling
+      }
+    };
   }
 
   private groupNodesByLayer(analysis: ArchitectureAnalysis): { [layer: string]: ArchitectureNode[] } {
@@ -143,6 +303,19 @@ export class DynamicFlowchartGenerator {
 
     // Infer layer based on node type and path
     if (node.metadata.isEntry) return 'entry';
+    
+    // Check if it's a frontend file based on path
+    if (node.filePath && (
+      node.filePath.includes('frontend') || 
+      node.filePath.includes('src/') ||
+      node.filePath.includes('.tsx') ||
+      node.filePath.includes('.jsx') ||
+      node.filePath.includes('.html') ||
+      node.filePath.includes('.css')
+    )) {
+      return 'presentation';
+    }
+    
     if (node.type === 'component') return 'presentation';
     if (node.type === 'service' || node.type === 'api') return 'business';
     if (node.type === 'database') return 'data';
@@ -187,7 +360,8 @@ export class DynamicFlowchartGenerator {
   private calculateNodeXPosition(index: number, totalNodes: number): number {
     const totalWidth = totalNodes * (this.nodeWidth + this.nodeSpacing) - this.nodeSpacing;
     // Use a reasonable default width for server-side rendering (1200px typical desktop)
-    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    // The actual positioning will be adjusted by the frontend renderer based on canvas size
+    const viewportWidth = 1200;
     const startX = (viewportWidth - totalWidth) / 2;
     return startX + index * (this.nodeWidth + this.nodeSpacing);
   }
@@ -233,13 +407,176 @@ export class DynamicFlowchartGenerator {
     return connections;
   }
 
+  private optimizeConnectionPaths(connections: FlowchartConnection[], nodes: FlowchartNode[]): FlowchartConnection[] {
+    return connections.map(connection => {
+      const fromNode = nodes.find(n => n.id === connection.from);
+      const toNode = nodes.find(n => n.id === connection.to);
+      
+      if (fromNode && toNode) {
+        // Create smart curved path with routing
+        const path = this.createSmartConnectionPath(fromNode, toNode, connection.type);
+        return { ...connection, path };
+      }
+      
+      return connection;
+    });
+  }
+
+  private createSmartConnectionPath(fromNode: FlowchartNode, toNode: FlowchartNode, connectionType: string): { x: number; y: number }[] {
+    const fromCenterX = fromNode.x + fromNode.width / 2;
+    const fromCenterY = fromNode.y + fromNode.height / 2;
+    const toCenterX = toNode.x + toNode.width / 2;
+    const toCenterY = toNode.y + toNode.height / 2;
+    
+    // Calculate connection points on node edges
+    const fromPoint = this.getConnectionPoint(fromNode, toNode);
+    const toPoint = this.getConnectionPoint(toNode, fromNode);
+    
+    // Create path based on connection type and node positions
+    if (connectionType === 'inheritance') {
+      // Inheritance - use tree-like structure
+      return this.createTreePath(fromPoint, toPoint);
+    } else if (Math.abs(fromNode.layer - toNode.layer) > 1) {
+      // Cross-layer connections - use stepped path
+      return this.createSteppedPath(fromPoint, toPoint, fromNode.layer, toNode.layer);
+    } else {
+      // Same layer or adjacent layer - use smooth curve
+      return this.createSmoothCurve(fromPoint, toPoint);
+    }
+  }
+
+  private getConnectionPoint(fromNode: FlowchartNode, toNode: FlowchartNode): { x: number; y: number } {
+    const fromCenterX = fromNode.x + fromNode.width / 2;
+    const fromCenterY = fromNode.y + fromNode.height / 2;
+    const toCenterX = toNode.x + toNode.width / 2;
+    const toCenterY = toNode.y + toNode.height / 2;
+    
+    // Calculate direction vector
+    const dx = toCenterX - fromCenterX;
+    const dy = toCenterY - fromCenterY;
+    
+    // Determine which edge of the fromNode to connect from
+    const angle = Math.atan2(dy, dx);
+    const absAngle = Math.abs(angle);
+    
+    // Connect from appropriate edge based on angle
+    if (absAngle < Math.PI / 4 || absAngle > 7 * Math.PI / 4) {
+      // Right edge
+      return { x: fromNode.x + fromNode.width, y: fromCenterY };
+    } else if (absAngle < 3 * Math.PI / 4) {
+      // Bottom edge
+      return { x: fromCenterX, y: fromNode.y + fromNode.height };
+    } else {
+      // Left edge
+      return { x: fromNode.x, y: fromCenterY };
+    }
+  }
+
+  private createTreePath(fromPoint: { x: number; y: number }, toPoint: { x: number; y: number }): { x: number; y: number }[] {
+    // Create tree-like path for inheritance
+    const midY = (fromPoint.y + toPoint.y) / 2;
+    
+    return [
+      { x: fromPoint.x, y: fromPoint.y },
+      { x: fromPoint.x, y: midY },
+      { x: toPoint.x, y: midY },
+      { x: toPoint.x, y: toPoint.y }
+    ];
+  }
+
+  private createSteppedPath(
+    fromPoint: { x: number; y: number }, 
+    toPoint: { x: number; y: number },
+    fromLayer: number,
+    toLayer: number
+  ): { x: number; y: number }[] {
+    // Create stepped path for cross-layer connections
+    const midX = (fromPoint.x + toPoint.x) / 2;
+    const midY = (fromPoint.y + toPoint.y) / 2;
+    
+    // Add intermediate points to create clear routing
+    const step1Y = fromPoint.y + (toPoint.y - fromPoint.y) * 0.3;
+    const step2Y = fromPoint.y + (toPoint.y - fromPoint.y) * 0.7;
+    
+    return [
+      { x: fromPoint.x, y: fromPoint.y },
+      { x: midX, y: step1Y },
+      { x: midX, y: step2Y },
+      { x: toPoint.x, y: toPoint.y }
+    ];
+  }
+
+  private createSmoothCurve(fromPoint: { x: number; y: number }, toPoint: { x: number; y: number }): { x: number; y: number }[] {
+    // Create smooth bezier curve for same-layer connections
+    const midX = (fromPoint.x + toPoint.x) / 2;
+    const midY = (fromPoint.y + toPoint.y) / 2;
+    
+    // Add curvature based on distance
+    const distance = Math.sqrt(
+      Math.pow(toPoint.x - fromPoint.x, 2) + 
+      Math.pow(toPoint.y - fromPoint.y, 2)
+    );
+    const curvature = Math.min(distance * 0.2, 50);
+    
+    // Create control points for bezier curve
+    const controlOffset = fromPoint.y < toPoint.y ? curvature : -curvature;
+    
+    return [
+      { x: fromPoint.x, y: fromPoint.y },
+      { x: midX, y: midY + controlOffset },
+      { x: toPoint.x, y: toPoint.y }
+    ];
+  }
+
   private calculateLayerPositions() {
+    // Ensure all layers start with positive Y coordinates
+    const baseMargin = Math.max(this.margin, 30); // Minimum 30px margin
     return {
-      entry: { y: this.margin, height: 120 },
-      presentation: { y: this.margin + 170, height: 200 },
-      business: { y: this.margin + 370, height: 250 },
-      data: { y: this.margin + 620, height: 150 },
-      infrastructure: { y: this.margin + 770, height: 180 }
+      entry: { 
+        y: baseMargin, 
+        height: 120, 
+        layerIndex: 0,
+        label: 'Entry Points',
+        color: '#10B981',
+        borderColor: '#059669',
+        backgroundColor: '#ECFDF5'
+      },
+      presentation: { 
+        y: baseMargin + 170, 
+        height: 200, 
+        layerIndex: 1,
+        label: 'Presentation Layer',
+        color: '#3B82F6',
+        borderColor: '#1D4ED8',
+        backgroundColor: '#EFF6FF'
+      },
+      business: { 
+        y: baseMargin + 370, 
+        height: 250, 
+        layerIndex: 2,
+        label: 'Business Logic',
+        color: '#8B5CF6',
+        borderColor: '#6D28D9',
+        backgroundColor: '#F3E8FF'
+      },
+      data: { 
+        y: baseMargin + 620, 
+        height: 150, 
+        layerIndex: 3,
+        label: 'Data Layer',
+        color: '#F59E0B',
+        borderColor: '#D97706',
+        backgroundColor: '#FEF3C7'
+      },
+      infrastructure: { 
+        y: baseMargin + 770, 
+        height: 180, 
+        layerIndex: 4,
+        label: 'Infrastructure',
+        color: '#EF4444',
+        borderColor: '#DC2626',
+        backgroundColor: '#FEF2F2'
+      }
     };
   }
 
@@ -322,42 +659,6 @@ export class DynamicFlowchartGenerator {
       node2.x += separationX;
       node2.y += separationY;
     }
-  }
-
-  private optimizeConnectionPaths(connections: FlowchartConnection[], nodes: FlowchartNode[]): FlowchartConnection[] {
-    return connections.map(connection => {
-      const fromNode = nodes.find(n => n.id === connection.from);
-      const toNode = nodes.find(n => n.id === connection.to);
-      
-      if (fromNode && toNode) {
-        // Create simple curved path
-        const path = this.createCurvedPath(fromNode, toNode);
-        return { ...connection, path };
-      }
-      
-      return connection;
-    });
-  }
-
-  private createCurvedPath(fromNode: FlowchartNode, toNode: FlowchartNode): { x: number; y: number }[] {
-    const fromX = fromNode.x + fromNode.width / 2;
-    const fromY = fromNode.y + fromNode.height / 2;
-    const toX = toNode.x + toNode.width / 2;
-    const toY = toNode.y + toNode.height / 2;
-    
-    // Create a simple curved path with control points
-    const midX = (fromX + toX) / 2;
-    const midY = (fromY + toY) / 2;
-    
-    // Add curve based on layer difference
-    const layerDiff = toNode.layer - fromNode.layer;
-    const curveOffset = layerDiff * 30;
-    
-    return [
-      { x: fromX, y: fromY },
-      { x: midX + curveOffset, y: midY },
-      { x: toX, y: toY }
-    ];
   }
 
   // Export utilities

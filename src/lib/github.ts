@@ -6,7 +6,7 @@ let communityStatsCache: any | null = null;
 import { enhanceRepository, getPersonalizedRecommendations, filterRepositories } from './recommendation-engine';
 import { enhancedRecommendationEngine } from './enhanced-recommendation-engine';
 import { getCachedPopularRepositories, updateCommunityStats } from './database';
-import { getGitHubHeaders } from './github-headers';
+import { getGitHubHeaders, getGitHubHeadersForContext } from './github-headers';
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats } from './types';
 
 // Only log configuration status on server side
@@ -106,7 +106,7 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
           }
           
           const response = await fetch(`https://api.github.com/search/repositories?q=${query}`, {
-            headers: await getGitHubHeaders(),
+            headers: getGitHubHeadersForContext(),
             next: {
               revalidate: 3600,
             }
@@ -183,7 +183,8 @@ export async function getPopularRepos(useCache = true): Promise<Repository[]> {
     if (enhancedRepos.length > 0) {
       try {
         // Call server-side API to cache repositories
-        const cacheResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/repositories/cache`, {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
+        const cacheResponse = await fetch(`${baseUrl}/api/repositories/cache`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -341,16 +342,16 @@ export async function getRepo(fullName: string, useCache = true): Promise<Reposi
     // Fetch repository details
     const [repoResponse, issuesResponse, contributorsResponse, commitsResponse] = await Promise.all([
       fetch(`https://api.github.com/repos/${fullName}`, {
-        headers: getGitHubHeaders()
+        headers: getGitHubHeadersForContext()
       }),
       fetch(`https://api.github.com/repos/${fullName}/issues?state=open&labels=good%20first%20issue&per_page=1`, {
-        headers: getGitHubHeaders()
+        headers: getGitHubHeadersForContext()
       }),
       fetch(`https://api.github.com/repos/${fullName}/contributors?per_page=100`, {
-        headers: getGitHubHeaders()
+        headers: getGitHubHeadersForContext()
       }),
       fetch(`https://api.github.com/repos/${fullName}/commits?per_page=30&since=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}`, {
-        headers: getGitHubHeaders()
+        headers: getGitHubHeadersForContext()
       })
     ]);
 
@@ -387,7 +388,7 @@ export async function getRepositoryContent(owner: string, repo: string, path: st
   console.log(`Fetching GitHub content: ${url}`);
   
   try {
-    const headers = getGitHubHeaders();
+    const headers = getGitHubHeadersForContext();
     console.log('GitHub headers:', JSON.stringify(headers, null, 2));
     
     const response = await fetch(url, {
@@ -483,7 +484,7 @@ export async function getRepositoryStructure(owner: string, repo: string, path: 
         if (isRelevantFile && item.size && item.size < 100000) { // Increased size limit to 100KB
           try {
             const fileResponse = await fetch(item.download_url, {
-              headers: getGitHubHeaders()
+              headers: getGitHubHeadersForContext()
             });
             if (fileResponse.ok) {
               content = await fileResponse.text();
@@ -617,15 +618,15 @@ export async function getCommunityStats(useCache = true): Promise<CommunityStats
     const [reposResponse, usersResponse, commitsResponse] = await Promise.all([
       // Get total repositories with good first issues
       fetch('https://api.github.com/search/repositories?q=good-first-issues:>1&stars:>100', {
-        headers: getGitHubHeaders()
+        headers: getGitHubHeadersForContext()
       }),
       // Get active contributors (this is an approximation)
       fetch('https://api.github.com/search/users?q=repos:>1&followers:>10', {
-        headers: getGitHubHeaders()
+        headers: getGitHubHeadersForContext()
       }),
       // Get recent commits across popular repos
       fetch('https://api.github.com/search/commits?q=committer-date:>=2024-01-01&sort=committer-date&order=desc', {
-        headers: getGitHubHeaders()
+        headers: getGitHubHeadersForContext()
       })
     ]);
 

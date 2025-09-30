@@ -66,14 +66,55 @@ interface FlowchartConnection {
   to: string;
   type: 'import' | 'export' | 'call' | 'dependency' | 'inheritance';
   strength: number;
+  path?: { x: number; y: number }[];
 }
 
 interface FlowchartLayers {
-  entry: { y: number; height: number };
-  presentation: { y: number; height: number };
-  business: { y: number; height: number };
-  data: { y: number; height: number };
-  infrastructure: { y: number; height: number };
+  entry: {
+    y: number;
+    height: number;
+    layerIndex: number;
+    label: string;
+    color: string;
+    borderColor: string;
+    backgroundColor: string;
+  };
+  presentation: {
+    y: number;
+    height: number;
+    layerIndex: number;
+    label: string;
+    color: string;
+    borderColor: string;
+    backgroundColor: string;
+  };
+  business: {
+    y: number;
+    height: number;
+    layerIndex: number;
+    label: string;
+    color: string;
+    borderColor: string;
+    backgroundColor: string;
+  };
+  data: {
+    y: number;
+    height: number;
+    layerIndex: number;
+    label: string;
+    color: string;
+    borderColor: string;
+    backgroundColor: string;
+  };
+  infrastructure: {
+    y: number;
+    height: number;
+    layerIndex: number;
+    label: string;
+    color: string;
+    borderColor: string;
+    backgroundColor: string;
+  };
 }
 
 interface FlowchartMetrics {
@@ -280,6 +321,26 @@ export default function DynamicFlowchartRenderer({
     }
   };
 
+  // Calculate coordinate offsets to ensure all nodes are visible
+  const calculateCoordinateOffsets = useCallback(() => {
+    if (!flowchartData.nodes || flowchartData.nodes.length === 0) {
+      return { offsetX: 0, offsetY: 0 };
+    }
+    
+    const allX = flowchartData.nodes.map(n => n.x);
+    const allY = flowchartData.nodes.map(n => n.y);
+    
+    const minX = Math.min(...allX);
+    const minY = Math.min(...allY);
+    
+    // Add padding to ensure nodes aren't at the very edge
+    const padding = 50;
+    const offsetX = minX < 0 ? Math.abs(minX) + padding : padding;
+    const offsetY = minY < 0 ? Math.abs(minY) + padding : padding;
+    
+    return { offsetX, offsetY };
+  }, [flowchartData.nodes]);
+
   // Draw flowchart on canvas
   const drawFlowchart = useCallback(() => {
     const canvas = canvasRef.current;
@@ -291,21 +352,40 @@ export default function DynamicFlowchartRenderer({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Calculate coordinate offsets
+    const { offsetX, offsetY } = calculateCoordinateOffsets();
+    
     // Apply transformations
     ctx.save();
-    ctx.translate(offset.x, offset.y);
+    ctx.translate(offset.x + offsetX, offset.y + offsetY);
     ctx.scale(scale, scale);
     
-    // Draw layer backgrounds
+    // Draw layer backgrounds with enhanced visual separation
     if (flowchartData.layers) {
-      Object.entries(flowchartData.layers).forEach(([layerName, layerInfo], index) => {
-        ctx.fillStyle = theme === 'dark' ? 'rgba(31, 41, 55, 0.3)' : 'rgba(229, 231, 235, 0.3)';
+      Object.entries(flowchartData.layers).forEach(([layerName, layerInfo]) => {
+        // Draw layer background with custom color
+        ctx.fillStyle = layerInfo.backgroundColor;
         ctx.fillRect(0, layerInfo.y, canvas.width / scale, layerInfo.height);
         
-        // Draw layer label
-        ctx.fillStyle = theme === 'dark' ? '#9ca3af' : '#6b7280';
-        ctx.font = '12px sans-serif';
-        ctx.fillText(getLayerLabel(layerInfo.layerIndex || index), 10, layerInfo.y + 20);
+        // Draw layer border
+        ctx.strokeStyle = layerInfo.borderColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, layerInfo.y, canvas.width / scale, layerInfo.height);
+        
+        // Draw layer label with enhanced styling
+        ctx.fillStyle = layerInfo.color;
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText(layerInfo.label, 15, layerInfo.y + 25);
+        
+        // Draw layer separator line
+        ctx.strokeStyle = theme === 'dark' ? 'rgba(75, 85, 99, 0.3)' : 'rgba(209, 213, 219, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0, layerInfo.y + layerInfo.height);
+        ctx.lineTo(canvas.width / scale, layerInfo.y + layerInfo.height);
+        ctx.stroke();
+        ctx.setLineDash([]);
       });
     }
     
@@ -316,33 +396,60 @@ export default function DynamicFlowchartRenderer({
         const toNode = flowchartData.nodes.find(n => n.id === connection.to);
         
         if (fromNode && toNode) {
-          const fromX = fromNode.x + fromNode.width / 2;
-          const fromY = fromNode.y + fromNode.height / 2;
-          const toX = toNode.x + toNode.width / 2;
-          const toY = toNode.y + toNode.height / 2;
-        
-        // Set connection style based on type
-        ctx.strokeStyle = getConnectionColor(connection.type);
-        ctx.lineWidth = Math.max(1, connection.strength);
-        ctx.setLineDash(getConnectionDash(connection.type));
-        
-        // Draw connection
-        ctx.beginPath();
-        ctx.moveTo(fromX, fromY);
-        
-        // Draw curved connection for inter-layer connections
-        if (Math.abs(fromNode.layer - toNode.layer) > 0) {
-          const midX = (fromX + toX) / 2;
-          const midY = (fromY + toY) / 2;
-          ctx.quadraticCurveTo(midX, fromY, midX, midY);
-          ctx.quadraticCurveTo(midX, toY, toX, toY);
-        } else {
-          ctx.lineTo(toX, toY);
+          // Set connection style based on type
+          ctx.strokeStyle = getConnectionColor(connection.type);
+          ctx.lineWidth = Math.max(1, connection.strength);
+          ctx.setLineDash(getConnectionDash(connection.type));
+          
+          // Draw connection using smart path if available
+          ctx.beginPath();
+          
+          if (connection.path && connection.path.length > 0) {
+            // Use the pre-calculated smart path
+            ctx.moveTo(connection.path[0].x, connection.path[0].y);
+            
+            if (connection.path.length === 3) {
+              // Quadratic curve for smooth paths
+              ctx.quadraticCurveTo(
+                connection.path[1].x, 
+                connection.path[1].y,
+                connection.path[2].x, 
+                connection.path[2].y
+              );
+            } else if (connection.path.length === 4) {
+              // Multi-segment path for stepped/tree connections
+              for (let i = 1; i < connection.path.length; i++) {
+                ctx.lineTo(connection.path[i].x, connection.path[i].y);
+              }
+            } else {
+              // Fallback to simple line
+              for (let i = 1; i < connection.path.length; i++) {
+                ctx.lineTo(connection.path[i].x, connection.path[i].y);
+              }
+            }
+          } else {
+            // Fallback to original logic
+            const fromX = fromNode.x + fromNode.width / 2;
+            const fromY = fromNode.y + fromNode.height / 2;
+            const toX = toNode.x + toNode.width / 2;
+            const toY = toNode.y + toNode.height / 2;
+            
+            ctx.moveTo(fromX, fromY);
+            
+            // Draw curved connection for inter-layer connections
+            if (Math.abs(fromNode.layer - toNode.layer) > 0) {
+              const midX = (fromX + toX) / 2;
+              const midY = (fromY + toY) / 2;
+              ctx.quadraticCurveTo(midX, fromY, midX, midY);
+              ctx.quadraticCurveTo(midX, toY, toX, toY);
+            } else {
+              ctx.lineTo(toX, toY);
+            }
+          }
+          
+          ctx.stroke();
+          ctx.setLineDash([]);
         }
-        
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
     });
     }
     
@@ -403,7 +510,7 @@ export default function DynamicFlowchartRenderer({
     });
     
     ctx.restore();
-  }, [flowchartData, scale, offset, selectedNode, highlightedNodes, searchTerm, filterType, viewMode, theme, getNodeColor, getLayerLabel, getFilteredNodes]);
+  }, [flowchartData, scale, offset, selectedNode, highlightedNodes, searchTerm, filterType, viewMode, theme, getNodeColor, getLayerLabel, getFilteredNodes, calculateCoordinateOffsets]);
 
   // Handle canvas click
   const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -411,8 +518,9 @@ export default function DynamicFlowchartRenderer({
     if (!canvas) return;
     
     const rect = canvas.getBoundingClientRect();
-    const x = (event.clientX - rect.left - offset.x) / scale;
-    const y = (event.clientY - rect.top - offset.y) / scale;
+    const { offsetX, offsetY } = calculateCoordinateOffsets();
+    const x = (event.clientX - rect.left - offset.x - offsetX) / scale;
+    const y = (event.clientY - rect.top - offset.y - offsetY) / scale;
     
     // Find clicked node
     const clickedNode = getFilteredNodes().find(node => 
@@ -428,7 +536,7 @@ export default function DynamicFlowchartRenderer({
       setSelectedNode(null);
       clearHighlights();
     }
-  }, [offset, scale, getFilteredNodes, highlightRelatedNodes, clearHighlights, onNodeClick]);
+  }, [offset, scale, getFilteredNodes, highlightRelatedNodes, clearHighlights, onNodeClick, calculateCoordinateOffsets]);
 
   // Handle mouse drag
   const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {

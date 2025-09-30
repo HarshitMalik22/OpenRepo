@@ -57,7 +57,7 @@ export default async function Home() {
       </div>
       
       {/* Hero Section */}
-      <section className="container mx-auto text-center py-24 md:py-40 relative overflow-hidden">
+      <section className="container mx-auto text-center py-0 md:py-0 relative overflow-hidden">
         <div className="relative z-10 animate-fade-in">
           <h1 className="text-5xl md:text-7xl font-bold font-headline tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/80 pb-6">
             Learn Open Source.

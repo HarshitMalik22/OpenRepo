@@ -94,6 +94,7 @@ export default function InteractiveFlowchartRenderer({
   onNodeClick,
   theme = 'dark' 
 }: InteractiveFlowchartProps) {
+  console.log('InteractiveFlowchartRenderer received chart:', chart, typeof chart);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
