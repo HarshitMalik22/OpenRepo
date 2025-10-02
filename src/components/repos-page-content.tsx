@@ -15,8 +15,6 @@ import {
   Target,
   Filter,
   Star,
-  Wifi,
-  WifiOff,
   Trophy
 } from 'lucide-react';
 import EnhancedRepoFilters from '@/components/enhanced-repo-filters';
@@ -26,7 +24,6 @@ import { getUserPreferencesClient } from '@/lib/user-preferences-client';
 import { getFilteredReposClient } from '@/lib/github-client';
 import { trackUserInteractionClient } from '@/lib/database-client';
 import { getTestimonialsClient } from '@/lib/github-client';
-import { useCommunityStatsWebSocket, usePopularReposWebSocket, useRecommendationsWebSocket } from '@/hooks/useWebSocket';
 import { createPreferencesHash } from '@/lib/github-client';
 import type { Repository, RepositoryFilters, UserPreferences } from '@/lib/types';
 
@@ -44,11 +41,7 @@ function ReposPageContentClient() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [previousStats, setPreviousStats] = useState<any>(null);
   
-  // WebSocket real-time updates
-  const { stats: wsStats, isConnected: wsConnected, connectionError: wsError } = useCommunityStatsWebSocket();
-  const { repositories: wsRepos } = usePopularReposWebSocket();
   const [preferencesHash, setPreferencesHash] = useState<string>('');
-  const { recommendations: wsRecommendations, joinRoom: joinRecommendationsRoom } = useRecommendationsWebSocket(user?.id, preferencesHash);
   
   const [isFiltering, setIsFiltering] = useState(false);
   const [filterError, setFilterError] = useState<string | null>(null);
@@ -108,38 +101,6 @@ function ReposPageContentClient() {
     }
   };
   
-  // WebSocket real-time updates
-  useEffect(() => {
-    if (wsStats) {
-      setCommunityStats(wsStats);
-      setLastUpdated(new Date());
-      setIsLive(true);
-    }
-  }, [wsStats]);
-  
-  useEffect(() => {
-    if (wsRepos.length > 0) {
-      setAllRepos(prev => {
-        const newRepos = [...prev];
-        wsRepos.forEach(wsRepo => {
-          const existingIndex = newRepos.findIndex(r => r.id === wsRepo.id);
-          if (existingIndex === -1) {
-            newRepos.push(wsRepo);
-          } else {
-            newRepos[existingIndex] = { ...newRepos[existingIndex], ...wsRepo };
-          }
-        });
-        return newRepos;
-      });
-    }
-  }, [wsRepos]);
-  
-  
-  useEffect(() => {
-    if (preferencesHash && user?.id && joinRecommendationsRoom) {
-      joinRecommendationsRoom();
-    }
-  }, [preferencesHash, user?.id, joinRecommendationsRoom]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -331,27 +292,6 @@ function ReposPageContentClient() {
       {/* Community Stats */}
       <div className="mb-12">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-            <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-              {wsConnected ? (
-                <>
-                  <Wifi className="w-4 h-4" />
-                  Live Updates
-                </>
-              ) : (
-                <>
-                  <WifiOff className="w-4 h-4" />
-                  {wsError ? 'WebSocket Error' : 'Connecting...'}
-                </>
-              )}
-            </span>
-            {wsError && (
-              <span className="text-xs text-red-500 bg-red-500/10 px-2 py-1 rounded">
-                {wsError}
-              </span>
-            )}
-          </div>
           <div className="text-xs text-muted-foreground">
             Last updated: {lastUpdated.toLocaleTimeString()}
           </div>
