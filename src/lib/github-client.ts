@@ -136,3 +136,61 @@ export async function getCommunityStatsClient() {
     return {};
   }
 }
+
+// Client-side version of getFilteredRepos
+export async function getFilteredReposClient(filters: any): Promise<Repository[]> {
+  try {
+    const response = await fetch('/api/repositories/filter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ filters }),
+      cache: 'no-store', // Don't cache filtered results
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to fetch filtered repositories');
+    }
+
+    return data.repositories || [];
+  } catch (error) {
+    console.error('Error fetching filtered repositories from client:', error);
+    return [];
+  }
+}
+
+// Client-side version of getTestimonials
+export async function getTestimonialsClient(): Promise<any[]> {
+  try {
+    const response = await fetch('/api/testimonials', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'force-cache', // Cache for 1 hour
+      next: { revalidate: 3600 } // Revalidate every hour
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to fetch testimonials');
+    }
+
+    return data.testimonials || [];
+  } catch (error) {
+    console.error('Error fetching testimonials from client:', error);
+    return [];
+  }
+}
