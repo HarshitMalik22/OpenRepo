@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPopularRepos } from '@/lib/github';
 import { filterRepositories } from '@/lib/recommendation-engine';
+import { redisCache, CacheKeys, CacheTTL } from '@/lib/redis-cache-client';
 import type { RepositoryFilters } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
   try {
     const filters: RepositoryFilters = await request.json();
+    
+    // Create cache key based on filters
+    const filterCacheKey = `${CacheKeys.repositories.filter}:${JSON.stringify(filters)}`;
+    
+    // Check cache first for better performance with 1k+ users
+    try {
+      const cachedResults = await redisCache.get(filterCacheKey);
+      if (cachedResults) {
+        console.log('🚀 [FILTER API] Returning cached results');
+        return NextResponse.json(cachedResults);
+      }
+    } catch (cacheError) {
+      console.warn('Cache miss, proceeding with normal filtering:', cacheError);
+    }
+    
     console.log('🔍 [FILTER API] Received filters:', filters);
     
     // Get repositories (this will handle caching and rate limits gracefully)
@@ -25,12 +41,22 @@ export async function POST(request: NextRequest) {
     console.log('🎯 [FILTER API] Applying filters...');
     const filteredRepositories = filterRepositories(repositories, filters);
     
-    return NextResponse.json({
+    const result = {
       success: true,
       repositories: filteredRepositories,
       total: filteredRepositories.length,
       originalTotal: repositories.length
-    });
+    };
+    
+    // Cache the results for 5 minutes to improve performance with 1k+ users
+    try {
+      await redisCache.set(filterCacheKey, result, CacheTTL.filterResults);
+      console.log('💾 [FILTER API] Results cached for 5 minutes');
+    } catch (cacheError) {
+      console.warn('Failed to cache results:', cacheError);
+    }
+    
+    return NextResponse.json(result);
     
   } catch (error) {
     console.error('Error filtering repositories:', error);

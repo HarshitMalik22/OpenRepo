@@ -1,40 +1,40 @@
 import type { Repository, UserPreferences, RecommendationScore, CompetitionLevel, ActivityLevel, AIDomain, ContributionDifficulty } from './types';
 
-// Tech stack mapping for better matching - expanded to be more inclusive
+// Tech stack mapping for better matching - more specific to reduce false positives
 const techStackMappings: Record<string, string[]> = {
-  'react': ['react', 'jsx', 'tsx', 'nextjs', 'gatsby', 'remix', 'react-native', 'reactjs', 'create-react-app'],
-  'vue': ['vue', 'nuxt', 'vuex', 'vuejs', 'vue-router', 'vite'],
-  'angular': ['angular', 'ng', 'typescript', 'angularjs', 'ionic'],
-  'nodejs': ['nodejs', 'javascript', 'typescript', 'express', 'nest', 'koa', 'hapi', 'fastify', 'npm', 'yarn'],
-  'python': ['python', 'django', 'flask', 'fastapi', 'pytorch', 'tensorflow', 'pandas', 'numpy', 'scipy', 'selenium', 'requests'],
-  'django': ['django', 'python', 'djangorestframework', 'django-rest-framework'],
-  'flask': ['flask', 'python', 'flask-sqlalchemy', 'flask-restful'],
-  'fastapi': ['fastapi', 'python', 'uvicorn', 'pydantic'],
-  'tensorflow': ['tensorflow', 'ml', 'ai', 'python', 'keras', 'tensorboard'],
-  'pytorch': ['pytorch', 'ml', 'ai', 'python', 'torch', 'torchvision', 'torchaudio'],
-  'rust': ['rust', 'cargo', 'actix', 'rocket', 'tokio', 'serde'],
-  'go': ['go', 'golang', 'gin', 'echo', 'gorilla', 'grpc', 'protobuf'],
-  'typescript': ['typescript', 'ts', 'javascript', 'js', 'deno', 'node'],
-  'nextjs': ['nextjs', 'react', 'vercel', 'next', 'next-auth'],
+  'react': ['react', 'jsx', 'tsx', 'nextjs', 'gatsby', 'remix', 'react-native', 'reactjs'],
+  'vue': ['vue', 'nuxt', 'vuex', 'vuejs', 'vue-router'],
+  'angular': ['angular', 'angularjs', 'ionic', 'ng'],
+  'nodejs': ['nodejs', 'express', 'nest', 'koa', 'hapi', 'fastify'],
+  'python': ['python', 'django', 'flask', 'fastapi', 'pytorch', 'tensorflow'],
+  'django': ['django', 'djangorestframework', 'django-rest-framework'],
+  'flask': ['flask', 'flask-sqlalchemy', 'flask-restful'],
+  'fastapi': ['fastapi', 'uvicorn', 'pydantic'],
+  'tensorflow': ['tensorflow', 'keras', 'tensorboard'],
+  'pytorch': ['pytorch', 'torch', 'torchvision', 'torchaudio'],
+  'rust': ['rust', 'cargo', 'actix', 'rocket', 'tokio'],
+  'go': ['go', 'golang', 'gin-framework', 'echo-framework', 'gorilla-mux'],
+  'typescript': ['typescript', 'ts'],
+  'nextjs': ['nextjs', 'next', 'next-auth'],
   'svelte': ['svelte', 'sveltekit', 'sapper', 'sveltejs'],
-  'tailwind': ['tailwind', 'css', 'styling', 'postcss', 'windicss'],
-  'docker': ['docker', 'container', 'devops', 'compose', 'kubernetes', 'podman'],
-  'kubernetes': ['kubernetes', 'k8s', 'container', 'orchestration', 'helm', 'istio', 'minikube'],
-  'graphql': ['graphql', 'gql', 'api', 'query', 'apollo', 'relay', 'prisma'],
-  'ml': ['machine-learning', 'ai', 'ml', 'tensorflow', 'pytorch', 'sklearn', 'scikit-learn', 'pandas', 'numpy'],
-  'java': ['java', 'spring', 'hibernate', 'maven', 'gradle', 'quarkus', 'micronaut'],
-  'javascript': ['javascript', 'js', 'nodejs', 'npm', 'yarn', 'webpack', 'babel', 'vite'],
-  'php': ['php', 'laravel', 'symfony', 'wordpress', 'drupal', 'composer'],
-  'ruby': ['ruby', 'rails', 'sinatra', 'rack', 'bundler', 'gem'],
-  'c++': ['c++', 'cpp', 'stl', 'boost', 'cmake', 'makefile'],
-  'c#': ['c#', 'csharp', '.net', 'aspnet', 'entity-framework', 'nuget'],
-  'swift': ['swift', 'ios', 'macos', 'xcode', 'uikit', 'swiftui'],
-  'kotlin': ['kotlin', 'android', 'jetpack', 'gradle', 'ktor'],
-  'android': ['android', 'kotlin', 'java', 'jetpack', 'gradle', 'sdk'],
-  'ios': ['ios', 'swift', 'objective-c', 'xcode', 'uikit', 'swiftui'],
-  'aws': ['aws', 'amazon', 'ec2', 's3', 'lambda', 'cloudformation', 'dynamodb'],
-  'blockchain': ['blockchain', 'ethereum', 'bitcoin', 'solidity', 'web3', 'defi'],
-  'ai': ['ai', 'artificial-intelligence', 'machine-learning', 'ml', 'deep-learning', 'neural-network'],
+  'tailwind': ['tailwind', 'tailwindcss'],
+  'docker': ['docker', 'dockerfile', 'docker-compose'],
+  'kubernetes': ['kubernetes', 'k8s', 'helm', 'istio'],
+  'graphql': ['graphql', 'gql', 'apollo', 'relay'],
+  'ml': ['machine-learning', 'tensorflow', 'pytorch', 'sklearn', 'scikit-learn'],
+  'java': ['java', 'spring', 'hibernate', 'maven', 'gradle'],
+  'javascript': ['javascript', 'js'],
+  'php': ['php', 'laravel', 'symfony', 'wordpress'],
+  'ruby': ['ruby', 'rails', 'sinatra'],
+  'c++': ['c++', 'cpp', 'stl', 'boost'],
+  'c#': ['c#', 'csharp', '.net', 'aspnet'],
+  'swift': ['swift', 'swiftui'],
+  'kotlin': ['kotlin', 'jetpack'],
+  'android': ['android', 'jetpack'],
+  'ios': ['ios', 'uikit', 'swiftui'],
+  'aws': ['aws', 'ec2', 's3', 'lambda'],
+  'blockchain': ['blockchain', 'ethereum', 'bitcoin', 'solidity'],
+  'ai': ['artificial-intelligence', 'machine-learning', 'deep-learning', 'neural-network'],
 };
 
 // AI domain classification based on repository characteristics
@@ -277,24 +277,68 @@ export function filterRepositories(
       requiredMatches++;
       const repoText = `${repo.name} ${repo.description || ''} ${repo.topics.join(' ')} ${repo.language || ''}`.toLowerCase();
       
+      // Debug: Show the actual text being searched
+      console.log(`🔍 [FILTER] Searching for tech stack in: "${repoText}"`);
+      
       const hasMatchingTech = filters.techStack.some(tech => {
         const techLower = tech.toLowerCase();
         const hasDirectMatch = repoText.includes(techLower);
-        const hasMappedMatch = techStackMappings[techLower]?.some(keyword => repoText.includes(keyword));
         
-        // Add partial matching for better results
-        const hasPartialMatch = techLower.length > 3 && 
-          repoText.split(' ').some(word => word.includes(techLower.substring(0, 4)) || 
-                                  techLower.includes(word.substring(0, Math.min(4, word.length))));
+        // Get mapped keywords for this tech
+        const mappedKeywords = techStackMappings[techLower] || [];
+        // More strict matching for mapped keywords - require word boundaries for framework keywords
+        const hasMappedMatch = mappedKeywords.some(keyword => {
+          // For framework-specific keywords, be more strict
+          if (keyword.includes('-framework') || keyword.includes('-mux')) {
+            const baseKeyword = keyword.replace('-framework', '').replace('-mux', '');
+            // Look for the framework name with word boundaries
+            const regex = new RegExp(`\\b${baseKeyword}\\b`, 'i');
+            return regex.test(repoText);
+          }
+          return repoText.includes(keyword);
+        });
         
-        const finalMatch = hasDirectMatch || hasMappedMatch || hasPartialMatch;
+        // More strict partial matching - only for specific cases
+        const hasPartialMatch = techLower.length > 4 && 
+          (techLower === 'typescript' && repoText.includes('ts') ||
+           techLower === 'javascript' && repoText.includes('js') ||
+           techLower === 'python' && repoText.includes('py') ||
+           (repoText.includes(techLower) && repoText.split(' ').some(word => word.length > 4 && word.includes(techLower))));
         
-        // Debug logging for tech stack matching
-        if (finalMatch) {
-          console.log(`✅ [FILTER] Tech match found: ${tech} for repo ${repo.name} (direct: ${hasDirectMatch}, mapped: ${hasMappedMatch}, partial: ${hasPartialMatch})`);
+        const finalMatch = hasDirectMatch || hasMappedMatch; // Remove partial matching for now
+        
+        // Validation: Ensure the match is legitimate
+        const isLegitimateMatch = hasDirectMatch || 
+          (hasMappedMatch && mappedKeywords.length > 0);
+        
+        // Enhanced debug logging for tech stack matching
+        if (finalMatch && isLegitimateMatch) {
+          console.log(`✅ [FILTER] Tech match found: ${tech} for repo ${repo.name}`);
+          console.log(`   - Direct match (${techLower}): ${hasDirectMatch}`);
+          console.log(`   - Mapped keywords [${mappedKeywords.join(', ')}]: ${hasMappedMatch}`);
+          console.log(`   - Partial match: ${hasPartialMatch}`);
+          
+          // Show what actually matched
+          if (hasDirectMatch) {
+            console.log(`   - Matched term: "${techLower}" found in text`);
+          }
+          if (hasMappedMatch) {
+            const matchedKeyword = mappedKeywords.find(keyword => {
+              if (keyword.includes('-framework') || keyword.includes('-mux')) {
+                const baseKeyword = keyword.replace('-framework', '').replace('-mux', '');
+                const regex = new RegExp(`\\b${baseKeyword}\\b`, 'i');
+                return regex.test(repoText);
+              }
+              return repoText.includes(keyword);
+            });
+            console.log(`   - Matched keyword: "${matchedKeyword}" found in text`);
+          }
+        } else if (finalMatch && !isLegitimateMatch) {
+          console.log(`⚠️ [FILTER] False positive detected for ${tech} in repo ${repo.name} - ignoring match`);
         }
         
-        return finalMatch;
+        // Only return legitimate matches
+        return finalMatch && isLegitimateMatch;
       });
       
       if (hasMatchingTech) {
@@ -352,10 +396,20 @@ export function filterRepositories(
       }
     }
 
-    // For other filters, require at least 15% match rate to be much more forgiving
+    // For tech stack filtering, require exact matches (100% for tech stack)
+    // For other optional filters, be more forgiving
     if (requiredMatches > 0) {
-      const matchRate = matchScore / requiredMatches;
-      const passesFilter = matchRate >= 0.15; // 15% match rate required - much more forgiving
+      let passesFilter = false;
+      let matchRate = matchScore / requiredMatches;
+      
+      // Special handling for tech stack - require exact match
+      if (filters.techStack && filters.techStack.length > 0) {
+        // For tech stack filtering, we need at least one tech stack match
+        passesFilter = matchScore >= 1; // Must match at least one tech stack
+      } else {
+        // For other filters, use 50% match rate for better results
+        passesFilter = matchRate >= 0.5;
+      }
       
       if (passesFilter) {
         console.log(`✅ [FILTER] ${repo.name} passes filter with score ${matchScore}/${requiredMatches} (${(matchRate * 100).toFixed(1)}%)`);

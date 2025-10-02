@@ -6,6 +6,7 @@ export const CacheKeys = {
     popular: 'repos:popular',
     byLanguage: (lang: string) => `repos:language:${lang}`,
     byTopic: (topic: string) => `repos:topic:${topic}`,
+    filter: 'repos:filter',
   },
   recommendations: {
     userPreferences: (hash: string) => `rec:user:${hash}`,
@@ -41,6 +42,9 @@ export const CacheTTL = {
   // GitHub API
   rateLimit: 60,             // 1 minute
   apiCache: 900,             // 15 minutes
+  
+  // Filter results
+  filterResults: 300,        // 5 minutes
 };
 
 // Client-safe cache interface (no actual Redis operations)

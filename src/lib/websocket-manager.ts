@@ -1,15 +1,4 @@
 import { Server } from 'socket.io';
-import { NextApiRequest, NextApiResponse } from 'next';
-import { Server as NetServer } from 'http';
-import { Socket as NetSocket } from 'net';
-
-type NextApiResponseWithSocket = NextApiResponse & {
-  socket: {
-    server: NetServer & {
-      io?: Server;
-    };
-  };
-};
 
 // WebSocket event types
 export enum WebSocketEvents {
@@ -87,18 +76,13 @@ class WebSocketManager {
       return;
     }
 
-    this.io = new Server(server, {
-      cors: {
-        origin: process.env.NODE_ENV === 'production' 
-          ? process.env.NEXT_PUBLIC_BASE_URL 
-          : ['http://localhost:3000', 'http://localhost:9002'],
-        methods: ['GET', 'POST'],
-        credentials: true,
-      },
-      transports: ['websocket', 'polling'],
-      pingTimeout: 60000,
-      pingInterval: 25000,
-    });
+    // Use the existing Socket.IO server from the Next.js server
+    this.io = server.io;
+    
+    if (!this.io) {
+      console.error('❌ Socket.IO server not found on the provided server');
+      return;
+    }
 
     this.setupEventHandlers();
     console.log('🔌 WebSocket server initialized');
@@ -275,15 +259,3 @@ class WebSocketManager {
 // Export singleton instance
 export const websocketManager = WebSocketManager.getInstance();
 
-// Next.js API route handler for WebSocket initialization
-export function setupWebSocket(req: NextApiRequest, res: NextApiResponseWithSocket) {
-  if (res.socket && res.socket.server && !res.socket.server.io) {
-    console.log('🔌 Initializing WebSocket server...');
-    websocketManager.initialize(res.socket.server);
-    const io = websocketManager['io'];
-    if (io) {
-      res.socket.server.io = io;
-    }
-  }
-  res.end();
-}

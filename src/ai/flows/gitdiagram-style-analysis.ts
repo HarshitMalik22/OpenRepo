@@ -407,10 +407,20 @@ export async function gitdiagramStyleAnalysis(input: GitdiagramStyleAnalysisInpu
     };
   }
 
+  // Debug: Check environment variables
+  console.log('🔍 Environment Variables Check:');
+  console.log('GEMINI_API_KEY exists:', Boolean(process.env.GEMINI_API_KEY));
+  console.log('GEMINI_API_KEY length:', process.env.GEMINI_API_KEY?.length || 0);
+  console.log('UPSTASH_REDIS_URL exists:', Boolean(process.env.UPSTASH_REDIS_URL));
+  console.log('DATABASE_URL exists:', Boolean(process.env.DATABASE_URL));
+  console.log('GITHUB_TOKEN exists:', Boolean(process.env.GITHUB_TOKEN));
+
   // Check if AI is configured
   if (!isAIConfigured()) {
-    console.warn('AI not configured, falling back to basic analysis');
+    console.warn('❌ AI not configured, falling back to basic analysis');
     return fallbackAnalysis(owner, repo, techStack);
+  } else {
+    console.log('✅ AI is configured, proceeding with analysis');
   }
 
   try {

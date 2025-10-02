@@ -38,9 +38,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     if (socketRef.current?.connected) return;
 
     try {
+      // Connect to the Next.js WebSocket API endpoint
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
+      const websocketUrl = `${baseUrl}/api/websocket`;
       
-      socketRef.current = io(baseUrl, {
+      socketRef.current = io(websocketUrl, {
         transports: ['websocket', 'polling'],
         upgrade: true,
         rememberUpgrade: true,
