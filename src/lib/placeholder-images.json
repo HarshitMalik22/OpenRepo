@@ -1,0 +1,28 @@
+{
+  "placeholderImages": [
+    {
+      "id": "tech-showcase",
+      "description": "Abstract visualization of code and technology",
+      "imageUrl": "https://picsum.photos/seed/tech1/600/400",
+      "imageHint": "technology abstract"
+    },
+    {
+      "id": "trending-carousel-1",
+      "description": "Card for a trending project",
+      "imageUrl": "https://picsum.photos/seed/trend1/500/300",
+      "imageHint": "code project"
+    },
+    {
+      "id": "trending-carousel-2",
+      "description": "Card for a trending project",
+      "imageUrl": "https://picsum.photos/seed/trend2/500/300",
+      "imageHint": "data visualization"
+    },
+    {
+      "id": "trending-carousel-3",
+      "description": "Card for a trending project",
+      "imageUrl": "https://picsum.photos/seed/trend3/500/300",
+      "imageHint": "abstract network"
+    }
+  ]
+}
