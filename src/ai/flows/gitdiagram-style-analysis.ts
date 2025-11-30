@@ -79,6 +79,12 @@ function removeMermaidCodeFences(diagram: string): string {
   return diagram.replace(/```mermaid/gi, '').replace(/```/g, '').trim();
 }
 
+function removeCodeFences(content: string): string {
+  if (!content) return '';
+  // Remove ```xml, ```markdown, ``` etc. and the closing ```
+  return content.replace(/```[\w-]*\n/g, '').replace(/```/g, '').trim();
+}
+
 function sanitizeMermaidDiagram(diagram: string): string {
   if (!diagram) return '';
   
@@ -142,6 +148,11 @@ function sanitizeMermaidDiagram(diagram: string): string {
   // Apply structural formatting AGAIN
   sanitized = formatMermaidCode(sanitized);
 
+  console.log('--- MERMAID SANITIZATION DEBUG ---');
+  console.log('Raw:', diagram.substring(0, 200) + '...');
+  console.log('Sanitized:', sanitized.substring(0, 200) + '...');
+  console.log('----------------------------------');
+
   return sanitized;
 }
 
@@ -171,19 +182,25 @@ function formatMermaidCode(code: string): string {
   // Fix: Remove :::className from subgraph declarations (e.g. subgraph "Name":::style)
   // Also clean up subgraph names that might contain brackets or extra quotes
   formatted = formatted.replace(/subgraph\s+([^\n]+)/g, (match, content) => {
-    // Remove class styling if present
-    let cleaned = content.replace(/:::[a-zA-Z0-9_-]+/, '');
+    // Aggressively remove class styling (:::style)
+    let cleaned = content.replace(/\s*:::[^\s\])]+/, '');
     
-    // If it looks like 'Client["Label"]', extract just 'Client' or '"Label"'
-    // We want to simplify it to just a name or a quoted label
+    // If it looks like 'Client["Label"]' or 'Client[Label]', extract just 'Client'
+    // We want to simplify it to just a clean ID to avoid parsing errors
     if (cleaned.includes('[') || cleaned.includes('(')) {
-        // Try to extract a clean name
-        const nameMatch = cleaned.match(/^["']?([a-zA-Z0-9_-]+)["']?/);
-        if (nameMatch) {
-            return `subgraph ${nameMatch[1]}`;
+        // Try to extract a clean ID before the bracket
+        const idMatch = cleaned.match(/^["']?([a-zA-Z0-9_-]+)["']?\s*[\(\[]/);
+        if (idMatch) {
+            return `subgraph ${idMatch[1]}`;
         }
-        // Fallback: quote the whole thing after stripping dangerous chars
-        return `subgraph "${cleaned.replace(/["\[\]()]/g, '')}"`;
+        // Fallback: if we can't find a clean ID, just strip special chars and quote it
+        // This handles cases like 'subgraph "My Label"' -> 'subgraph "My Label"'
+        // But converts 'subgraph "My Label"[...]' -> 'subgraph "My Label"'
+        const labelMatch = cleaned.match(/^["']?([^"'\(\[]+)["']?/);
+        if (labelMatch) {
+             return `subgraph "${labelMatch[1].trim()}"`;
+        }
+        return `subgraph "${cleaned.replace(/["\[\]()]/g, '').trim()}"`;
     }
     return `subgraph ${cleaned.trim()}`;
   });
@@ -616,47 +633,39 @@ function filterAndFormatFileTree(tree: any[]): string {
 }
 
 // GitDiagram-style 3-step AI analysis prompts - EXACT copies from GitDiagram
-const SYSTEM_FIRST_PROMPT = `You are tasked with explaining to a principal software engineer how to draw the best and most accurate system design diagram / architecture of a given project. This explanation should be tailored to the specific project's purpose and structure. To accomplish this, you will be provided with two key pieces of information:
+const SYSTEM_FIRST_PROMPT = `You are an expert software architect tasked with analyzing a codebase and describing its system architecture. Your goal is to provide a comprehensive, specific, and technical explanation of how the system works, which will be used to generate a system design diagram.
 
-1. The complete and entire file tree of the project including all directory and file names, which will be enclosed in <file_tree> tags in the users message.
+You will be provided with:
+1. The complete file tree of the project (<file_tree> tags).
+2. The README file of the project (<readme> tags).
 
-2. The README file of the project, which will be enclosed in <readme> tags in the users message.
+Analyze these inputs to understand the project's purpose, structure, and implementation details.
 
-Analyze these components carefully, as they will provide crucial information about the project's structure and purpose. Follow these steps to create an explanation for the principal software engineer:
+Your output must be a detailed architectural description enclosed in <explanation> tags.
 
-1. Identify the project type and purpose:
-   - Examine the file structure and README to determine if the project is a full-stack application, an open-source tool, a compiler, or another type of software imaginable.
-   - Look for key indicators in the README, such as project description, features, or use cases.
+Follow these guidelines for your explanation:
 
-2. Analyze the file structure:
-   - Pay attention to top-level directories and their names (e.g., "frontend", "backend", "src", "lib", "tests").
-   - Identify patterns in the directory structure that might indicate architectural choices (e.g., MVC pattern, microservices).
-   - Note any configuration files, build scripts, or deployment-related files.
+1.  **Project Identity**: Briefly identify what the project is (e.g., "A Next.js e-commerce platform using Supabase," "A Rust-based CLI tool for file manipulation").
 
-3. Examine the README for additional insights:
-   - Look for sections describing the architecture, dependencies, or technical stack.
-   - Check for any diagrams or explanations of the system's components.
+2.  **Core Components**: Identify and describe the major building blocks. Do not just list folders; explain what they *do*.
+    *   Example: "The 'auth' service handles JWT issuance and user verification using Passport.js."
+    *   Example: "The 'engine' module contains the core game loop and physics calculations."
 
-4. Based on your analysis, explain how to create a system design diagram that accurately represents the project's architecture. Include the following points:
+3.  **Data Flow & Interactions**: Explain how data moves through the system.
+    *   How does the frontend communicate with the backend?
+    *   How do services interact with the database?
+    *   Are there message queues, events, or background jobs?
 
-   a. Identify the main components of the system (e.g., frontend, backend, database, external services).
-   b. Determine the relationships and interactions between these components.
-   c. Highlight any important architectural patterns or design principles used in the project.
-   d. Include relevant technologies, frameworks, or libraries that play a significant role in the system's architecture.
+4.  **Key Patterns**: Mention architectural patterns used (e.g., MVC, Clean Architecture, Microservices, Event-Driven).
 
-5. Provide guidelines for tailoring the diagram to the specific project type:
-   - For a full-stack application, emphasize the separation between frontend and backend, database interactions, and any API layers.
-   - For an open-source tool, focus on the core functionality, extensibility points, and how it integrates with other systems.
-   - For a compiler or language-related project, highlight the different stages of compilation or interpretation, and any intermediate representations.
+5.  **Technology Stack**: Briefly mention key technologies if they define the architecture (e.g., "Uses Redis for caching," "Relies on gRPC for inter-service communication").
 
-6. Instruct the principal software engineer to include the following elements in the diagram:
-   - Clear labels for each component
-   - Directional arrows to show data flow or dependencies
-   - Color coding or shapes to distinguish between different types of components
+**CRITICAL INSTRUCTIONS:**
+*   **BE SPECIFIC**: Do not give generic advice like "The system has a frontend and backend." Instead, say "The Next.js frontend in 'src/app' consumes the Express API in 'src/api' via REST endpoints."
+*   **DESCRIBE, DON'T INSTRUCT**: Do NOT write "You should draw a box for..." or "The diagram should include...". Write "The system consists of..." or "The API Gateway routes requests to...".
+*   **FOCUS ON THE ACTUAL CODE**: Base your explanation *strictly* on the provided file tree and README. Do not hallucinate components that aren't there.
 
-7. NOTE: Emphasize the importance of being very detailed and capturing the essential architectural elements. Don't overthink it too much, simply separating the project into as many components as possible is best.
-
-Present your explanation and instructions within <explanation> tags, ensuring that you tailor your advice to the specific project based on the provided file tree and README content.`;
+Present your analysis within <explanation> tags.`;
 
 const SYSTEM_SECOND_PROMPT = `You are tasked with mapping key components of a system design to their corresponding files and directories in a project's file structure. You will be provided with a detailed explanation of the system design/architecture and a file tree of the project.
 
@@ -734,10 +743,11 @@ Example:
 - BackendService["Backend Service"]:::backend
 - Database[(Database)]:::database
 
-At the end of your diagram, add class statements to apply styles:
-class FrontendComponent1,FrontendComponent2 frontend
-class BackendService1,BackendService2 backend
-etc.
+At the end of your diagram, DO NOT add bulk class statements (e.g. \`class A,B,C style\`). Instead, you MUST apply the class directly to the node definition using \`:::style\`.
+    
+    Example:
+    - Correct: \`FrontendComponent["Frontend Component"]:::frontend\`
+    - Incorrect: \`class FrontendComponent frontend\`
 
 You must include click events for components of the diagram that have been specified in the provided <component_mapping>:
 - Do not try to include the full url. This will be processed by another program afterwards. All you need to do is include the path.
@@ -802,16 +812,16 @@ flowchart TD
     classDef test fill:#FFFFE0,stroke:#333,stroke-width:2px,color:#000
     
     %% Apply styles to nodes based on their type
-    %% Example: class Node1,Node2,Node3 frontend
-    %% Make sure to apply appropriate classes to your nodes!
+    %% Example: Node1["Label"]:::frontend
+    %% Make sure to apply appropriate classes to your nodes inline!
 \`\`\`
 
 EXTREMELY Important notes on syntax!!! (PAY ATTENTION TO THIS):
 - Make sure to add colour to the diagram!!! This is extremely critical.
 - In Mermaid.js syntax, we cannot include special characters for nodes without being inside quotes! For example: \`EX[/api/process (Backend)]:::api\` and \`API -->|calls Process()| Backend\` are two examples of syntax errors. They should be \`EX["/api/process (Backend)"]:::api\` and \`API -->|"calls Process()"| Backend\` respectively. Notice the quotes. This is extremely important. Make sure to include quotes for any string that contains special characters.
-- In Mermaid.js syntax, you cannot apply a class style directly within a subgraph declaration. For example: \`subgraph "Frontend Layer":::frontend\` is a syntax error. However, you can apply them to nodes within the subgraph. For example: \`Example["Example Node"]:::frontend\` is valid, and \`class Example1,Example2 frontend\` is valid.
+- In Mermaid.js syntax, you cannot apply a class style directly within a subgraph declaration. For example: \`subgraph "Frontend Layer":::frontend\` is a syntax error. However, you can apply them to nodes within the subgraph. For example: \`Example["Example Node"]:::frontend\` is valid. DO NOT use \`class Example1,Example2 frontend\`.
 - In Mermaid.js syntax, there cannot be spaces in the relationship label names. For example: \`A -->| "example relationship" | B\` is a syntax error. It should be \`A -->|"example relationship"| B\` 
-- In Mermaid.js syntax, you cannot give subgraphs an alias like nodes. For example: \`subgraph A "Layer A"\` is a syntax error. It should be \`subgraph "Layer A"\` 
+- In Mermaid.js syntax, you cannot give subgraphs an alias like nodes. For example: \`subgraph A "Layer A"\` is a syntax error. It should be \`subgraph "Layer A"\`. NEVER use brackets in subgraph definitions like \`subgraph Id["Label"]\`. Just use \`subgraph "Label"\` or \`subgraph Id\`. 
 `;
 
 export async function gitdiagramStyleAnalysis(input: GitdiagramStyleAnalysisInput): Promise<GitdiagramStyleAnalysisOutput> {
@@ -936,7 +946,10 @@ ${readme.replace(/\{/g, '{{').replace(/\}/g, '}}')}
 
     const firstChain = firstPrompt.pipe(model).pipe(parser);
     const explanationRaw = await withTimeout(firstChain.invoke({}), AI_STEP_TIMEOUT_MS, 'Step 2 (explanation) timed out');
-    const explanationWrapped = ensureWrappedWithTag(explanationRaw, 'explanation');
+    
+    // Clean up explanation: remove code fences and ensure proper tagging
+    const explanationCleaned = removeCodeFences(explanationRaw);
+    const explanationWrapped = ensureWrappedWithTag(explanationCleaned, 'explanation');
     const explanationContent = stripXmlTagContent(explanationWrapped, 'explanation');
 
     // Step 3: Map components to files/directories using AI
@@ -944,7 +957,7 @@ ${readme.replace(/\{/g, '{{').replace(/\}/g, '}}')}
     const secondPrompt = ChatPromptTemplate.fromMessages([
       ['system', SYSTEM_SECOND_PROMPT],
       ['user', `<explanation>
-${explanationWrapped.replace(/\{/g, '{{').replace(/\}/g, '}}')}
+${explanationContent.replace(/\{/g, '{{').replace(/\}/g, '}}')}
 </explanation>
 
 <file_tree>
@@ -954,7 +967,8 @@ ${promptFileTree.replace(/\{/g, '{{').replace(/\}/g, '}}')}
 
     const secondChain = secondPrompt.pipe(model).pipe(parser);
     const componentMappingRaw = await withTimeout(secondChain.invoke({}), AI_STEP_TIMEOUT_MS, 'Step 3 (component mapping) timed out');
-    const componentMappingWrapped = ensureWrappedWithTag(componentMappingRaw, 'component_mapping');
+    const componentMappingCleaned = removeCodeFences(componentMappingRaw);
+    const componentMappingWrapped = ensureWrappedWithTag(componentMappingCleaned, 'component_mapping');
     const componentMappingContent = stripXmlTagContent(componentMappingWrapped, 'component_mapping');
 
     // Step 4: Generate detailed Mermaid diagram using AI
@@ -962,11 +976,11 @@ ${promptFileTree.replace(/\{/g, '{{').replace(/\}/g, '}}')}
     const thirdPrompt = ChatPromptTemplate.fromMessages([
       ['system', SYSTEM_THIRD_PROMPT],
       ['user', `<explanation>
-${explanationWrapped.replace(/\{/g, '{{').replace(/\}/g, '}}')}
+${explanationContent.replace(/\{/g, '{{').replace(/\}/g, '}}')}
 </explanation>
 
 <component_mapping>
-${componentMappingWrapped.replace(/\{/g, '{{').replace(/\}/g, '}}')}
+${componentMappingContent.replace(/\{/g, '{{').replace(/\}/g, '}}')}
 </component_mapping>
 
 Repository: ${repo}
