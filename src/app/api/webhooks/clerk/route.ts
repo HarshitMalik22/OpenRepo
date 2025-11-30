@@ -54,9 +54,18 @@ export async function POST(req: Request) {
   console.log(`Webhook with and ID of ${id} and type of ${eventType}`)
 
   if (eventType === 'user.created' || eventType === 'user.updated') {
-    const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+    const { id, email_addresses, first_name, last_name, image_url, username, external_accounts } = evt.data;
     const email = email_addresses[0]?.email_address;
     const fullName = `${first_name || ''} ${last_name || ''}`.trim();
+    
+    // Try to get GitHub username from external accounts or username field
+    let githubUsername = username;
+    if (external_accounts && Array.isArray(external_accounts)) {
+      const githubAccount = external_accounts.find((acc: any) => acc.provider === 'oauth_github');
+      if (githubAccount) {
+        githubUsername = githubAccount.username || githubAccount.email_address?.split('@')[0];
+      }
+    }
 
     await prisma.profiles.upsert({
       where: { id: id },
@@ -64,16 +73,25 @@ export async function POST(req: Request) {
         email: email,
         full_name: fullName,
         avatar_url: image_url,
+        github_username: githubUsername,
       },
       create: {
         id: id,
         email: email,
         full_name: fullName,
         avatar_url: image_url,
+        github_username: githubUsername,
       },
     });
     
     console.log(`User ${id} synced to database`);
+  } else if (eventType === 'user.deleted') {
+    if (id) {
+      await prisma.profiles.delete({
+        where: { id: id },
+      });
+      console.log(`User ${id} deleted from database`);
+    }
   }
 
   return new Response('', { status: 200 })

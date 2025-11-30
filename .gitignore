@@ -43,9 +43,7 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
-/src/generated/prisma
+/src/generated/client
 
 # clerk configuration (can include secrets)
 /.clerk/
-
-/src/generated/prisma

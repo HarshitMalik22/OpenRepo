@@ -192,9 +192,13 @@ export function EnhancedMermaidChart({
         return;
       }
 
-      // Without viewBox, just reset to allow natural diagram size
-      instance.resetZoom();
-      // Don't center - let diagram use its natural position
+      // Fit and center the diagram
+      instance.fit();
+      instance.center();
+
+      // Zoom in significantly to make it more readable (3x)
+      // This ensures it fills the container better, even if it requires minor panning
+      instance.zoomBy(3);
     } catch (error) {
       console.error('Error fitting diagram:', error);
     }
@@ -223,8 +227,8 @@ export function EnhancedMermaidChart({
         preventMouseEventsDefault: true,
         minZoom: 0.01,
         maxZoom: 10,
-        fit: false,
-        center: false,
+        fit: true,
+        center: true,
         zoomScaleSensitivity: 0.1,
       });
 
@@ -363,10 +367,10 @@ export function EnhancedMermaidChart({
   }, [zoomingEnabled]);
 
   return (
-    <div className={cn('relative w-full min-h-[500px] overflow-x-visible overflow-y-visible', className)}>
+    <div className={cn('relative w-full min-h-[500px] overflow-hidden', className)}>
       <div
         ref={containerRef}
-        className="h-full w-full overflow-visible rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900/70 dark:to-slate-900/40"
+        className="h-full w-full overflow-visible"
       />
 
       {isLoading && (

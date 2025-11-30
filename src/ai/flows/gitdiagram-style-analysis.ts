@@ -720,10 +720,11 @@ IMPORTANT!!: Please orient and draw the diagram as vertically as possible. You m
 
 CRITICAL - LAYOUT INSTRUCTIONS:
 - You MUST use 'flowchart TD' (Top-Down) to ensure a vertical orientation.
-- Enforce a "narrow and tall" aspect ratio. Do not create wide diagrams.
-- Limit the number of nodes per row/rank to a maximum of 3-4. Force a new row if there are more.
-- Use nested subgraphs to group related components vertically. For example, instead of placing 5 services side-by-side, group them into a "Services" subgraph and stack them.
-- Avoid "fan-out" patterns where one node connects to 10 others in a single horizontal line. Use intermediate nodes or subgraphs to break this up.
+- Enforce a "Tree-like" structure. The diagram should look like a hierarchy, not a flat list.
+- Use subgraphs to group related components (e.g., "Services", "Database", "Frontend") but keep the overall flow vertical.
+- Limit the number of nodes per row/rank to a maximum of 3. Force a new row if there are more.
+- Avoid "fan-out" patterns where one node connects to many others in a single horizontal line. Use intermediate nodes or subgraphs to break this up.
+- Keep connections clean. Avoid excessive cross-linking that makes the diagram look like a "spiderweb". Focus on the main data flow.
 
 CRITICAL - COLOR APPLICATION INSTRUCTIONS:
 You MUST apply the appropriate color classes to ALL nodes in your diagram. Here's how to apply colors:

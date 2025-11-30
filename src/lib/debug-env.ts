@@ -7,6 +7,7 @@ export interface EnvDebugInfo {
   clerk: {
     publishableKey: boolean;
     secretKey: boolean;
+    webhookSecret: boolean;
     publishableKeyPrefix?: string;
     secretKeyPrefix?: string;
   };
@@ -34,6 +35,7 @@ export interface EnvDebugInfo {
 export function getEnvironmentDebugInfo(): EnvDebugInfo {
   const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+  const clerkWebhookSecret = process.env.CLERK_WEBHOOK_SECRET;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -45,6 +47,7 @@ export function getEnvironmentDebugInfo(): EnvDebugInfo {
     clerk: {
       publishableKey: !!clerkPublishableKey,
       secretKey: !!clerkSecretKey,
+      webhookSecret: !!clerkWebhookSecret,
       publishableKeyPrefix: clerkPublishableKey ? clerkPublishableKey.substring(0, 10) + '...' : undefined,
       secretKeyPrefix: clerkSecretKey ? clerkSecretKey.substring(0, 10) + '...' : undefined,
     },
@@ -81,6 +84,7 @@ export function logEnvironmentDebugInfo() {
   console.log('\n--- Clerk Configuration ---');
   console.log('Publishable Key:', debugInfo.clerk.publishableKey ? '✅ Present' : '❌ Missing');
   console.log('Secret Key:', debugInfo.clerk.secretKey ? '✅ Present' : '❌ Missing');
+  console.log('Webhook Secret:', debugInfo.clerk.webhookSecret ? '✅ Present' : '❌ Missing');
   if (debugInfo.clerk.publishableKeyPrefix) {
     console.log('Publishable Key Prefix:', debugInfo.clerk.publishableKeyPrefix);
   }
