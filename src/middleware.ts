@@ -12,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
   '/contact(.*)',
   '/api/github-image(.*)',
   '/api/repositories/(.*)',
+  '/api/github/config-status(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

@@ -17,7 +17,7 @@ export interface GitHubConfigStatus {
  */
 export async function getGitHubConfigStatus(): Promise<GitHubConfigStatus> {
   try {
-    const response = await fetch('/api/github/config', {
+    const response = await fetch('/api/github/config-status', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

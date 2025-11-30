@@ -451,7 +451,7 @@ export async function getPopularRepos(options: boolean | GetPopularReposOptions 
   const { page = 1, perPage = 30, language, q, enrichWithIssues = false } = typeof options === 'object' ? options : {};
   
   // Generate a unique cache key based on options
-  const cacheKey = `repos:popular:${JSON.stringify({ page, perPage, language, q, enrichWithIssues })}`;
+  const cacheKey = `repos:popular:${JSON.stringify({ page, perPage, language, q, enrichWithIssues, v: '2' })}`;
   
   // Use getCachedData to handle caching automatically
   return getCachedData<PopularReposResponse>(

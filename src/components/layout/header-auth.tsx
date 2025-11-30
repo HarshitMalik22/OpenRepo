@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -18,6 +20,8 @@ export default function HeaderAuth() {
   const { user, isLoaded, isSignedIn } = useUser()
   const { signOut } = useClerk()
   const router = useRouter()
+
+  // Debug logging removed
 
   if (!isLoaded) {
     return <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
@@ -74,7 +78,7 @@ export default function HeaderAuth() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="text-destructive focus:text-destructive focus:bg-destructive/10"
           onClick={() => signOut(() => router.push('/'))}
         >
