@@ -134,7 +134,7 @@ export default function BentoGrid({ stats, topRepos = [] }: BentoGridProps) {
           transition={{ delay: 0.1 }}
         >
           {/* Animated Gradient Border */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-gradient-xy" style={{ padding: '1px', mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)' }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-cyan-500 opacity-0 transition-opacity duration-500 animate-gradient-xy" style={{ padding: '1px', mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)' }} />
 
           <div className="relative z-10 h-full flex flex-col items-center justify-center text-center">
             {/* 3D Holographic Core */}

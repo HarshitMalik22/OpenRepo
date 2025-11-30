@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  images: {
-    domains: ['avatars.githubusercontent.com', 'opengraph.githubassets.com'],
-  },
+
   compiler: {
     reactRemoveProperties: {
       properties: ['^bis_skin_checked$'],
@@ -20,7 +18,7 @@ const nextConfig = {
         message: /require\.extensions is not supported by webpack/,
       },
     ];
-    
+
     // Handle fallbacks for client-side
     if (!isServer) {
       config.resolve.fallback = {
@@ -29,10 +27,11 @@ const nextConfig = {
         path: false,
       };
     }
-    
+
     return config;
   },
   images: {
+    domains: ['avatars.githubusercontent.com', 'opengraph.githubassets.com'],
     remotePatterns: [
       {
         protocol: 'https',

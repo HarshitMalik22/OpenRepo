@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import Header from '@/components/layout/header'
 import Footer from '@/components/layout/footer'
 import { ReactQueryProvider } from '@/components/providers/react-query-provider'
+import { SmoothScrollProvider } from '@/components/providers/smooth-scroll-provider'
 import { Providers } from './providers'
 
 export function generateViewport() {
@@ -53,14 +54,16 @@ export default async function RootLayout({
         <div id="root" suppressHydrationWarning>
           <Providers>
             <ReactQueryProvider>
-              <div className="font-body antialiased min-h-screen flex flex-col">
-                <Header stars={stars} />
-                <main>
-                  {children}
-                </main>
-                <Footer />
-                <Toaster />
-              </div>
+              <SmoothScrollProvider>
+                <div className="font-body antialiased min-h-screen flex flex-col">
+                  <Header stars={stars} />
+                  <main>
+                    {children}
+                  </main>
+                  <Footer />
+                  <Toaster />
+                </div>
+              </SmoothScrollProvider>
             </ReactQueryProvider>
           </Providers>
         </div>
