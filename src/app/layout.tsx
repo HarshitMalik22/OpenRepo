@@ -17,8 +17,8 @@ export function generateViewport() {
 }
 
 export const metadata: Metadata = {
-  title: 'OpenSauce',
-  description: 'Learn Open Source. Smarter. Faster.',
+  title: "OpenRepo",
+  description: "AI-Powered Open Source Code Understanding Platform",
   icons: {
     icon: '/logos/opensauce-logo.png',
     apple: '/logos/opensauce-logo.png',
@@ -34,7 +34,7 @@ export default async function RootLayout({
 }>) {
   let stars = 0;
   try {
-    const repo = await getGitHubRepoDetails('HarshitMalik22/OpenSauce');
+    const repo = await getGitHubRepoDetails('HarshitMalik22/OpenRepo');
     stars = repo.stargazers_count;
   } catch (error) {
     console.error('Failed to fetch repo details:', error);

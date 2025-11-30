@@ -24,7 +24,7 @@ export default function OnboardingPage() {
 
   const interests = [
     'Frontend Development',
-    'Backend Development', 
+    'Backend Development',
     'Full Stack Development',
     'Machine Learning',
     'DevOps',
@@ -73,14 +73,12 @@ export default function OnboardingPage() {
           <div className="flex items-center justify-between mb-4">
             {[1, 2, 3].map((num) => (
               <div key={num} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-                }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                  }`}>
                   {step > num ? <CheckCircle className="h-4 w-4" /> : num}
                 </div>
-                {num < 3 && <div className={`w-16 h-1 mx-2 ${
-                  step > num ? 'bg-blue-600' : 'bg-gray-200'
-                }`} />}
+                {num < 3 && <div className={`w-16 h-1 mx-2 ${step > num ? 'bg-blue-600' : 'bg-gray-200'
+                  }`} />}
               </div>
             ))}
           </div>
@@ -93,7 +91,7 @@ export default function OnboardingPage() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">
-              {step === 1 && 'Welcome to OpenSauce!'}
+              {step === 1 && 'Welcome to OpenRepo!'}
               {step === 2 && 'Tell us about your interests'}
               {step === 3 && 'Your preferences'}
             </CardTitle>
@@ -209,7 +207,7 @@ export default function OnboardingPage() {
               >
                 Previous
               </Button>
-              
+
               {step < 3 ? (
                 <Button onClick={nextStep} className="gap-2">
                   Next

@@ -4,7 +4,7 @@ This guide provides comprehensive scripts and instructions for maintaining your 
 
 ## 📋 Overview
 
-Your OpenSauce application uses a sophisticated database schema with caching, user interactions, AI analyses, and repository data. Regular maintenance ensures optimal performance and data consistency.
+Your OpenRepo application uses a sophisticated database schema with caching, user interactions, AI analyses, and repository data. Regular maintenance ensures optimal performance and data consistency.
 
 ## 🚀 Quick Start
 

@@ -97,7 +97,7 @@ class WebSocketManager {
 
       // Send welcome message
       socket.emit(WebSocketEvents.CONNECT, {
-        message: 'Connected to OpenSauce real-time updates',
+        message: 'Connected to OpenRepo real-time updates',
         timestamp: Date.now(),
       });
 

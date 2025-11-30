@@ -27,13 +27,13 @@ export default function Header({ stars = 0 }: { stars?: number }) {
           <div className="relative w-8 h-8">
             <Image
               src="/logos/opensauce-logo.png"
-              alt="OpenSauce Logo"
+              alt="OpenRepo Logo"
               fill
               sizes="32px"
               className="object-contain"
             />
           </div>
-          <h1 className="text-2xl font-bold font-headline text-foreground">OpenSauce</h1>
+          <h1 className="text-2xl font-bold font-headline text-foreground">OpenRepo</h1>
         </Link>
         <nav className="hidden md:flex items-center gap-6">
           <Link href="/repos" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -45,7 +45,7 @@ export default function Header({ stars = 0 }: { stars?: number }) {
         </nav>
         <div className="hidden md:flex items-center gap-2">
           <Link
-            href="https://github.com/HarshitMalik22/OpenSauce"
+            href="https://github.com/HarshitMalik22/OpenRepo"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] transition-colors border border-[#30363d] text-sm font-medium group"

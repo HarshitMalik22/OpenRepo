@@ -25,14 +25,14 @@ export default function MobileNav() {
           <div className="border-b pb-4">
             <Link href="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
               <div className="relative w-8 h-8">
-                <Image 
-                  src="/logos/opensauce-logo.png" 
-                  alt="OpenSauce Logo" 
+                <Image
+                  src="/logos/opensauce-logo.png"
+                  alt="OpenRepo Logo"
                   fill
                   className="object-contain"
                 />
               </div>
-              <span className="text-xl font-bold font-headline text-foreground">OpenSauce</span>
+              <span className="text-xl font-bold font-headline text-foreground">OpenRepo</span>
             </Link>
           </div>
           <nav className="flex flex-col gap-4 py-6">
@@ -48,9 +48,9 @@ export default function MobileNav() {
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Theme</p>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="flex-1 justify-start"
                     onClick={() => {
                       const { setTheme } = require('next-themes');
@@ -60,9 +60,9 @@ export default function MobileNav() {
                     <Sun className="mr-2 h-4 w-4" />
                     Light
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="flex-1 justify-start"
                     onClick={() => {
                       const { setTheme } = require('next-themes');
@@ -73,9 +73,9 @@ export default function MobileNav() {
                     Dark
                   </Button>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="w-full justify-start"
                   onClick={() => {
                     const { setTheme } = require('next-themes');

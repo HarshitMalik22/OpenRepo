@@ -427,7 +427,7 @@ function generateDiagramFromComponentMapping(mappingText: string, repoName: stri
 async function fetchRepositoryStructure(owner: string, repo: string) {
   try {
     const headers = getGitHubHeaders();
-    headers['User-Agent'] = 'OpenSauce-AI';
+    headers['User-Agent'] = 'OpenRepo-AI';
     headers['Accept'] = 'application/vnd.github.v3+json';
     
     console.log(`Fetching repository structure for ${owner}/${repo}`);
@@ -461,7 +461,7 @@ async function fetchRepositoryStructure(owner: string, repo: string) {
 async function fetchRepositoryReadme(owner: string, repo: string) {
   try {
     const headers = getGitHubHeaders();
-    headers['User-Agent'] = 'OpenSauce-AI';
+    headers['User-Agent'] = 'OpenRepo-AI';
     headers['Accept'] = 'application/vnd.github.v3+json';
     
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
@@ -510,7 +510,7 @@ async function fetchRepositoryReadme(owner: string, repo: string) {
 async function getCompleteFileTree(owner: string, repo: string): Promise<string> {
   try {
     const headers = getGitHubHeaders();
-    headers['User-Agent'] = 'OpenSauce-AI';
+    headers['User-Agent'] = 'OpenRepo-AI';
     
     console.log(`\nFetching repository info for ${owner}/${repo}...`);
     const repoUrl = `https://api.github.com/repos/${owner}/${repo}`;

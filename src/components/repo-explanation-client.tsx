@@ -346,7 +346,7 @@ export default function RepoExplanationClient({ repository, initialIsSaved = fal
                         ) : (
                             <>
                                 <Sparkles className="mr-2 h-4 w-4" />
-                                {aiData ? 'Update Analysis' : 'Explain with OpenSauce'}
+                                {aiData ? 'Update Analysis' : 'Explain with OpenRepo'}
                             </>
                         )}
                     </Button>
@@ -413,7 +413,7 @@ export default function RepoExplanationClient({ repository, initialIsSaved = fal
                             Analyzing Repository Architecture
                         </CardTitle>
                         <CardDescription>
-                            OpenSauce AI is analyzing the repository structure and generating flowchart...
+                            OpenRepo AI is analyzing the repository structure and generating flowchart...
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -610,7 +610,7 @@ export default function RepoExplanationClient({ repository, initialIsSaved = fal
                         <Brain className="h-12 w-12 text-muted-foreground mb-4" />
                         <h3 className="text-lg font-semibold mb-2">Ready for AI Analysis</h3>
                         <p className="text-sm text-muted-foreground text-center mb-4">
-                            Click "Explain with OpenSauce" to generate an interactive flowchart of this repository
+                            Click "Explain with OpenRepo" to generate an interactive flowchart of this repository
                         </p>
                         <Button onClick={handleAnalyzeRepository}>
                             <Sparkles className="mr-2 h-4 w-4" />

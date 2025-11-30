@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
         id: 1,
         name: 'Sarah Chen',
         role: 'Frontend Developer',
-        content: 'OpenSauce helped me understand complex React codebases in minutes. The AI analysis is incredibly accurate!',
+        content: 'OpenRepo helped me understand complex React codebases in minutes. The AI analysis is incredibly accurate!',
         avatar: '/avatars/sarah.jpg',
         rating: 5
       },
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         id: 3,
         name: 'Emily Johnson',
         role: 'Tech Lead',
-        content: 'We use OpenSauce for team onboarding. It saves us hours of explanation time.',
+        content: 'We use OpenRepo for team onboarding. It saves us hours of explanation time.',
         avatar: '/avatars/emily.jpg',
         rating: 4
       }

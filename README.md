@@ -1,4 +1,4 @@
-# OpenSauce 
+# OpenRepo 
 
 ## AI-Powered Open Source Code Understanding Platform
 

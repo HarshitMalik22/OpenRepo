@@ -11,41 +11,58 @@
 }
 
 @layer base {
-  html {
-    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'%3E%3Cg transform='rotate(180 12 12)'%3E%3Ctext y='20' font-size='24'%3E🍕%3C/text%3E%3C/g%3E%3C/svg%3E"), auto;
-  }
 
   :root {
     /* Apple Glassmorphism Theme - Pure White & Ethereal */
-    --background: 0 0% 100%; /* Pure white */
-    --foreground: 0 0% 8%; /* Deep charcoal for text */
+    --background: 0 0% 100%;
+    /* Pure white */
+    --foreground: 0 0% 8%;
+    /* Deep charcoal for text */
 
-    --card: 0 0% 100%; /* Pure white */
-    --card-foreground: 0 0% 8%; /* Deep charcoal */
+    --card: 0 0% 100%;
+    /* Pure white */
+    --card-foreground: 0 0% 8%;
+    /* Deep charcoal */
 
-    --popover: 0 0% 100%; /* Pure white */
-    --popover-foreground: 0 0% 8%; /* Deep charcoal */
+    --popover: 0 0% 100%;
+    /* Pure white */
+    --popover-foreground: 0 0% 8%;
+    /* Deep charcoal */
 
-    --primary: 0 0% 10%; /* Almost black for Apple aesthetic */
-    --primary-foreground: 0 0% 100%; /* Pure white */
+    --primary: 0 0% 10%;
+    /* Almost black for Apple aesthetic */
+    --primary-foreground: 0 0% 100%;
+    /* Pure white */
 
-    --secondary: 0 0% 96%; /* Very light gray */
-    --secondary-foreground: 0 0% 10%; /* Almost black */
+    --secondary: 0 0% 96%;
+    /* Very light gray */
+    --secondary-foreground: 0 0% 10%;
+    /* Almost black */
 
-    --muted: 0 0% 98%; /* Extremely light gray */
-    --muted-foreground: 0 0% 45%; /* Medium gray */
+    --muted: 0 0% 98%;
+    /* Extremely light gray */
+    --muted-foreground: 0 0% 45%;
+    /* Medium gray */
 
-    --accent: 0 0% 96%; /* Very light gray */
-    --accent-foreground: 0 0% 10%; /* Almost black */
+    --accent: 0 0% 96%;
+    /* Very light gray */
+    --accent-foreground: 0 0% 10%;
+    /* Almost black */
 
-    --destructive: 0 84% 60%; /* Red */
-    --destructive-foreground: 0 0% 100%; /* White */
+    --destructive: 0 84% 60%;
+    /* Red */
+    --destructive-foreground: 0 0% 100%;
+    /* White */
 
-    --border: 0 0% 92%; /* Very light border */
-    --input: 0 0% 92%; /* Very light input */
-    --ring: 0 0% 10%; /* Almost black ring */
+    --border: 0 0% 92%;
+    /* Very light border */
+    --input: 0 0% 92%;
+    /* Very light input */
+    --ring: 0 0% 10%;
+    /* Almost black ring */
 
-    --radius: 1rem; /* 16px - Apple-style rounded corners */
+    --radius: 1rem;
+    /* 16px - Apple-style rounded corners */
 
     --chart-1: 0 0% 10%;
     --chart-2: 0 0% 45%;
@@ -62,33 +79,50 @@
 
   .dark {
     /* Dark Glassmorphism */
-    --background: 0 0% 8%; /* Very dark */
-    --foreground: 0 0% 98%; /* Very light text */
+    --background: 0 0% 8%;
+    /* Very dark */
+    --foreground: 0 0% 98%;
+    /* Very light text */
 
-    --card: 0 0% 10%; /* Slightly lighter than background */
-    --card-foreground: 0 0% 98%; /* Very light text */
+    --card: 0 0% 10%;
+    /* Slightly lighter than background */
+    --card-foreground: 0 0% 98%;
+    /* Very light text */
 
-    --popover: 0 0% 10%; /* Dark glass */
-    --popover-foreground: 0 0% 98%; /* Very light text */
+    --popover: 0 0% 10%;
+    /* Dark glass */
+    --popover-foreground: 0 0% 98%;
+    /* Very light text */
 
-    --primary: 0 0% 98%; /* Very light for dark mode */
-    --primary-foreground: 0 0% 10%; /* Dark text */
+    --primary: 0 0% 98%;
+    /* Very light for dark mode */
+    --primary-foreground: 0 0% 10%;
+    /* Dark text */
 
-    --secondary: 0 0% 15%; /* Medium dark */
-    --secondary-foreground: 0 0% 98%; /* Very light text */
+    --secondary: 0 0% 15%;
+    /* Medium dark */
+    --secondary-foreground: 0 0% 98%;
+    /* Very light text */
 
-    --muted: 0 0% 12%; /* Dark muted */
-    --muted-foreground: 0 0% 65%; /* Medium light */
+    --muted: 0 0% 12%;
+    /* Dark muted */
+    --muted-foreground: 0 0% 65%;
+    /* Medium light */
 
-    --accent: 0 0% 15%; /* Medium dark */
-    --accent-foreground: 0 0% 98%; /* Very light text */
+    --accent: 0 0% 15%;
+    /* Medium dark */
+    --accent-foreground: 0 0% 98%;
+    /* Very light text */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%; /* Dark border */
-    --input: 0 0% 20%; /* Dark input */
-    --ring: 0 0% 98%; /* Light ring */
+    --border: 0 0% 20%;
+    /* Dark border */
+    --input: 0 0% 20%;
+    /* Dark input */
+    --ring: 0 0% 98%;
+    /* Light ring */
 
     --chart-1: 0 0% 98%;
     --chart-2: 0 0% 65%;
@@ -113,8 +147,8 @@
     transform-style: preserve-3d;
     transform-origin: left center;
     transition: transform 1.2s cubic-bezier(0.645, 0.045, 0.355, 1),
-                background-color 1.2s cubic-bezier(0.645, 0.045, 0.355, 1),
-                color 1.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+      background-color 1.2s cubic-bezier(0.645, 0.045, 0.355, 1),
+      color 1.2s cubic-bezier(0.645, 0.045, 0.355, 1);
     position: relative;
   }
 
@@ -138,14 +172,17 @@
       transform: rotateY(0deg);
       opacity: 1;
     }
+
     45% {
       transform: rotateY(-90deg);
       opacity: 0.3;
     }
+
     55% {
       transform: rotateY(-90deg);
       opacity: 0.3;
     }
+
     100% {
       transform: rotateY(0deg);
       opacity: 1;
@@ -157,14 +194,17 @@
       transform: rotateY(0deg);
       opacity: 1;
     }
+
     45% {
       transform: rotateY(90deg);
       opacity: 0.3;
     }
+
     55% {
       transform: rotateY(90deg);
       opacity: 0.3;
     }
+
     100% {
       transform: rotateY(0deg);
       opacity: 1;
@@ -179,10 +219,10 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, 
-      rgba(0, 0, 0, 0) 0%, 
-      rgba(0, 0, 0, 0.3) 50%, 
-      rgba(0, 0, 0, 0) 100%);
+    background: linear-gradient(90deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.3) 50%,
+        rgba(0, 0, 0, 0) 100%);
     pointer-events: none;
     opacity: 0;
     z-index: 9999;
@@ -201,7 +241,7 @@
     transition-duration: 1.2s;
     transition-timing-function: cubic-bezier(0.645, 0.045, 0.355, 1);
   }
-  
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
@@ -211,7 +251,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Inter', sans-serif;
     font-weight: 600;
     color: hsl(var(--foreground));
@@ -270,6 +315,7 @@
 }
 
 @layer components {
+
   /* Apple Glassmorphism Base Styles */
   .glass {
     background: var(--glass-bg);
@@ -649,8 +695,15 @@
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
   }
 
   /* Subtle glow effect */

@@ -139,7 +139,7 @@ export default async function Home() {
       <section className="pt-0 pb-16 md:pt-0 md:pb-24 bg-gradient-to-b from-background to-muted/20 w-full relative z-10">
         <div className="w-full px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">Why Developers Love OpenSauce</h2>
+            <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">Why Developers Love OpenRepo</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">Powerful features that make understanding open source code a breeze</p>
           </div>
           <BentoGrid stats={communityStats} topRepos={repos} key="bento-grid-v2" />
@@ -149,7 +149,7 @@ export default async function Home() {
       {/* How It Works Section */}
       <section className="container mx-auto animate-fade-in py-16 md:py-24">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold font-headline mb-4">How OpenSauce Works</h2>
+          <h2 className="text-4xl font-bold font-headline mb-4">How OpenRepo Works</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">Start contributing to open source in three simple steps</p>
         </div>
 
