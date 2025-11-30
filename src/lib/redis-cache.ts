@@ -216,6 +216,7 @@ export class RedisCache {
     try {
       const serialized = JSON.stringify(data);
       await this.client.set(key, serialized, 'EX', ttl);
+      console.log(`✅ Cache set for key: ${key}`);
     } catch (error: unknown) {
       console.error(`❌ Redis SET error for key ${key}:`, error);
     }

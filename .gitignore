@@ -47,3 +47,5 @@ firestore-debug.log
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+/src/generated/prisma

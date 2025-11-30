@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { RepositoryList } from '@/components/repositories/repository-list';
 import type { Repository } from '@/lib/types';
 
-export default function ReposPage() {
+function ReposPageContent() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -142,5 +142,13 @@ export default function ReposPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ReposPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto py-8 px-4">Loading...</div>}>
+      <ReposPageContent />
+    </Suspense>
   );
 }

@@ -1,18 +1,26 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireAuth } from '@/lib/supabase/auth'
+import { createAdminClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 
 export async function GET(request: Request) {
   try {
-    const user = await requireAuth()
-    const supabase = await createClient()
+    const { userId } = await auth()
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const supabase = (await createAdminClient()) as any
     const { searchParams } = new URL(request.url)
     const repoFullName = searchParams.get('repo_full_name')
 
     let query = supabase
       .from('repository_analyses')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
     if (repoFullName) {
@@ -40,14 +48,22 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAuth()
-    const supabase = await createClient()
+    const { userId } = await auth()
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const supabase = (await createAdminClient()) as any
     const body = await request.json()
 
     const { data, error } = await supabase
       .from('repository_analyses')
       .upsert({
-        user_id: user.id,
+        user_id: userId,
         repo_full_name: body.repo_full_name,
         repo_url: body.repo_url,
         flowchart_mermaid: body.flowchart_mermaid,
@@ -55,7 +71,7 @@ export async function POST(request: Request) {
         resources: body.resources,
         insights: body.insights,
         analysis_version: body.analysis_version || '1.0',
-      } as any, {
+      }, {
         onConflict: 'user_id,repo_full_name',
       })
       .select()

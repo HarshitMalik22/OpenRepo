@@ -4,42 +4,60 @@ import { Badge } from '@/components/ui/badge';
 import { Star, GitBranch, ExternalLink } from 'lucide-react';
 import RepoExplanationClient from '@/components/repo-explanation-client';
 import { getGitHubRepoDetails } from '@/lib/github';
+import { auth } from '@clerk/nextjs/server';
+import prisma from '@/lib/prisma';
 
 export default async function RepoDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   // Await the params in Next.js 15
   const { slug } = await params;
-  
+
   // Validate the slug parameter
   if (!slug || typeof slug !== 'string') {
     console.error('RepoDetailPage - Invalid slug parameter:', slug);
     notFound();
   }
-  
+
   // The slug is expected to be in the format "owner--repo".
   // We need to decode and replace '--' with '/' to get "owner/repo".
   const decodedSlug = decodeURIComponent(slug);
   const repoFullName = decodedSlug.replace('--', '/');
-  
+
   console.log('RepoDetailPage - slug:', slug);
   console.log('RepoDetailPage - decodedSlug:', decodedSlug);
   console.log('RepoDetailPage - repoFullName:', repoFullName);
-  
+
   // Validate the repository full name
   if (!repoFullName || !repoFullName.includes('/') || repoFullName.split('/').length !== 2) {
     console.error('RepoDetailPage - Invalid repoFullName:', repoFullName);
     notFound();
   }
-  
+
   try {
     const repo = await getGitHubRepoDetails(repoFullName);
-    
+
     console.log('RepoDetailPage - repo fetched:', repo ? 'Found' : 'Not found');
 
     if (!repo) {
       console.log('RepoDetailPage - Showing 404 for:', repoFullName);
       notFound();
     }
-    
+
+    // Check if user has saved this repo
+    const { userId } = await auth();
+    let isSaved = false;
+
+    if (userId) {
+      const savedRepo = await prisma.saved_repositories.findUnique({
+        where: {
+          user_id_repository_id: {
+            user_id: userId,
+            repository_id: BigInt(repo.id)
+          }
+        }
+      });
+      isSaved = !!savedRepo;
+    }
+
     return (
       <div className="container mx-auto py-12">
         {/* Header */}
@@ -63,7 +81,7 @@ export default async function RepoDetailPage({ params }: { params: Promise<{ slu
           </div>
         </header>
 
-        <RepoExplanationClient repository={repo} />
+        <RepoExplanationClient repository={repo} initialIsSaved={isSaved} />
       </div>
     );
   } catch (error) {

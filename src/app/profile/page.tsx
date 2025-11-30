@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/supabase/auth'
-import { createClient } from '@/lib/supabase/server'
+import { currentUser } from '@clerk/nextjs/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -53,7 +53,7 @@ function formatDate(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-  
+
   const intervals = {
     year: 31536000,
     month: 2592000,
@@ -62,26 +62,26 @@ function formatDate(dateString: string): string {
     hour: 3600,
     minute: 60
   }
-  
+
   for (const [unit, seconds] of Object.entries(intervals)) {
     const interval = Math.floor(diffInSeconds / seconds)
     if (interval >= 1) {
       return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`
     }
   }
-  
+
   return 'Just now'
 }
 
 export default async function ProfilePage() {
   try {
-    const user = await getUser()
+    const user = await currentUser()
 
     if (!user) {
-      redirect('/login')
+      redirect('/sign-in')
     }
 
-    const supabase = await createClient()
+    const supabase = (await createAdminClient()) as any
 
     // Get user profile data using individual queries for better type safety
     const [
@@ -97,30 +97,30 @@ export default async function ProfilePage() {
         .select('*')
         .eq('id', user.id)
         .single(),
-      
+
       supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
         .single(),
-      
+
       supabase
         .from('saved_repositories')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id),
-      
+
       supabase
         .from('repository_analyses')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id),
-      
+
       supabase
         .from('repository_analyses')
         .select('id, created_at, repo_name, analysis_summary')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3),
-      
+
       supabase
         .from('saved_repositories')
         .select('id, created_at, name, full_name, description')
@@ -137,13 +137,15 @@ export default async function ProfilePage() {
     const typedRecentAnalyses = recentAnalyses as RepositoryAnalysis[] | null;
     const typedRecentRepos = recentRepos as SavedRepository[] | null;
 
-    const fullName = typedUserData?.full_name || user.user_metadata?.full_name || 'User';
-    const initials = fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U';
-    const memberSince = user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', {
+    const fullName = user.firstName ? `${user.firstName} ${user.lastName || ''}` : user.username || 'User';
+    const initials = fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U';
+    const memberSince = user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     }) : '';
+    const email = user.emailAddresses[0]?.emailAddress;
+    const avatarUrl = user.imageUrl;
 
     return (
       <div className="container mx-auto py-8 px-4">
@@ -178,22 +180,22 @@ export default async function ProfilePage() {
                   <div className="flex flex-col sm:flex-row gap-6">
                     <div className="flex-shrink-0">
                       <Avatar className="h-24 w-24">
-                        <AvatarImage src={typedUserData?.avatar_url || user.user_metadata?.avatar_url || ''} />
+                        <AvatarImage src={avatarUrl || ''} />
                         <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
                       </Avatar>
                     </div>
                     <div className="space-y-4 flex-1">
                       <div>
                         <h2 className="text-2xl font-bold">{fullName}</h2>
-                        <p className="text-muted-foreground">{user.email || 'No email provided'}</p>
+                        <p className="text-muted-foreground">{email || 'No email provided'}</p>
                       </div>
-                      
+
                       {typedProfile?.bio && (
                         <div className="prose prose-sm max-w-none">
                           <p className="text-muted-foreground">{typedProfile.bio}</p>
                         </div>
                       )}
-                      
+
                       <div className="flex flex-wrap gap-2 pt-2">
                         {typedProfile?.github_username && (
                           <Badge variant="secondary" className="gap-1.5">
@@ -208,13 +210,13 @@ export default async function ProfilePage() {
                             </a>
                           </Badge>
                         )}
-                        
+
                         {typedProfile?.experience_level && (
                           <Badge variant="outline" className="capitalize">
                             {typedProfile.experience_level} Developer
                           </Badge>
                         )}
-                        
+
                         {typedUserData?.is_pro && (
                           <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 border-0 text-white">
                             Pro Member
@@ -238,7 +240,7 @@ export default async function ProfilePage() {
                       <TabsTrigger value="analyses">Recent Analyses</TabsTrigger>
                       <TabsTrigger value="repositories">Saved Repositories</TabsTrigger>
                     </TabsList>
-                    
+
                     <TabsContent value="analyses" className="mt-4">
                       {typedRecentAnalyses && typedRecentAnalyses.length > 0 ? (
                         <div className="space-y-4">
@@ -269,7 +271,7 @@ export default async function ProfilePage() {
                         </div>
                       )}
                     </TabsContent>
-                    
+
                     <TabsContent value="repositories" className="mt-4">
                       {typedRecentRepos && typedRecentRepos.length > 0 ? (
                         <div className="space-y-4">
@@ -321,7 +323,7 @@ export default async function ProfilePage() {
                       </div>
                       <p className="text-2xl font-bold">{typedSavedCount || 0}</p>
                     </div>
-                    
+
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <GitCommit className="w-4 h-4" />
@@ -329,7 +331,7 @@ export default async function ProfilePage() {
                       </div>
                       <p className="text-2xl font-bold">{typedAnalysesCount || 0}</p>
                     </div>
-                    
+
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <Star className="w-4 h-4" />
@@ -339,18 +341,18 @@ export default async function ProfilePage() {
                         {typedProfile?.stars || 0}
                       </p>
                     </div>
-                    
+
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <Clock className="w-4 h-4" />
                         <span className="text-xs font-medium">Member</span>
                       </div>
                       <p className="text-2xl font-bold">
-                        {memberSince ? formatDate(user.created_at) : 'New'}
+                        {memberSince ? formatDate(user.createdAt.toString()) : 'New'}
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="pt-2 space-y-3">
                     <Button variant="outline" className="w-full" asChild>
                       <Link href="/repos">
@@ -358,7 +360,7 @@ export default async function ProfilePage() {
                         Browse Repositories
                       </Link>
                     </Button>
-                    
+
                   </div>
                 </CardContent>
               </Card>

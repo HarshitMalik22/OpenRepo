@@ -1,16 +1,24 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireAuth } from '@/lib/supabase/auth'
+import { createAdminClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 
 export async function GET() {
   try {
-    const user = await requireAuth()
-    const supabase = await createClient()
+    const { userId } = await auth()
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const supabase = (await createAdminClient()) as any
 
     const { data, error } = await supabase
       .from('saved_repositories')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -32,15 +40,22 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAuth()
-    const supabase = await createClient()
+    const { userId } = await auth()
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const supabase = (await createAdminClient()) as any
     const body = await request.json()
 
     const { data, error } = await supabase
       .from('saved_repositories')
-      // @ts-expect-error
       .insert({
-        user_id: user.id,
+        user_id: userId,
         repo_full_name: body.repo_full_name,
         repo_name: body.repo_name,
         repo_url: body.repo_url,
@@ -72,8 +87,16 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const user = await requireAuth()
-    const supabase = await createClient()
+    const { userId } = await auth()
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const supabase = (await createAdminClient()) as any
     const { searchParams } = new URL(request.url)
     const repoFullName = searchParams.get('repo_full_name')
 
@@ -87,7 +110,7 @@ export async function DELETE(request: Request) {
     const { error } = await supabase
       .from('saved_repositories')
       .delete()
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('repo_full_name', repoFullName)
 
     if (error) {

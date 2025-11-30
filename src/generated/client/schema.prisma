@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model profiles {
+  id               String    @id @default(uuid())
+  email            String?
+  full_name        String?
+  avatar_url       String?
+  bio              String?
+  github_username  String?
+  experience_level String?
+  tech_interests   String[]  @default([])
+  created_at       DateTime? @default(now())
+  updated_at       DateTime? @updatedAt
+
+  saved_repositories saved_repositories[]
+  analyses           analyses[]
+
+  @@map("profiles")
+}
+
+model repositories {
+  id            BigInt    @id
+  full_name     String
+  data          Json
+  last_analyzed DateTime?
+  created_at    DateTime? @default(now())
+
+  saved_by saved_repositories[]
+  analyses analyses[]
+
+  @@map("repositories")
+}
+
+model saved_repositories {
+  id            String    @id @default(uuid())
+  user_id       String
+  repository_id BigInt
+  created_at    DateTime? @default(now())
+
+  user       profiles     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  repository repositories @relation(fields: [repository_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, repository_id])
+  @@map("saved_repositories")
+}
+
+model analyses {
+  id            String    @id @default(uuid())
+  user_id       String
+  repository_id BigInt
+  mermaid_code  String
+  explanation   String
+  created_at    DateTime? @default(now())
+
+  user       profiles     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  repository repositories @relation(fields: [repository_id], references: [id], onDelete: Cascade)
+
+  @@map("analyses")
+}
+
+model user_roles {
+  id         String    @id @default(uuid())
+  user_id    String
+  role       app_role
+  created_at DateTime? @default(now())
+
+  @@map("user_roles")
+}
+
+enum app_role {
+  admin
+  moderator
+  user
+}

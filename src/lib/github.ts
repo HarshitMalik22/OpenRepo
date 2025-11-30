@@ -124,7 +124,7 @@ async function makeGitHubRequest<T>(url: string, options: RequestInit = {}): Pro
 }
 
 import { getGitHubHeaders, getGitHubHeadersForContext } from './github-headers';
-import { redisCache, CacheKeys, CacheTTL } from './redis-cache-client';
+import { redisCache, CacheKeys, CacheTTL, getCachedData } from './redis-cache';
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats } from './types';
 import { CompetitionLevel, ActivityLevel, AIDomain, ContributionDifficultyLevel } from './types';
 
@@ -446,114 +446,125 @@ interface GetPopularReposOptions {
 
 export async function getPopularRepos(options: boolean | GetPopularReposOptions = true): Promise<PopularReposResponse> {
   const { page = 1, perPage = 30, language, q, enrichWithIssues = false } = typeof options === 'object' ? options : {};
-  let response: GitHubSearchResponse | null = null;
+  
+  // Generate a unique cache key based on options
+  const cacheKey = `repos:popular:${JSON.stringify({ page, perPage, language, q, enrichWithIssues })}`;
+  
+  // Use getCachedData to handle caching automatically
+  return getCachedData<PopularReposResponse>(
+    cacheKey,
+    async () => {
+      let response: GitHubSearchResponse | null = null;
 
-  try {
-    // Define search query for popular repositories
-    let query = q || 'stars:>1000 sort:stars-desc';
-    
-    // Append language filter if provided and not already in query
-    if (language && !query.includes('language:')) {
-      query += ` language:${language}`;
-    }
-    const maxPages = 2; // Reduced number of pages to fetch
-    const allRepos: Repository[] = [];
-    const seenRepos = new Set<number>();
-    
-    // Set up request headers
-    const headers: Record<string, string> = {
-      'Accept': 'application/vnd.github.v3+json',
-    };
-    
-    // Add authorization if token exists
-    if (process.env.GITHUB_TOKEN) {
-      headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
-    }
-    
-    // Fetch repositories from GitHub API
-    for (let currentPage = 1; currentPage <= maxPages; currentPage++) {
       try {
-        const url = new URL('https://api.github.com/search/repositories');
-        url.searchParams.append('q', query);
-        url.searchParams.append('sort', 'stars');
-        url.searchParams.append('order', 'desc');
-        url.searchParams.append('per_page', perPage.toString());
-        url.searchParams.append('page', currentPage.toString());
+        // Define search query for popular repositories
+        let query = q || 'stars:>1000 sort:stars-desc';
         
-        console.log(`Fetching page ${currentPage} from GitHub API: ${url.toString()}`);
+        // Append language filter if provided and not already in query
+        if (language && !query.includes('language:')) {
+          query += ` language:${language}`;
+        }
+        const maxPages = 2; // Reduced number of pages to fetch
+        const allRepos: Repository[] = [];
+        const seenRepos = new Set<number>();
         
-        const fetchResponse = await fetch(url.toString(), { headers });
-        const responseData = await fetchResponse.json() as GitHubSearchResponse;
+        // Set up request headers
+        const headers: Record<string, string> = {
+          'Accept': 'application/vnd.github.v3+json',
+        };
         
-        // Update the response variable for potential error handling
-        response = responseData;
-
-        // Check for rate limiting and other errors in the response data
-        if ('message' in responseData && responseData.message) {
-          const errorMessage = typeof responseData.message === 'string' 
-            ? responseData.message 
-            : 'Unknown GitHub API error';
+        // Add authorization if token exists
+        if (process.env.GITHUB_TOKEN) {
+          headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+        }
+        
+        // Fetch repositories from GitHub API
+        for (let currentPage = 1; currentPage <= maxPages; currentPage++) {
+          try {
+            const url = new URL('https://api.github.com/search/repositories');
+            url.searchParams.append('q', query);
+            url.searchParams.append('sort', 'stars');
+            url.searchParams.append('order', 'desc');
+            url.searchParams.append('per_page', perPage.toString());
+            url.searchParams.append('page', currentPage.toString());
             
-          console.error('GitHub API error:', errorMessage);
-          
-          if (errorMessage.includes('API rate limit exceeded')) {
-            console.warn('GitHub API rate limit exceeded');
-            throw new Error('GitHub API rate limit exceeded');
-          }
-          
-          throw new Error(`GitHub API error: ${errorMessage}`);
-        }
+            console.log(`Fetching page ${currentPage} from GitHub API: ${url.toString()}`);
+            
+            const fetchResponse = await fetch(url.toString(), { headers });
+            const responseData = await fetchResponse.json() as GitHubSearchResponse;
+            
+            // Update the response variable for potential error handling
+            response = responseData;
 
-        if (!('items' in response) || !Array.isArray(response.items)) {
-          console.error('Invalid GitHub API response format:', response);
-          throw new Error('Invalid response format from GitHub API');
+            // Check for rate limiting and other errors in the response data
+            if ('message' in responseData && responseData.message) {
+              const errorMessage = typeof responseData.message === 'string' 
+                ? responseData.message 
+                : 'Unknown GitHub API error';
+                
+              console.error('GitHub API error:', errorMessage);
+              
+              if (errorMessage.includes('API rate limit exceeded')) {
+                console.warn('GitHub API rate limit exceeded');
+                throw new Error('GitHub API rate limit exceeded');
+              }
+              
+              throw new Error(`GitHub API error: ${errorMessage}`);
+            }
+
+            if (!('items' in response) || !Array.isArray(response.items)) {
+              console.error('Invalid GitHub API response format:', response);
+              throw new Error('Invalid response format from GitHub API');
+            }
+            
+            // Process repositories from this page
+            for (const repo of response.items) {
+              if (!seenRepos.has(repo.id)) {
+                seenRepos.add(repo.id);
+                allRepos.push(mapGitHubRepoToRepository(repo));
+              }
+            }
+
+            // If we got fewer results than requested, we've reached the end
+            if (response.items.length < perPage) {
+              break;
+            }
+
+            // Add a small delay between requests to avoid hitting rate limits
+            if (page < maxPages) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          } catch (error) {
+            console.error(`Error fetching page ${page}:`, error);
+            // Continue to next page even if one page fails
+          }
         }
         
-        // Process repositories from this page
-        for (const repo of response.items) {
-          if (!seenRepos.has(repo.id)) {
-            seenRepos.add(repo.id);
-            allRepos.push(mapGitHubRepoToRepository(repo));
+        // Enrich with good first issue counts if requested
+        let finalRepos = allRepos;
+        if (enrichWithIssues && allRepos.length > 0) {
+          try {
+            console.log('Enriching repositories with good first issue counts...');
+            finalRepos = await enrichRepositoriesWithIssueData(allRepos);
+          } catch (enrichError) {
+            console.error('Failed to enrich repositories with issue data:', enrichError);
+            // Continue with unenriched data
           }
         }
-
-        // If we got fewer results than requested, we've reached the end
-        if (response.items.length < perPage) {
-          break;
-        }
-
-        // Add a small delay between requests to avoid hitting rate limits
-        if (page < maxPages) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+        
+        const result = {
+          repositories: finalRepos,
+          totalCount: response?.total_count || finalRepos.length
+        };
+        
+        return result;
       } catch (error) {
-        console.error(`Error fetching page ${page}:`, error);
-        // Continue to next page even if one page fails
+        console.error('Failed to fetch popular repositories:', error);
+        throw error;
       }
-    }
-    
-    // Enrich with good first issue counts if requested
-    let finalRepos = allRepos;
-    if (enrichWithIssues && allRepos.length > 0) {
-      try {
-        console.log('Enriching repositories with good first issue counts...');
-        finalRepos = await enrichRepositoriesWithIssueData(allRepos);
-      } catch (enrichError) {
-        console.error('Failed to enrich repositories with issue data:', enrichError);
-        // Continue with unenriched data
-      }
-    }
-    
-    const result = {
-      repositories: finalRepos,
-      totalCount: response?.total_count || finalRepos.length
-    };
-    
-    return result;
-  } catch (error) {
-    console.error('Failed to fetch popular repositories:', error);
-    throw error;
-  }
+    },
+    CacheTTL.popularRepos // Cache for 1 hour
+  );
 }
 
 // Get personalized recommendations based on user preferences (stub - functionality removed)
