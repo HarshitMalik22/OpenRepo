@@ -156,6 +156,8 @@ exports.Prisma.AnalysesScalarFieldEnum = {
   repository_id: 'repository_id',
   mermaid_code: 'mermaid_code',
   explanation: 'explanation',
+  component_mapping: 'component_mapping',
+  summary: 'summary',
   created_at: 'created_at'
 };
 

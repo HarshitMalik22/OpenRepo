@@ -70,7 +70,9 @@ function calculateBackoff(retryCount: number): number {
 
 // Make a rate-limited request to GitHub API
 async function makeGitHubRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const contextHeaders = getGitHubHeadersForContext();
   const headers = {
+    ...contextHeaders,
     'Accept': 'application/vnd.github.v3+json',
     ...options.headers,
   };

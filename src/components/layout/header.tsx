@@ -29,6 +29,7 @@ export default function Header({ stars = 0 }: { stars?: number }) {
               src="/logos/opensauce-logo.png"
               alt="OpenSauce Logo"
               fill
+              sizes="32px"
               className="object-contain"
             />
           </div>

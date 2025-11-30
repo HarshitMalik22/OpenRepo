@@ -81,33 +81,126 @@ function removeMermaidCodeFences(diagram: string): string {
 
 function sanitizeMermaidDiagram(diagram: string): string {
   if (!diagram) return '';
-  let sanitized = diagram;
+  
+  // Apply structural formatting FIRST to handle single-line diagrams
+  // This ensures that regexes relying on newlines (like subgraph sanitization) work correctly
+  let sanitized = formatMermaidCode(diagram);
 
-  // Remove invalid class syntax from subgraph declarations (e.g., subgraph "name":::class)
-  // Mermaid doesn't support applying classes directly to subgraphs
-  sanitized = sanitized.replace(/subgraph\s+([^:\n]+):::[a-zA-Z0-9_]+/g, 'subgraph $1');
+  // Fix incorrect class syntax (:: instead of :::)
+  // Matches pattern like: Node["Label"]::className or Node::className
+  // We look for :: followed by a class name, ensuring it's not part of a URL (http://) or C++ style scope
+  sanitized = sanitized.replace(/([\])])\s*::\s*([a-zA-Z0-9_-]+)/g, '$1:::$2');
+  sanitized = sanitized.replace(/(\w+)\s*::\s*([a-zA-Z0-9_-]+)/g, (match, p1, p2) => {
+    if (p1 === 'http' || p1 === 'https') return match;
+    return `${p1}:::${p2}`;
+  });
 
   // Remove invalid class syntax from arrow connections (e.g., A --> B:::class)
-  // Classes can only be applied when defining nodes, not in connections
   sanitized = sanitized.replace(/(-->|---|\-\.\->|\-\.-)\s*([a-zA-Z0-9_]+):::[a-zA-Z0-9_]+/g, '$1 $2');
 
-  // Normalize improperly closed input/output shapes like [/"Text"] or [\"Text"/]
+  // Normalize improperly closed input/output shapes
   sanitized = sanitized.replace(/\[\/\"([^\"]+)\"\/?\]/g, '[\"$1\"]');
   sanitized = sanitized.replace(/\[\"([^\"]+)\"\/\]/g, '[\"$1\"]');
 
   // Ensure standard bracket nodes don't accidentally drop their closing bracket
   sanitized = sanitized.replace(/\[([^\[\]]+)\n/g, (_, label) => `[${label.trim()}]\n`);
 
-  // Remove stray carriage returns that can break parsing
+  // Remove stray carriage returns
   sanitized = sanitized.replace(/\r/g, '');
 
   // Ensure subgraph declarations end on their own line
   sanitized = sanitized.replace(/end(\S)/g, 'end\n$1');
+  
+  // Replace 'endsubgraph' with 'end' (common AI hallucination)
+  sanitized = sanitized.replace(/endsubgraph/g, 'end');
 
   // Replace literal '\n' sequences inside labels with HTML line breaks
   sanitized = sanitized.replace(/\\n/g, '<br/>');
 
+  // Helper regex part for matching content that might be quoted with nested delimiters
+  const getContentPattern = (delimiter: string) => `(?:[^${delimiter}]|"(?:[^"\\\\]|\\\\.)*")*`;
+  const safeQuote = (content: string) => {
+    let inner = content.trim();
+    const isQuoted = inner.startsWith('"') && inner.endsWith('"');
+    if (isQuoted) {
+      inner = inner.substring(1, inner.length - 1);
+    }
+    inner = inner.replace(/"/g, "'");
+    return `"${inner}"`;
+  };
+
+  // Shape sanitization (Cylinder, Subroutine, etc.)
+  sanitized = sanitized.replace(new RegExp(`\\[\\((${getContentPattern('\\)')})\\)\\]`, 'g'), (_, c) => `[(${safeQuote(c)})]`);
+  sanitized = sanitized.replace(new RegExp(`\\[\\[(${getContentPattern('\\]')})\\]\\]`, 'g'), (_, c) => `[[${safeQuote(c)}]]`);
+  sanitized = sanitized.replace(new RegExp(`\\[\\/(${getContentPattern('\\/')})\\/\\]`, 'g'), (_, c) => `[/${safeQuote(c)}/]`);
+  sanitized = sanitized.replace(new RegExp(`\\[\\\\(${getContentPattern('\\\\')})\\\\\\]`, 'g'), (_, c) => `[\\${safeQuote(c)}\\]`);
+  sanitized = sanitized.replace(new RegExp(`\\(\\(([^)]+)\\)\\)`, 'g'), (_, c) => `((${safeQuote(c)}))`);
+  sanitized = sanitized.replace(new RegExp(`\\{\\{(${getContentPattern('\\}')})\\}\\}`, 'g'), (_, c) => `{{${safeQuote(c)}}}`);
+  sanitized = sanitized.replace(new RegExp(`(?<![\\[\\(])\\((${getContentPattern('\\)')})\\)`, 'g'), (match, c) => `(${safeQuote(c)})`);
+  sanitized = sanitized.replace(new RegExp(`(?<!\\[)\\[(${getContentPattern('\\]')})\\]`, 'g'), (_, c) => `[${safeQuote(c)}]`);
+
+  // Apply structural formatting AGAIN
+  sanitized = formatMermaidCode(sanitized);
+
   return sanitized;
+}
+
+function formatMermaidCode(code: string): string {
+  if (!code) return '';
+  
+  let formatted = code;
+
+  // 1. Ensure newlines before top-level keywords
+  // We use a more specific replacement to avoid eating existing newlines and ensure separation
+  const keywords = ['subgraph', 'click', 'classDef', 'class', 'style', 'linkStyle'];
+  keywords.forEach(kw => {
+    // Replace (whitespace)keyword(whitespace) with \nkeyword 
+    formatted = formatted.replace(new RegExp(`\\s+${kw}\\s+`, 'g'), `\n${kw} `);
+  });
+
+  // Handle 'end' separately to ensure it has a newline AFTER it as well, 
+  // because 'end' is often followed by another block start on the same line in minified output
+  formatted = formatted.replace(/\s+end\s+/g, '\nend\n');
+
+  // 2. Ensure newline after subgraph title
+  // Simplified regex: just look for subgraph "..." or subgraph Word
+  // We don't try to be too smart about nested quotes here because we pre-processed them.
+  formatted = formatted.replace(/(subgraph\s+(?:"[^"]*"|[^\s]+))\s+/g, '$1\n');
+
+  // 3. Handle class assignments (:::className)
+  // Fix: Remove :::className from subgraph declarations (e.g. subgraph "Name":::style)
+  // Also clean up subgraph names that might contain brackets or extra quotes
+  formatted = formatted.replace(/subgraph\s+([^\n]+)/g, (match, content) => {
+    // Remove class styling if present
+    let cleaned = content.replace(/:::[a-zA-Z0-9_-]+/, '');
+    
+    // If it looks like 'Client["Label"]', extract just 'Client' or '"Label"'
+    // We want to simplify it to just a name or a quoted label
+    if (cleaned.includes('[') || cleaned.includes('(')) {
+        // Try to extract a clean name
+        const nameMatch = cleaned.match(/^["']?([a-zA-Z0-9_-]+)["']?/);
+        if (nameMatch) {
+            return `subgraph ${nameMatch[1]}`;
+        }
+        // Fallback: quote the whole thing after stripping dangerous chars
+        return `subgraph "${cleaned.replace(/["\[\]()]/g, '')}"`;
+    }
+    return `subgraph ${cleaned.trim()}`;
+  });
+  
+  // Ensure newline after class assignment
+  formatted = formatted.replace(/(:::[a-zA-Z0-9_-]+)\s+(?![-=.])/g, '$1\n');
+
+  // 4. Ensure graph/flowchart is on its own line
+  formatted = formatted.replace(/^\s*(graph|flowchart)\s+([A-Z]+)([\s\S]*)/, '$1 $2\n$3');
+  
+  // 5. Split sequential connections (e.g. A-->B C-->D)
+  formatted = formatted.replace(/([^\s"]+)\s+(?=[^\s"]+\s+(?:-->|---|==>|-\.->))/g, '$1\n');
+
+  // 6. Clean up multiple newlines
+  formatted = formatted.replace(/\n{3,}/g, '\n\n');
+  
+  return formatted.trim();
 }
 
 const RESERVED_KEYWORDS = new Set(['graph', 'flowchart', 'subgraph', 'classDef', 'class', 'click', 'style', 'linkStyle']);
@@ -616,6 +709,13 @@ Guidelines for diagram components and relationships:
 
 IMPORTANT!!: Please orient and draw the diagram as vertically as possible. You must avoid long horizontal lists of nodes and sections!
 
+CRITICAL - LAYOUT INSTRUCTIONS:
+- You MUST use 'flowchart TD' (Top-Down) to ensure a vertical orientation.
+- Enforce a "narrow and tall" aspect ratio. Do not create wide diagrams.
+- Limit the number of nodes per row/rank to a maximum of 3-4. Force a new row if there are more.
+- Use nested subgraphs to group related components vertically. For example, instead of placing 5 services side-by-side, group them into a "Services" subgraph and stack them.
+- Avoid "fan-out" patterns where one node connects to 10 others in a single horizontal line. Use intermediate nodes or subgraphs to break this up.
+
 CRITICAL - COLOR APPLICATION INSTRUCTIONS:
 You MUST apply the appropriate color classes to ALL nodes in your diagram. Here's how to apply colors:
 - Frontend components (React, Vue, Angular, HTML, CSS, UI components): Use :::frontend
@@ -673,9 +773,10 @@ flowchart TD
 
     %% Subgraphs and modules
     subgraph "Layer A"
+        direction TB
         A1("Module A"):::example
-        %% more modules...
-        %% inner subgraphs if needed...
+        A2("Module B"):::example
+        A1 --> A2
     end
 
     %% more subgraphs, modules, etc...

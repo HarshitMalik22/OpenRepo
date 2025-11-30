@@ -54,15 +54,18 @@ model saved_repositories {
 
 model analyses {
   id            String    @id @default(uuid())
-  user_id       String
+  user_id       String?
   repository_id BigInt
-  mermaid_code  String
-  explanation   String
+  mermaid_code      String
+  explanation       String
+  component_mapping String?
+  summary           String?
   created_at    DateTime? @default(now())
 
-  user       profiles     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user       profiles?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   repository repositories @relation(fields: [repository_id], references: [id], onDelete: Cascade)
 
+  @@unique([repository_id])
   @@map("analyses")
 }
 

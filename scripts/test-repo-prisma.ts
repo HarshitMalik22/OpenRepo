@@ -5,7 +5,7 @@ async function main() {
   
   try {
     const testRepo = {
-      id: 123456789n, // BigInt
+      id: BigInt(123456789), // BigInt
       full_name: 'test/repo-prisma',
       data: { description: 'Test repository via Prisma' },
       last_analyzed: new Date(),

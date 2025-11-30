@@ -4301,6 +4301,8 @@ export namespace Prisma {
     repository_id: bigint | null
     mermaid_code: string | null
     explanation: string | null
+    component_mapping: string | null
+    summary: string | null
     created_at: Date | null
   }
 
@@ -4310,6 +4312,8 @@ export namespace Prisma {
     repository_id: bigint | null
     mermaid_code: string | null
     explanation: string | null
+    component_mapping: string | null
+    summary: string | null
     created_at: Date | null
   }
 
@@ -4319,6 +4323,8 @@ export namespace Prisma {
     repository_id: number
     mermaid_code: number
     explanation: number
+    component_mapping: number
+    summary: number
     created_at: number
     _all: number
   }
@@ -4338,6 +4344,8 @@ export namespace Prisma {
     repository_id?: true
     mermaid_code?: true
     explanation?: true
+    component_mapping?: true
+    summary?: true
     created_at?: true
   }
 
@@ -4347,6 +4355,8 @@ export namespace Prisma {
     repository_id?: true
     mermaid_code?: true
     explanation?: true
+    component_mapping?: true
+    summary?: true
     created_at?: true
   }
 
@@ -4356,6 +4366,8 @@ export namespace Prisma {
     repository_id?: true
     mermaid_code?: true
     explanation?: true
+    component_mapping?: true
+    summary?: true
     created_at?: true
     _all?: true
   }
@@ -4448,10 +4460,12 @@ export namespace Prisma {
 
   export type AnalysesGroupByOutputType = {
     id: string
-    user_id: string
+    user_id: string | null
     repository_id: bigint
     mermaid_code: string
     explanation: string
+    component_mapping: string | null
+    summary: string | null
     created_at: Date | null
     _count: AnalysesCountAggregateOutputType | null
     _avg: AnalysesAvgAggregateOutputType | null
@@ -4480,8 +4494,10 @@ export namespace Prisma {
     repository_id?: boolean
     mermaid_code?: boolean
     explanation?: boolean
+    component_mapping?: boolean
+    summary?: boolean
     created_at?: boolean
-    user?: boolean | profilesDefaultArgs<ExtArgs>
+    user?: boolean | analyses$userArgs<ExtArgs>
     repository?: boolean | repositoriesDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["analyses"]>
 
@@ -4491,8 +4507,10 @@ export namespace Prisma {
     repository_id?: boolean
     mermaid_code?: boolean
     explanation?: boolean
+    component_mapping?: boolean
+    summary?: boolean
     created_at?: boolean
-    user?: boolean | profilesDefaultArgs<ExtArgs>
+    user?: boolean | analyses$userArgs<ExtArgs>
     repository?: boolean | repositoriesDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["analyses"]>
 
@@ -4502,30 +4520,34 @@ export namespace Prisma {
     repository_id?: boolean
     mermaid_code?: boolean
     explanation?: boolean
+    component_mapping?: boolean
+    summary?: boolean
     created_at?: boolean
   }
 
   export type analysesInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | profilesDefaultArgs<ExtArgs>
+    user?: boolean | analyses$userArgs<ExtArgs>
     repository?: boolean | repositoriesDefaultArgs<ExtArgs>
   }
   export type analysesIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | profilesDefaultArgs<ExtArgs>
+    user?: boolean | analyses$userArgs<ExtArgs>
     repository?: boolean | repositoriesDefaultArgs<ExtArgs>
   }
 
   export type $analysesPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "analyses"
     objects: {
-      user: Prisma.$profilesPayload<ExtArgs>
+      user: Prisma.$profilesPayload<ExtArgs> | null
       repository: Prisma.$repositoriesPayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
-      user_id: string
+      user_id: string | null
       repository_id: bigint
       mermaid_code: string
       explanation: string
+      component_mapping: string | null
+      summary: string | null
       created_at: Date | null
     }, ExtArgs["result"]["analyses"]>
     composites: {}
@@ -4891,7 +4913,7 @@ export namespace Prisma {
    */
   export interface Prisma__analysesClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends profilesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, profilesDefaultArgs<ExtArgs>>): Prisma__profilesClient<$Result.GetResult<Prisma.$profilesPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    user<T extends analyses$userArgs<ExtArgs> = {}>(args?: Subset<T, analyses$userArgs<ExtArgs>>): Prisma__profilesClient<$Result.GetResult<Prisma.$profilesPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     repository<T extends repositoriesDefaultArgs<ExtArgs> = {}>(args?: Subset<T, repositoriesDefaultArgs<ExtArgs>>): Prisma__repositoriesClient<$Result.GetResult<Prisma.$repositoriesPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -4927,6 +4949,8 @@ export namespace Prisma {
     readonly repository_id: FieldRef<"analyses", 'BigInt'>
     readonly mermaid_code: FieldRef<"analyses", 'String'>
     readonly explanation: FieldRef<"analyses", 'String'>
+    readonly component_mapping: FieldRef<"analyses", 'String'>
+    readonly summary: FieldRef<"analyses", 'String'>
     readonly created_at: FieldRef<"analyses", 'DateTime'>
   }
     
@@ -5243,6 +5267,21 @@ export namespace Prisma {
      * Filter which analyses to delete
      */
     where?: analysesWhereInput
+  }
+
+  /**
+   * analyses.user
+   */
+  export type analyses$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the profiles
+     */
+    select?: profilesSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: profilesInclude<ExtArgs> | null
+    where?: profilesWhereInput
   }
 
   /**
@@ -6183,6 +6222,8 @@ export namespace Prisma {
     repository_id: 'repository_id',
     mermaid_code: 'mermaid_code',
     explanation: 'explanation',
+    component_mapping: 'component_mapping',
+    summary: 'summary',
     created_at: 'created_at'
   };
 
@@ -6542,21 +6583,25 @@ export namespace Prisma {
     OR?: analysesWhereInput[]
     NOT?: analysesWhereInput | analysesWhereInput[]
     id?: StringFilter<"analyses"> | string
-    user_id?: StringFilter<"analyses"> | string
+    user_id?: StringNullableFilter<"analyses"> | string | null
     repository_id?: BigIntFilter<"analyses"> | bigint | number
     mermaid_code?: StringFilter<"analyses"> | string
     explanation?: StringFilter<"analyses"> | string
+    component_mapping?: StringNullableFilter<"analyses"> | string | null
+    summary?: StringNullableFilter<"analyses"> | string | null
     created_at?: DateTimeNullableFilter<"analyses"> | Date | string | null
-    user?: XOR<ProfilesRelationFilter, profilesWhereInput>
+    user?: XOR<ProfilesNullableRelationFilter, profilesWhereInput> | null
     repository?: XOR<RepositoriesRelationFilter, repositoriesWhereInput>
   }
 
   export type analysesOrderByWithRelationInput = {
     id?: SortOrder
-    user_id?: SortOrder
+    user_id?: SortOrderInput | SortOrder
     repository_id?: SortOrder
     mermaid_code?: SortOrder
     explanation?: SortOrder
+    component_mapping?: SortOrderInput | SortOrder
+    summary?: SortOrderInput | SortOrder
     created_at?: SortOrderInput | SortOrder
     user?: profilesOrderByWithRelationInput
     repository?: repositoriesOrderByWithRelationInput
@@ -6564,24 +6609,28 @@ export namespace Prisma {
 
   export type analysesWhereUniqueInput = Prisma.AtLeast<{
     id?: string
+    repository_id?: bigint | number
     AND?: analysesWhereInput | analysesWhereInput[]
     OR?: analysesWhereInput[]
     NOT?: analysesWhereInput | analysesWhereInput[]
-    user_id?: StringFilter<"analyses"> | string
-    repository_id?: BigIntFilter<"analyses"> | bigint | number
+    user_id?: StringNullableFilter<"analyses"> | string | null
     mermaid_code?: StringFilter<"analyses"> | string
     explanation?: StringFilter<"analyses"> | string
+    component_mapping?: StringNullableFilter<"analyses"> | string | null
+    summary?: StringNullableFilter<"analyses"> | string | null
     created_at?: DateTimeNullableFilter<"analyses"> | Date | string | null
-    user?: XOR<ProfilesRelationFilter, profilesWhereInput>
+    user?: XOR<ProfilesNullableRelationFilter, profilesWhereInput> | null
     repository?: XOR<RepositoriesRelationFilter, repositoriesWhereInput>
-  }, "id">
+  }, "id" | "repository_id">
 
   export type analysesOrderByWithAggregationInput = {
     id?: SortOrder
-    user_id?: SortOrder
+    user_id?: SortOrderInput | SortOrder
     repository_id?: SortOrder
     mermaid_code?: SortOrder
     explanation?: SortOrder
+    component_mapping?: SortOrderInput | SortOrder
+    summary?: SortOrderInput | SortOrder
     created_at?: SortOrderInput | SortOrder
     _count?: analysesCountOrderByAggregateInput
     _avg?: analysesAvgOrderByAggregateInput
@@ -6595,10 +6644,12 @@ export namespace Prisma {
     OR?: analysesScalarWhereWithAggregatesInput[]
     NOT?: analysesScalarWhereWithAggregatesInput | analysesScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"analyses"> | string
-    user_id?: StringWithAggregatesFilter<"analyses"> | string
+    user_id?: StringNullableWithAggregatesFilter<"analyses"> | string | null
     repository_id?: BigIntWithAggregatesFilter<"analyses"> | bigint | number
     mermaid_code?: StringWithAggregatesFilter<"analyses"> | string
     explanation?: StringWithAggregatesFilter<"analyses"> | string
+    component_mapping?: StringNullableWithAggregatesFilter<"analyses"> | string | null
+    summary?: StringNullableWithAggregatesFilter<"analyses"> | string | null
     created_at?: DateTimeNullableWithAggregatesFilter<"analyses"> | Date | string | null
   }
 
@@ -6863,17 +6914,21 @@ export namespace Prisma {
     id?: string
     mermaid_code: string
     explanation: string
+    component_mapping?: string | null
+    summary?: string | null
     created_at?: Date | string | null
-    user: profilesCreateNestedOneWithoutAnalysesInput
+    user?: profilesCreateNestedOneWithoutAnalysesInput
     repository: repositoriesCreateNestedOneWithoutAnalysesInput
   }
 
   export type analysesUncheckedCreateInput = {
     id?: string
-    user_id: string
+    user_id?: string | null
     repository_id: bigint | number
     mermaid_code: string
     explanation: string
+    component_mapping?: string | null
+    summary?: string | null
     created_at?: Date | string | null
   }
 
@@ -6881,26 +6936,32 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    user?: profilesUpdateOneRequiredWithoutAnalysesNestedInput
+    user?: profilesUpdateOneWithoutAnalysesNestedInput
     repository?: repositoriesUpdateOneRequiredWithoutAnalysesNestedInput
   }
 
   export type analysesUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    user_id?: StringFieldUpdateOperationsInput | string
+    user_id?: NullableStringFieldUpdateOperationsInput | string | null
     repository_id?: BigIntFieldUpdateOperationsInput | bigint | number
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type analysesCreateManyInput = {
     id?: string
-    user_id: string
+    user_id?: string | null
     repository_id: bigint | number
     mermaid_code: string
     explanation: string
+    component_mapping?: string | null
+    summary?: string | null
     created_at?: Date | string | null
   }
 
@@ -6908,15 +6969,19 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type analysesUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
-    user_id?: StringFieldUpdateOperationsInput | string
+    user_id?: NullableStringFieldUpdateOperationsInput | string | null
     repository_id?: BigIntFieldUpdateOperationsInput | bigint | number
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
@@ -7278,12 +7343,19 @@ export namespace Prisma {
     repository_id?: SortOrder
   }
 
+  export type ProfilesNullableRelationFilter = {
+    is?: profilesWhereInput | null
+    isNot?: profilesWhereInput | null
+  }
+
   export type analysesCountOrderByAggregateInput = {
     id?: SortOrder
     user_id?: SortOrder
     repository_id?: SortOrder
     mermaid_code?: SortOrder
     explanation?: SortOrder
+    component_mapping?: SortOrder
+    summary?: SortOrder
     created_at?: SortOrder
   }
 
@@ -7297,6 +7369,8 @@ export namespace Prisma {
     repository_id?: SortOrder
     mermaid_code?: SortOrder
     explanation?: SortOrder
+    component_mapping?: SortOrder
+    summary?: SortOrder
     created_at?: SortOrder
   }
 
@@ -7306,6 +7380,8 @@ export namespace Prisma {
     repository_id?: SortOrder
     mermaid_code?: SortOrder
     explanation?: SortOrder
+    component_mapping?: SortOrder
+    summary?: SortOrder
     created_at?: SortOrder
   }
 
@@ -7588,10 +7664,12 @@ export namespace Prisma {
     connect?: repositoriesWhereUniqueInput
   }
 
-  export type profilesUpdateOneRequiredWithoutAnalysesNestedInput = {
+  export type profilesUpdateOneWithoutAnalysesNestedInput = {
     create?: XOR<profilesCreateWithoutAnalysesInput, profilesUncheckedCreateWithoutAnalysesInput>
     connectOrCreate?: profilesCreateOrConnectWithoutAnalysesInput
     upsert?: profilesUpsertWithoutAnalysesInput
+    disconnect?: profilesWhereInput | boolean
+    delete?: profilesWhereInput | boolean
     connect?: profilesWhereUniqueInput
     update?: XOR<XOR<profilesUpdateToOneWithWhereWithoutAnalysesInput, profilesUpdateWithoutAnalysesInput>, profilesUncheckedUpdateWithoutAnalysesInput>
   }
@@ -7820,6 +7898,8 @@ export namespace Prisma {
     id?: string
     mermaid_code: string
     explanation: string
+    component_mapping?: string | null
+    summary?: string | null
     created_at?: Date | string | null
     repository: repositoriesCreateNestedOneWithoutAnalysesInput
   }
@@ -7829,6 +7909,8 @@ export namespace Prisma {
     repository_id: bigint | number
     mermaid_code: string
     explanation: string
+    component_mapping?: string | null
+    summary?: string | null
     created_at?: Date | string | null
   }
 
@@ -7889,10 +7971,12 @@ export namespace Prisma {
     OR?: analysesScalarWhereInput[]
     NOT?: analysesScalarWhereInput | analysesScalarWhereInput[]
     id?: StringFilter<"analyses"> | string
-    user_id?: StringFilter<"analyses"> | string
+    user_id?: StringNullableFilter<"analyses"> | string | null
     repository_id?: BigIntFilter<"analyses"> | bigint | number
     mermaid_code?: StringFilter<"analyses"> | string
     explanation?: StringFilter<"analyses"> | string
+    component_mapping?: StringNullableFilter<"analyses"> | string | null
+    summary?: StringNullableFilter<"analyses"> | string | null
     created_at?: DateTimeNullableFilter<"analyses"> | Date | string | null
   }
 
@@ -7922,15 +8006,19 @@ export namespace Prisma {
     id?: string
     mermaid_code: string
     explanation: string
+    component_mapping?: string | null
+    summary?: string | null
     created_at?: Date | string | null
-    user: profilesCreateNestedOneWithoutAnalysesInput
+    user?: profilesCreateNestedOneWithoutAnalysesInput
   }
 
   export type analysesUncheckedCreateWithoutRepositoryInput = {
     id?: string
-    user_id: string
+    user_id?: string | null
     mermaid_code: string
     explanation: string
+    component_mapping?: string | null
+    summary?: string | null
     created_at?: Date | string | null
   }
 
@@ -8235,6 +8323,8 @@ export namespace Prisma {
     repository_id: bigint | number
     mermaid_code: string
     explanation: string
+    component_mapping?: string | null
+    summary?: string | null
     created_at?: Date | string | null
   }
 
@@ -8260,6 +8350,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     repository?: repositoriesUpdateOneRequiredWithoutAnalysesNestedInput
   }
@@ -8269,6 +8361,8 @@ export namespace Prisma {
     repository_id?: BigIntFieldUpdateOperationsInput | bigint | number
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
@@ -8277,6 +8371,8 @@ export namespace Prisma {
     repository_id?: BigIntFieldUpdateOperationsInput | bigint | number
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
@@ -8288,9 +8384,11 @@ export namespace Prisma {
 
   export type analysesCreateManyRepositoryInput = {
     id?: string
-    user_id: string
+    user_id?: string | null
     mermaid_code: string
     explanation: string
+    component_mapping?: string | null
+    summary?: string | null
     created_at?: Date | string | null
   }
 
@@ -8316,23 +8414,29 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    user?: profilesUpdateOneRequiredWithoutAnalysesNestedInput
+    user?: profilesUpdateOneWithoutAnalysesNestedInput
   }
 
   export type analysesUncheckedUpdateWithoutRepositoryInput = {
     id?: StringFieldUpdateOperationsInput | string
-    user_id?: StringFieldUpdateOperationsInput | string
+    user_id?: NullableStringFieldUpdateOperationsInput | string | null
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type analysesUncheckedUpdateManyWithoutRepositoryInput = {
     id?: StringFieldUpdateOperationsInput | string
-    user_id?: StringFieldUpdateOperationsInput | string
+    user_id?: NullableStringFieldUpdateOperationsInput | string | null
     mermaid_code?: StringFieldUpdateOperationsInput | string
     explanation?: StringFieldUpdateOperationsInput | string
+    component_mapping?: NullableStringFieldUpdateOperationsInput | string | null
+    summary?: NullableStringFieldUpdateOperationsInput | string | null
     created_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 

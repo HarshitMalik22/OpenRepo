@@ -15,7 +15,7 @@ export default function GithubRepoSearch() {
   const extractRepoFromUrl = (url: string): string | null => {
     // Remove trailing slashes and whitespace
     const cleanUrl = url.trim().replace(/\/$/, '');
-    
+
     // Handle various GitHub URL formats
     const patterns = [
       /^https?:\/\/github\.com\/([^\/]+)\/([^\/\?#]+)/i,
@@ -33,7 +33,7 @@ export default function GithubRepoSearch() {
         return `${owner}/${repoName}`;
       }
     }
-    
+
     return null;
   };
 
@@ -47,7 +47,7 @@ export default function GithubRepoSearch() {
     }
 
     const repoFullName = extractRepoFromUrl(repoUrl);
-    
+
     if (!repoFullName) {
       setError('Please enter a valid GitHub repository URL (e.g., https://github.com/owner/repo)');
       return;
@@ -95,7 +95,7 @@ export default function GithubRepoSearch() {
       `}</style>
       <div className="relative min-h-[300px] flex items-end pb-10 overflow-hidden border-0 shadow-none bg-transparent">
         <div className="absolute right-0 -top-[20%] bottom-0 w-full z-0 pointer-events-none">
-          <LaserFlow 
+          <LaserFlow
             horizontalBeamOffset={0}
             verticalBeamOffset={-0.15}
             verticalSizing={2}
@@ -108,7 +108,7 @@ export default function GithubRepoSearch() {
         <div className="relative ml-10 pl-20 z-10 w-full items-center">
           <form onSubmit={handleSearch} className="flex sm:flex-row gap-3 mt-0 w-full max-w-2xl">
             <div className="relative flex-grow no-border-wrapper">
-              <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
               <Input
                 type="text"
                 placeholder="Enter GitHub repository URL..."

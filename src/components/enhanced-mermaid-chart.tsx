@@ -1,6 +1,8 @@
+"use client";
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import mermaid from 'mermaid';
-import svgPanZoom from 'svg-pan-zoom';
+// import mermaid from 'mermaid'; // Removed to fix SSR error
+// import svgPanZoom from 'svg-pan-zoom'; // Removed to fix SSR error
 import { ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,111 +13,9 @@ interface EnhancedMermaidChartProps {
   onNodeClick?: (nodeId: string) => void;
 }
 
-// Initialize Mermaid with a vibrant and colorful theme
-mermaid.initialize({
-  startOnLoad: true,
-  theme: 'default',
-  securityLevel: 'loose',
-  fontFamily: 'var(--font-sans, Arial, sans-serif)',
-  themeVariables: {
-    primaryColor: '#7e57c2',
-    primaryTextColor: '#2d3748',
-    primaryBorderColor: '#9f7aea',
-    lineColor: '#a0aec0',
-    secondaryColor: '#4299e1',
-    tertiaryColor: '#f6ad55',
-    quaternaryColor: '#68d391',
-    background: '#ffffff',
-    nodeTextColor: '#2d3748',
-    nodeBorder: '2px',
-    nodeBorderRadius: '8px',
-    nodeFontSize: '14px',
-    edgeLabelBackground: '#f7fafc',
-    edgeLabelColor: '#4a5568',
-  },
-  themeCSS: `
-    .node rect, .node circle, .node polygon {
-      stroke: #7e57c2 !important;
-      fill: #f0f9ff !important;
-      stroke-width: 2px;
-      rx: 8px;
-      ry: 8px;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
-    }
-    
-    .node.clickable {
-      cursor: pointer;
-    }
-    
-    .node.clickable:hover rect, 
-    .node.clickable:hover circle, 
-    .node.clickable:hover polygon {
-      stroke: #9f7aea !important;
-      fill: #e9d8fd !important;
-      filter: drop-shadow(0 4px 8px rgba(159, 122, 234, 0.3));
-    }
-    
-    .edgeLabel {
-      background-color: #f7fafc !important;
-      color: #4a5568 !important;
-      border: 1px solid #e2e8f0 !important;
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-size: 12px;
-    }
-    
-    .label {
-      color: #2d3748 !important;
-      font-weight: 500;
-    }
-    
-    .cluster rect {
-      fill: #f0fdf4 !important;
-      stroke: #86efac !important;
-      stroke-width: 2px !important;
-      rx: 12px !important;
-      ry: 12px !important;
-    }
-    
-    .cluster-label {
-      color: #15803d !important;
-      font-weight: 600 !important;
-    }
-    
-    /* Color variations for different node types */
-    .node.database rect, .node.database circle, .node.database polygon {
-      fill: #dbeafe !important;
-      stroke: #3b82f6 !important;
-    }
-    
-    .node.api rect, .node.api circle, .node.api polygon {
-      fill: #fef3c7 !important;
-      stroke: #f59e0b !important;
-    }
-    
-    .node.ui rect, .node.ui circle, .node.ui polygon {
-      fill: #dcfce7 !important;
-      stroke: #10b981 !important;
-    }
-    
-    .node.service rect, .node.service circle, .node.service polygon {
-      fill: #f3e8ff !important;
-      stroke: #8b5cf6 !important;
-    }
-    
-    /* Arrow styling */
-    .marker {
-      fill: #a0aec0 !important;
-      stroke: #a0aec0 !important;
-    }
-    
-    .edgePath path {
-      stroke: #a0aec0 !important;
-      stroke-width: 2px !important;
-    }`
-});
+// Mermaid initialization moved to component
 
-type PanZoomInstance = ReturnType<typeof svgPanZoom>;
+type PanZoomInstance = any;
 
 export function EnhancedMermaidChart({
   chart,
@@ -127,6 +27,123 @@ export function EnhancedMermaidChart({
   const panZoomRef = useRef<PanZoomInstance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initMermaid = async () => {
+      try {
+        const mermaidModule = await import('mermaid');
+        const mermaid = mermaidModule.default || mermaidModule;
+
+        mermaid.initialize({
+          startOnLoad: true,
+          theme: 'default',
+          securityLevel: 'loose',
+          fontFamily: 'var(--font-sans, Arial, sans-serif)',
+          themeVariables: {
+            primaryColor: '#7e57c2',
+            primaryTextColor: '#2d3748',
+            primaryBorderColor: '#9f7aea',
+            lineColor: '#a0aec0',
+            secondaryColor: '#4299e1',
+            tertiaryColor: '#f6ad55',
+            quaternaryColor: '#68d391',
+            background: '#ffffff',
+            nodeTextColor: '#2d3748',
+            nodeBorder: '2px',
+            nodeBorderRadius: '8px',
+            nodeFontSize: '14px',
+            edgeLabelBackground: '#f7fafc',
+            edgeLabelColor: '#4a5568',
+          },
+          themeCSS: `
+            .node rect, .node circle, .node polygon {
+              stroke: #7e57c2 !important;
+              fill: #f0f9ff !important;
+              stroke-width: 2px;
+              rx: 8px;
+              ry: 8px;
+              filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+            }
+            
+            .node.clickable {
+              cursor: pointer;
+            }
+            
+            .node.clickable:hover rect, 
+            .node.clickable:hover circle, 
+            .node.clickable:hover polygon {
+              stroke: #9f7aea !important;
+              fill: #e9d8fd !important;
+              filter: drop-shadow(0 4px 8px rgba(159, 122, 234, 0.3));
+            }
+            
+            .edgeLabel {
+              background-color: #f7fafc !important;
+              color: #4a5568 !important;
+              border: 1px solid #e2e8f0 !important;
+              border-radius: 4px;
+              padding: 2px 6px;
+              font-size: 12px;
+            }
+            
+            .label {
+              color: #2d3748 !important;
+              font-weight: 500;
+            }
+            
+            .cluster rect {
+              fill: #f0fdf4 !important;
+              stroke: #86efac !important;
+              stroke-width: 2px !important;
+              rx: 12px !important;
+              ry: 12px !important;
+            }
+            
+            .cluster-label {
+              color: #15803d !important;
+              font-weight: 600 !important;
+              border: none !important;
+            }
+            
+            /* Color variations for different node types */
+            .node.database rect, .node.database circle, .node.database polygon {
+              fill: #dbeafe !important;
+              stroke: #3b82f6 !important;
+            }
+            
+            .node.api rect, .node.api circle, .node.api polygon {
+              fill: #fef3c7 !important;
+              stroke: #f59e0b !important;
+            }
+            
+            .node.ui rect, .node.ui circle, .node.ui polygon {
+              fill: #dcfce7 !important;
+              stroke: #10b981 !important;
+            }
+            
+            .node.service rect, .node.service circle, .node.service polygon {
+              fill: #f3e8ff !important;
+              stroke: #8b5cf6 !important;
+            }
+            
+            /* Arrow styling */
+            .marker {
+              fill: #a0aec0 !important;
+              stroke: #a0aec0 !important;
+            }
+            
+            .edgePath path {
+              stroke: #a0aec0 !important;
+              stroke-width: 2px !important;
+            }`
+        });
+      } catch (err) {
+        console.error('Failed to initialize mermaid:', err);
+      }
+    };
+
+    initMermaid();
+  }, []);
 
   const destroyPanZoom = useCallback(() => {
     if (panZoomRef.current) {
@@ -183,7 +200,7 @@ export function EnhancedMermaidChart({
     }
   }, []);
 
-  const initializePanZoom = useCallback((svgElement: SVGSVGElement) => {
+  const initializePanZoom = useCallback(async (svgElement: SVGSVGElement) => {
     destroyPanZoom();
 
     try {
@@ -193,6 +210,10 @@ export function EnhancedMermaidChart({
         console.warn('SVG has zero dimensions, skipping pan-zoom initialization');
         return;
       }
+
+      // Dynamically import svg-pan-zoom to avoid SSR issues
+      const svgPanZoomModule = await import('svg-pan-zoom');
+      const svgPanZoom = svgPanZoomModule.default || svgPanZoomModule;
 
       const instance = svgPanZoom(svgElement, {
         zoomEnabled: zoomingEnabled,
@@ -266,6 +287,8 @@ export function EnhancedMermaidChart({
           containerRef.current.appendChild(chartShell);
 
           try {
+            const mermaidModule = await import('mermaid');
+            const mermaid = mermaidModule.default || mermaidModule;
             const { svg } = await mermaid.render(`mermaid-${Date.now()}`, chart);
 
             // Check if component is still mounted and element is still in DOM
