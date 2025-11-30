@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+export const dynamic = 'force-dynamic'
 import { currentUser } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

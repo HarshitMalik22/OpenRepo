@@ -129,6 +129,7 @@ import { getGitHubHeaders, getGitHubHeadersForContext } from './github-headers';
 import { redisCache, CacheKeys, CacheTTL, getCachedData } from './redis-cache';
 import type { Repository, UserPreferences, RepositoryFilters, CommunityStats } from './types';
 import { CompetitionLevel, ActivityLevel, AIDomain, ContributionDifficultyLevel } from './types';
+import { FALLBACK_REPOS } from './mock-data';
 
 // Only log configuration status on server side
 if (typeof window === 'undefined') {
@@ -562,7 +563,11 @@ export async function getPopularRepos(options: boolean | GetPopularReposOptions 
         return result;
       } catch (error) {
         console.error('Failed to fetch popular repositories:', error);
-        throw error;
+        console.warn('Using fallback data due to API failure');
+        return {
+          repositories: FALLBACK_REPOS,
+          totalCount: FALLBACK_REPOS.length
+        };
       }
     },
     CacheTTL.popularRepos // Cache for 1 hour
