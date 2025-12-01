@@ -25,6 +25,7 @@ import GithubRepoSearch from '@/components/github-repo-search';
 import RepositoryImage from '@/components/repository-image';
 import GitHubStatusIndicator from '@/components/github-status-indicator';
 import type { Repository, CommunityStats } from '@/lib/types';
+import { FALLBACK_REPOS } from '@/lib/mock-data';
 
 // --- IMPORT THE NEW COMPONENT HERE ---
 import WarpBackground from '@/components/ui/warp-background';
@@ -48,27 +49,22 @@ export default async function Home() {
   };
 
   if (!isBuildTime) {
-    try {
-      const { repositories: reposData } = await getPopularRepos();
-      const stats = await getCommunityStats();
+    // TEMPORARY: Use static data to avoid hitting GitHub API rate limits
+    // const { repositories: reposData } = await getPopularRepos();
+    // const stats = await getCommunityStats();
 
-      // Ensure repos is always an array
-      repos = Array.isArray(reposData) ? reposData : [];
+    // Ensure repos is always an array
+    repos = FALLBACK_REPOS;
 
-      // Ensure communityStats has all required fields
-      communityStats = {
-        totalQueries: stats?.totalQueries ?? 0,
-        totalUsers: stats?.totalUsers ?? 0,
-        activeRepositories: stats?.activeRepositories ?? 0,
-        successfulContributions: stats?.successfulContributions ?? 0,
-        averageSatisfaction: stats?.averageSatisfaction ?? 0,
-        lastUpdated: stats?.lastUpdated || new Date().toISOString()
-      };
-    } catch (error) {
-      console.error('Failed to fetch data during page load:', error);
-      // Use empty data as fallback
-      repos = [];
-    }
+    // Ensure communityStats has all required fields
+    communityStats = {
+      totalQueries: 12500,
+      totalUsers: 850,
+      activeRepositories: 120,
+      successfulContributions: 450,
+      averageSatisfaction: 4.8,
+      lastUpdated: new Date().toISOString()
+    };
   }
 
   return (

@@ -543,6 +543,11 @@ export async function getPopularRepos(options: boolean | GetPopularReposOptions 
           }
         }
         
+        // If we failed to fetch any repos, throw an error to trigger fallback
+        if (allRepos.length === 0) {
+          throw new Error('No repositories found or all requests failed');
+        }
+        
         // Enrich with good first issue counts if requested
         let finalRepos = allRepos;
         if (enrichWithIssues && allRepos.length > 0) {
