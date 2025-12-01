@@ -17,11 +17,70 @@ export function generateViewport() {
 }
 
 export const metadata: Metadata = {
-  title: "OpenRepo",
-  description: "AI-Powered Open Source Code Understanding Platform",
+  metadataBase: new URL('https://openrepo.xyz'),
+  title: {
+    default: "OpenRepo - AI-Powered Open Source Discovery",
+    template: "%s | OpenRepo"
+  },
+  description: "Discover and analyze open-source projects with AI-powered recommendations, architecture visualization, and comprehensive insights.",
+  keywords: [
+    "open source",
+    "github",
+    "repository",
+    "repositories",
+    "repo",
+    "open repo",
+    "openrepo",
+    "analysis",
+    "visualization",
+    "ai",
+    "architecture",
+    "code understanding",
+    "git analysis",
+    "codebase visualization"
+  ],
+  authors: [{ name: "Harshit Malik" }],
+  creator: "Harshit Malik",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://openrepo.xyz",
+    title: "OpenRepo - AI-Powered Open Source Discovery",
+    description: "Discover and analyze open-source projects with AI-powered recommendations, architecture visualization, and comprehensive insights.",
+    siteName: "OpenRepo",
+    images: [
+      {
+        url: "/logos/opensauce-logo.png",
+        width: 1200,
+        height: 630,
+        alt: "OpenRepo - AI-Powered Open Source Discovery",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OpenRepo - AI-Powered Open Source Discovery",
+    description: "Discover and analyze open-source projects with AI-powered recommendations, architecture visualization, and comprehensive insights.",
+    images: ["/logos/opensauce-logo.png"],
+    creator: "@HarshitMalik22",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: '/logos/opensauce-logo.png',
     apple: '/logos/opensauce-logo.png',
+  },
+  verification: {
+    google: "google-site-verification-code", // Placeholder
   },
 };
 
