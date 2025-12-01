@@ -78,12 +78,12 @@ export default async function Home() {
           <div className="flex flex-col items-center justify-center pb-6 drop-shadow-2xl">
             <BlurFadeText
               delay={0.25}
-              className="text-5xl md:text-7xl font-bold font-headline tracking-tighter text-white"
+              className="text-4xl md:text-7xl font-bold font-headline tracking-tighter text-white"
               text="Learn Open Source."
             />
             <BlurFadeText
               delay={0.5}
-              className="text-5xl md:text-7xl font-bold font-headline tracking-tighter pb-1"
+              className="text-4xl md:text-7xl font-bold font-headline tracking-tighter pb-1"
               textClassName="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600"
               text="Smarter. Faster."
             />

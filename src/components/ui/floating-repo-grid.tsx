@@ -14,8 +14,42 @@ interface FloatingRepoGridProps {
 }
 
 export default function FloatingRepoGrid({ repos }: FloatingRepoGridProps) {
+    const [mounted, setMounted] = useState(false);
+    const [columns, setColumns] = useState(1);
+
+    useEffect(() => {
+        setMounted(true);
+        const handleResize = () => {
+            if (window.innerWidth >= 1024) {
+                setColumns(3);
+            } else if (window.innerWidth >= 768) {
+                setColumns(2);
+            } else {
+                setColumns(1);
+            }
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // Use 9 repos for a clean 3x3 grid
     const displayRepos = repos.slice(0, 9);
+
+    if (!mounted) {
+        return (
+            <div className="relative w-full h-[800px] bg-gradient-to-b from-background/50 via-background/80 to-background overflow-hidden">
+                <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+                <div className="relative w-full h-full max-w-7xl mx-auto p-4 flex flex-wrap justify-center gap-4 pt-20">
+                    {/* Static fallback for SSR/Loading */}
+                    {displayRepos.map((repo) => (
+                        <div key={repo.id} className="w-[300px] h-[180px] rounded-2xl border border-white/10 bg-white/5" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="relative w-full h-[800px] overflow-hidden bg-gradient-to-b from-background/50 via-background/80 to-background">
@@ -23,15 +57,34 @@ export default function FloatingRepoGrid({ repos }: FloatingRepoGridProps) {
             <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
 
             <div className="relative w-full h-full max-w-7xl mx-auto p-4">
-                {displayRepos.map((repo, index) => (
-                    <FloatingCard key={repo.id} repo={repo} index={index} total={displayRepos.length} />
-                ))}
+                {displayRepos.map((repo, index) => {
+                    // Strict Grid Calculation based on responsive columns
+                    const row = Math.floor(index / columns);
+                    const col = index % columns;
+
+                    // Position with percentage to be responsive
+                    const colWidth = 100 / columns;
+                    const rowHeight = 30; // approx 30% height per row
+
+                    const top = `${(row * rowHeight) + 5}%`;
+                    const left = `${(col * colWidth) + (colWidth / 2) - (columns === 1 ? 40 : 15)}%`; // Center align adjustment
+
+                    return (
+                        <FloatingCard
+                            key={repo.id}
+                            repo={repo}
+                            index={index}
+                            top={top}
+                            left={left}
+                        />
+                    );
+                })}
             </div>
         </div>
     );
 }
 
-function FloatingCard({ repo, index, total }: { repo: Repository; index: number; total: number }) {
+function FloatingCard({ repo, index, top, left }: { repo: Repository; index: number; top: string; left: string }) {
     const [config, setConfig] = useState({
         x: 0,
         y: 0,
@@ -51,21 +104,11 @@ function FloatingCard({ repo, index, total }: { repo: Repository; index: number;
         });
     }, []);
 
-    // Strict Grid Calculation (3 columns)
-    const cols = 3;
-    const row = Math.floor(index / cols);
-    const col = index % cols;
-
-    // Position with percentage to be responsive
-    // 33% width per col, 30% height per row roughly
-    const top = `${(row * 30) + 5}%`;
-    const left = `${(col * 33) + 2}%`;
-
     const slug = repo.full_name.replace('/', '--');
 
     return (
         <motion.div
-            className="absolute w-[300px] md:w-[350px] z-10"
+            className="absolute w-[280px] md:w-[350px] z-10"
             style={{ top, left }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{
@@ -97,6 +140,7 @@ function FloatingCard({ repo, index, total }: { repo: Repository; index: number;
                     repeatType: "reverse",
                     duration: config.duration * 1.5,
                     ease: "easeInOut",
+                    delay: config.delay
                 }
             }}
             whileHover={{
