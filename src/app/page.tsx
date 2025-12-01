@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 
 import { getCommunityStats } from '@/lib/github';
@@ -29,10 +28,11 @@ import { FALLBACK_REPOS } from '@/lib/mock-data';
 
 // --- IMPORT THE NEW COMPONENT HERE ---
 import WarpBackground from '@/components/ui/warp-background';
-import SpotlightCard from '@/components/ui/spotlight-card';
 import FloatingRepoGrid from '@/components/ui/floating-repo-grid';
 import BlurFade from '@/components/ui/blur-fade';
 import BlurFadeText from '@/components/ui/blur-fade-text';
+import VideoDemo from '@/components/video-demo';
+import HowItWorks from '@/components/how-it-works';
 
 export default async function Home() {
   // Skip database calls during build time to avoid connection errors
@@ -60,7 +60,7 @@ export default async function Home() {
       {/* --- MODIFIED HERO SECTION --- */}
       {/* We ensure min-h-[600px] or similar so the starfield has room to show */}
       {/* Added extra top padding to account for fixed header */}
-      <section className="relative w-full overflow-hidden pt-20 pb-20 md:pt-24 md:pb-32">
+      <section className="relative w-full overflow-hidden pt-20 pb-10 md:pt-24 md:pb-16">
 
         {/* 1. The Warp Background */}
         <WarpBackground />
@@ -119,74 +119,30 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Video Demo Section */}
+      <VideoDemo />
+
+
+
       {/* Feature Highlights - Bento Grid */}
       <section className="pt-0 pb-16 md:pt-0 md:pb-24 bg-gradient-to-b from-background to-muted/20 w-full relative z-10">
         <div className="w-full px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline mb-4">Why Developers Love OpenRepo</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">Powerful features that make understanding open source code a breeze</p>
+          <div className="text-center mb-5">
+            <h2 className="text-3xl md:text-5xl font-bold font-headline mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-blue-500 to-green-500">
+              Open Source Intelligence
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Real-time insights and trending repositories at your fingertips.
+            </p>
           </div>
           <BentoGrid stats={communityStats} topRepos={repos} key="bento-grid-v2" />
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="container mx-auto animate-fade-in py-16 md:py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold font-headline mb-4">How OpenRepo Works</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">Start contributing to open source in three simple steps</p>
-        </div>
+      <HowItWorks />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          {/* Connecting Line (Desktop) */}
-          <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary/20 to-transparent -translate-y-1/2 z-0" />
 
-          {/* Step 1 */}
-          <Card className="relative z-10 bg-background/80 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1">
-            <CardHeader className="pb-2">
-              <div className="w-12 h-12 bg-blue-100/80 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-inner">
-                <span className="text-xl font-bold text-blue-600 dark:text-blue-400">1</span>
-              </div>
-              <CardTitle className="text-center">Input Repository</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground">
-                Paste any public GitHub repository URL. No complex setup or configuration required.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Step 2 */}
-          <Card className="relative z-10 bg-background/80 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1">
-            <CardHeader className="pb-2">
-              <div className="w-12 h-12 bg-purple-100/80 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-inner">
-                <span className="text-xl font-bold text-purple-600 dark:text-purple-400">2</span>
-              </div>
-              <CardTitle className="text-center">AI Analysis</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground">
-                Our advanced AI agents read the codebase, understanding architecture, logic, and dependencies.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Step 3 */}
-          <Card className="relative z-10 bg-background/80 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1">
-            <CardHeader className="pb-2">
-              <div className="w-12 h-12 bg-green-100/80 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-inner">
-                <span className="text-xl font-bold text-green-600 dark:text-green-400">3</span>
-              </div>
-              <CardTitle className="text-center">Interactive Insights</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground">
-                Get a visual flowchart and deep explanations to understand the code and start contributing faster.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
 
       {/* Trending Projects Carousel */}
       <section className="container mx-auto animate-fade-in">
@@ -197,140 +153,7 @@ export default async function Home() {
         <FloatingRepoGrid repos={repos} />
       </section>
 
-      {/* Features Section */}
-      <section className="container mx-auto animate-fade-in pb-16">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold font-headline mb-4">Everything You Need to Succeed in Open Source</h2>
-          <p className="text-muted-foreground max-w-3xl mx-auto">Powerful features designed to accelerate your open source journey</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <SpotlightCard className="group h-full border-primary/10 bg-background/50 backdrop-blur-sm hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500" spotlightColor="rgba(59, 130, 246, 0.15)">
-            <CardHeader>
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500 border border-blue-500/10 group-hover:border-blue-500/20">
-                <Brain className="w-7 h-7 text-blue-600 dark:text-blue-400 group-hover:text-blue-500 transition-colors" />
-              </div>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Sparkles className="w-5 h-5 text-blue-500 animate-pulse" />
-                Personalized Recommendations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                Get AI-powered repository recommendations based on your tech stack, experience level, and goals.
-                Find projects that match your skills perfectly.
-              </p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm group/item">
-                  <div className="p-1 rounded-full bg-green-500/10 group-hover/item:bg-green-500/20 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="group-hover/item:translate-x-1 transition-transform duration-300">Tech stack matching</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm group/item">
-                  <div className="p-1 rounded-full bg-green-500/10 group-hover/item:bg-green-500/20 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="group-hover/item:translate-x-1 transition-transform duration-300 delay-75">Experience level alignment</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm group/item">
-                  <div className="p-1 rounded-full bg-green-500/10 group-hover/item:bg-green-500/20 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="group-hover/item:translate-x-1 transition-transform duration-300 delay-100">Goal-oriented suggestions</span>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full mt-8 group-hover:bg-primary/5 group-hover:border-primary/30 transition-all duration-300" asChild>
-                <Link href="/repos">
-                  Explore Recommendations
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-            </CardContent>
-          </SpotlightCard>
 
-          <SpotlightCard className="group h-full border-primary/10 bg-background/50 backdrop-blur-sm hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500" spotlightColor="rgba(34, 197, 94, 0.15)">
-            <CardHeader>
-              <div className="w-14 h-14 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500 border border-green-500/10 group-hover:border-green-500/20">
-                <BookOpen className="w-7 h-7 text-green-600 dark:text-green-400 group-hover:text-green-500 transition-colors" />
-              </div>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Target className="w-5 h-5 text-green-500 animate-pulse" />
-                Guided Contribution Workflow
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                New to open source? Explore our comprehensive analysis tools that help you understand
-                project structure, code quality, and contribution opportunities.
-              </p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm group/item">
-                  <div className="p-1 rounded-full bg-green-500/10 group-hover/item:bg-green-500/20 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="group-hover/item:translate-x-1 transition-transform duration-300">Step-by-step guidance</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm group/item">
-                  <div className="p-1 rounded-full bg-green-500/10 group-hover/item:bg-green-500/20 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="group-hover/item:translate-x-1 transition-transform duration-300 delay-75">Beginner-friendly projects</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm group/item">
-                  <div className="p-1 rounded-full bg-green-500/10 group-hover/item:bg-green-500/20 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="group-hover/item:translate-x-1 transition-transform duration-300 delay-100">Progress tracking</span>
-                </div>
-              </div>
-            </CardContent>
-          </SpotlightCard>
-
-          <SpotlightCard className="group h-full border-primary/10 bg-background/50 backdrop-blur-sm hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500" spotlightColor="rgba(168, 85, 247, 0.15)">
-            <CardHeader>
-              <div className="w-14 h-14 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500 border border-purple-500/10 group-hover:border-purple-500/20">
-                <Filter className="w-7 h-7 text-purple-600 dark:text-purple-400 group-hover:text-purple-500 transition-colors" />
-              </div>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Zap className="w-5 h-5 text-purple-500 animate-pulse" />
-                Advanced Filtering
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                Find the perfect project with advanced filtering by competition level, activity level,
-                AI domain, programming language, and more.
-              </p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm group/item">
-                  <div className="p-1 rounded-full bg-green-500/10 group-hover/item:bg-green-500/20 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="group-hover/item:translate-x-1 transition-transform duration-300">Competition level filters</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm group/item">
-                  <div className="p-1 rounded-full bg-green-500/10 group-hover/item:bg-green-500/20 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="group-hover/item:translate-x-1 transition-transform duration-300 delay-75">Activity level insights</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm group/item">
-                  <div className="p-1 rounded-full bg-green-500/10 group-hover/item:bg-green-500/20 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="group-hover/item:translate-x-1 transition-transform duration-300 delay-100">AI domain classification</span>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full mt-8 group-hover:bg-primary/5 group-hover:border-primary/30 transition-all duration-300" asChild>
-                <Link href="/repos">
-                  Browse Projects
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-            </CardContent>
-          </SpotlightCard>
-        </div>
-      </section>
 
     </div>
   );
