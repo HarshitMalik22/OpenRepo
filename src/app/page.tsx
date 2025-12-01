@@ -38,34 +38,22 @@ export default async function Home() {
   // Skip database calls during build time to avoid connection errors
   const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || process.env.NEXT_BUILD === 'true';
 
-  let repos: Repository[] = [];
+  // TEMPORARY: Use static data to avoid hitting GitHub API rate limits
+  // const { repositories: reposData } = await getPopularRepos();
+  // const stats = await getCommunityStats();
+
+  // Ensure repos is always an array
+  let repos: Repository[] = FALLBACK_REPOS;
+
+  // Ensure communityStats has all required fields
   let communityStats: CommunityStats = {
-    totalQueries: 0,
-    totalUsers: 0,
-    activeRepositories: 0,
-    successfulContributions: 0,
-    averageSatisfaction: 0,
+    totalQueries: 12500,
+    totalUsers: 850,
+    activeRepositories: 120,
+    successfulContributions: 450,
+    averageSatisfaction: 4.8,
     lastUpdated: new Date().toISOString()
   };
-
-  if (!isBuildTime) {
-    // TEMPORARY: Use static data to avoid hitting GitHub API rate limits
-    // const { repositories: reposData } = await getPopularRepos();
-    // const stats = await getCommunityStats();
-
-    // Ensure repos is always an array
-    repos = FALLBACK_REPOS;
-
-    // Ensure communityStats has all required fields
-    communityStats = {
-      totalQueries: 12500,
-      totalUsers: 850,
-      activeRepositories: 120,
-      successfulContributions: 450,
-      averageSatisfaction: 4.8,
-      lastUpdated: new Date().toISOString()
-    };
-  }
 
   return (
     <div className="mb-32 min-h-screen">
