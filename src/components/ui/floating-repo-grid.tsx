@@ -22,6 +22,11 @@ export default function FloatingRepoGrid({ repos }: FloatingRepoGridProps) {
             {/* Subtle grid background */}
             <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
 
+            {/* Debug Info */}
+            <div className="absolute top-0 left-0 z-50 bg-red-500 text-white p-2">
+                Debug: Repos received: {repos?.length || 0}
+            </div>
+
             <div className="relative w-full h-full max-w-7xl mx-auto p-4">
                 {displayRepos.map((repo, index) => (
                     <FloatingCard key={repo.id} repo={repo} index={index} total={displayRepos.length} />
