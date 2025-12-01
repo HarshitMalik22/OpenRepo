@@ -29,14 +29,14 @@ export default function HeaderAuth() {
 
   if (!isSignedIn) {
     return (
-      <>
-        <Button variant="ghost" asChild>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" className="rounded-full" asChild>
           <Link href="/sign-in">Sign In</Link>
         </Button>
-        <Button asChild>
+        <Button className="rounded-full" asChild>
           <Link href="/sign-up">Sign Up</Link>
         </Button>
-      </>
+      </div>
     )
   }
 
