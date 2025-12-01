@@ -93,39 +93,41 @@ export default function GithubRepoSearch() {
           border: none !important;
         }
       `}</style>
-      <div className="relative min-h-[300px] flex items-end pb-10 overflow-hidden border-0 shadow-none bg-transparent">
-        <div className="absolute right-0 -top-[20%] bottom-0 w-full z-0 pointer-events-none">
-          <LaserFlow
-            horizontalBeamOffset={0}
-            verticalBeamOffset={-0.15}
-            verticalSizing={2}
-            horizontalSizing={0.49}
-            fogIntensity={0.02}
-            fogScale={0.05}
-            color="#3b82f6"
-          />
+      <div className="relative min-h-[300px] flex items-end pb-10 overflow-hidden border-0 shadow-none bg-transparent w-full">
+        <div className="absolute inset-x-0 -top-[20%] bottom-0 z-0 pointer-events-none flex justify-center">
+          <div className="w-full max-w-2xl relative h-full">
+            <LaserFlow
+              horizontalBeamOffset={0}
+              verticalBeamOffset={-0.15}
+              verticalSizing={2}
+              horizontalSizing={0.49}
+              fogIntensity={0.02}
+              fogScale={0.05}
+              color="#3b82f6"
+            />
+          </div>
         </div>
-        <div className="relative ml-10 pl-20 z-10 w-full items-center">
-          <form onSubmit={handleSearch} className="flex sm:flex-row gap-3 mt-0 w-full max-w-2xl">
-            <div className="relative flex-grow no-border-wrapper">
+        <div className="relative z-10 w-full max-w-2xl mx-auto px-4 flex flex-col items-center">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mt-0 w-full">
+            <div className="relative flex-grow no-border-wrapper w-full">
               <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
               <Input
                 type="text"
                 placeholder="Enter GitHub repository URL..."
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
-                className="pl-10 bg-background/95 backdrop-blur-md border-0"
+                className="pl-10 bg-background/95 backdrop-blur-md border-0 w-full"
               />
             </div>
-            <Button type="submit" size="lg" className="gap-2 whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button type="submit" size="lg" className="w-full sm:w-auto gap-2 whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90">
               <Search className="h-5 w-5" />
               Analyze Repo
             </Button>
           </form>
           {error && (
-            <p className="text-destructive text-sm mt-2">{error}</p>
+            <p className="text-destructive text-sm mt-2 text-center">{error}</p>
           )}
-          <p className="text-muted-foreground text-sm mt-2">
+          <p className="text-muted-foreground text-sm mt-2 text-center">
             Try: https://github.com/facebook/react or vercel/next.js
           </p>
         </div>

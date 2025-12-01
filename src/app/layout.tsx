@@ -27,6 +27,8 @@ export const metadata: Metadata = {
 
 import { getGitHubRepoDetails } from '@/lib/github';
 
+import { Analytics } from "@vercel/analytics/next"
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -59,6 +61,7 @@ export default async function RootLayout({
                   <Header stars={stars} />
                   <main>
                     {children}
+                    <Analytics />
                   </main>
                   <Footer />
                   <Toaster />
