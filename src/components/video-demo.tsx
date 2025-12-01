@@ -33,7 +33,8 @@ export default function VideoDemo() {
                         playsInline
                         muted
                     >
-                        <source src="/videos/demo.mp4" type="video/mp4" />
+                        {/* TODO: Replace with your Cloudinary URL */}
+                        <source src="https://res.cloudinary.com/drvqnu9dr/video/upload/v1764581492/OpenRepo-1764573920669_guxtiz.mp4" type="video/mp4" />
                         Your browser does not support the video tag.
                     </video>
                 </div>
