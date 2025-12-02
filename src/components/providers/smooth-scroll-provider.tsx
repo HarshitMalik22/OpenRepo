@@ -6,12 +6,12 @@ import Lenis from "lenis";
 export function SmoothScrollProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const lenis = new Lenis({
-            duration: 2.0,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Exponential easing is good, keeping it but longer duration
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             orientation: "vertical",
             gestureOrientation: "vertical",
             smoothWheel: true,
-            wheelMultiplier: 0.8, // Lower multiplier for "heavier" feel
+            wheelMultiplier: 1,
             touchMultiplier: 2,
         });
 
