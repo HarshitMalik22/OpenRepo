@@ -30,6 +30,7 @@ export const metadata: Metadata = {
     "repositories",
     "repo",
     "open repo",
+    "open repository",
     "openrepo",
     "analysis",
     "visualization",
@@ -76,8 +77,13 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/logos/opensauce-logo.png',
-    apple: '/logos/opensauce-logo.png',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/icon.png',
+    other: {
+      rel: 'apple-touch-icon-precomposed',
+      url: '/icon.png',
+    },
   },
   verification: {
     google: "google-site-verification-code", // Placeholder
@@ -107,9 +113,6 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&family=Source+Code+Pro:wght@400;500;700&display=swap" rel="stylesheet" />
-        <link rel="icon" href="/logos/opensauce-logo.png" />
-        <link rel="apple-touch-icon" href="/logos/opensauce-logo.png" />
-
       </head>
       <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
         <div id="root" suppressHydrationWarning>
