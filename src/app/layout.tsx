@@ -79,11 +79,7 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
-    apple: '/icon.png',
-    other: {
-      rel: 'apple-touch-icon-precomposed',
-      url: '/icon.png',
-    },
+    apple: '/favicon.ico', // Fallback to ICO since PNG is too large
   },
   verification: {
     google: "google-site-verification-code", // Placeholder
