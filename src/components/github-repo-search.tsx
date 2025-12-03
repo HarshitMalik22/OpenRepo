@@ -7,10 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Search, Github } from 'lucide-react';
 import LaserFlow from '@/components/LaserFlow';
 
+import { useAuth } from '@clerk/nextjs';
+
 export default function GithubRepoSearch() {
   const [repoUrl, setRepoUrl] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const { userId } = useAuth();
 
   const extractRepoFromUrl = (url: string): string | null => {
     // Remove trailing slashes and whitespace
@@ -55,6 +58,12 @@ export default function GithubRepoSearch() {
 
     // Convert to slug format for routing
     const slug = repoFullName.replace('/', '--');
+
+    if (!userId) {
+      router.push(`/sign-in?redirect_url=/repos/${slug}`);
+      return;
+    }
+
     router.push(`/repos/${slug}`);
   };
 
