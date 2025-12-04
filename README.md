@@ -2,7 +2,7 @@
 
 ## AI-Powered Open Source Code Understanding Platform
 
-OpenSauce is a modern web application that helps developers understand and explore open-source repositories through an intuitive interface. Built with Next.js and TypeScript, it provides a clean, responsive UI for discovering and analyzing GitHub repositories with AI-powered insights.
+OpenRepo is a modern web application that helps developers understand and explore open-source repositories through an intuitive interface. Built with Next.js and TypeScript, it provides a clean, responsive UI for discovering and analyzing GitHub repositories with AI-powered insights.
 
 ## Key Features
 
@@ -63,8 +63,8 @@ Before you begin, ensure you have the following installed:
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-username/OpenSauce.git
-   cd OpenSauce
+   git clone https://github.com/your-username/OpenRepo.git
+   cd Openrepo
    ```
 
 2. **Install dependencies**
@@ -120,7 +120,7 @@ Before you begin, ensure you have the following installed:
 ## 📁 Project Structure
 
 ```text
-OpenSauce/
+Openrepo/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── repos/             # Repository-related pages
@@ -154,11 +154,11 @@ OpenSauce/
 └── package.json               # Project dependencies and scripts
 ```
 
-## 🎯 How to Use OpenSauce
+## 🎯 How to Use Openrepo
 
 ### 1. **Onboarding**
 
-When you first visit OpenSauce, you'll be guided through an onboarding process where you:
+When you first visit Openrepo, you'll be guided through an onboarding process where you:
 
 - **Select Your Tech Stack**: Choose the programming languages and frameworks you're interested in
 - **Set Experience Level**: Indicate whether you're a beginner, intermediate, or advanced developer
@@ -421,6 +421,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Made with ❤️ by the OpenSauce team
+Made with ❤️ by the Openrepo team
 
-[⭐ Star us on GitHub](https://github.com/your-username/OpenSauce) | [🐛 Report Issues](https://github.com/your-username/OpenSauce/issues) | [💬 Join Discussions](https://github.com/your-username/OpenSauce/discussions)
+[⭐ Star us on GitHub](https://github.com/your-username/Openrepo) | [🐛 Report Issues](https://github.com/your-username/Openrepo/issues) | [💬 Join Discussions](https://github.com/your-username/Openrepo/discussions)
