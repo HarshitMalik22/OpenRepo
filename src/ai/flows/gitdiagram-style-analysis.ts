@@ -155,6 +155,14 @@ function sanitizeMermaidDiagram(diagram: string): string {
   // Apply structural formatting AGAIN
   sanitized = formatMermaidCode(sanitized);
 
+  // CRITICAL FIX: Final pass to remove newlines within double quotes which break Mermaid parsing
+  // We run this LAST to ensure no formatting steps introduced newlines into strings
+  sanitized = sanitized.replace(/"[^"]*"/g, (match) => match.replace(/\n/g, ' '));
+
+  // CRITICAL FIX 2: Rejoin detached node labels (e.g. ID \n [Label])
+  // formatMermaidCode sometimes splits nodes from their labels if there are spacing issues
+  sanitized = sanitized.replace(/([a-zA-Z0-9_]+)\s*\n\s*([\[\(\{])/g, '$1$2');
+
   console.log('--- MERMAID SANITIZATION DEBUG ---');
   console.log('Raw:', diagram.substring(0, 200) + '...');
   console.log('Sanitized:', sanitized.substring(0, 200) + '...');
@@ -169,8 +177,7 @@ function formatMermaidCode(code: string): string {
   let formatted = code;
 
   // 1. Ensure newlines before top-level keywords
-  // We use a more specific replacement to avoid eating existing newlines and ensure separation
-  const keywords = ['subgraph', 'click', 'classDef', 'class', 'style', 'linkStyle'];
+  const keywords = ['subgraph', 'click', 'classDef', 'class', 'style', 'linkStyle', 'direction'];
   keywords.forEach(kw => {
     // Replace (whitespace)keyword(whitespace) with \nkeyword 
     formatted = formatted.replace(new RegExp(`\\s+${kw}\\s+`, 'g'), `\n${kw} `);
@@ -182,8 +189,10 @@ function formatMermaidCode(code: string): string {
 
   // 2. Ensure newline after subgraph title
   // Simplified regex: just look for subgraph "..." or subgraph Word
-  // We don't try to be too smart about nested quotes here because we pre-processed them.
   formatted = formatted.replace(/(subgraph\s+(?:"[^"]*"|[^\s]+))\s+/g, '$1\n');
+
+  // 2b. Ensure newline after direction instruction (e.g. direction TB)
+  formatted = formatted.replace(/(direction\s+[A-Z]+)\s+/g, '$1\n');
 
   // 3. Handle class assignments (:::className)
   // Fix: Remove :::className from subgraph declarations (e.g. subgraph "Name":::style)
@@ -214,6 +223,12 @@ function formatMermaidCode(code: string): string {
   
   // Ensure newline after class assignment
   formatted = formatted.replace(/(:::[a-zA-Z0-9_-]+)\s+(?![-=.])/g, '$1\n');
+
+  // 4b. Sanitize malformed click events (e.g. click ID _src "URL")
+  // The AI sometimes inserts a junk token (like _src or variable names) between the ID and the URL
+  // Pattern: click ID junk "URL" -> click ID "URL"
+  formatted = formatted.replace(/^click\s+([^\s"]+)\s+(?:[^\s"]+)\s+("[^"]+")/gm, 'click $1 $2');
+  formatted = formatted.replace(/^click\s+([^\s"]+)\s+("[^"]+")/gm, 'click $1 $2'); 
 
   // 4. Ensure graph/flowchart is on its own line
   formatted = formatted.replace(/^\s*(graph|flowchart)\s+([A-Z]+)([\s\S]*)/, '$1 $2\n$3');
