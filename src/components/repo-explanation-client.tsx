@@ -195,7 +195,7 @@ export default function RepoExplanationClient({ repository, initialIsSaved = fal
             console.log('Starting repository analysis for:', repository.html_url);
             // Create a timeout promise
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Analysis request timed out after 60 seconds')), 60000);
+                setTimeout(() => reject(new Error('Analysis request timed out after 300 seconds')), 300000);
             });
 
             // Race the analysis against the timeout
@@ -442,11 +442,23 @@ export default function RepoExplanationClient({ repository, initialIsSaved = fal
                 </Card>
             ) : aiData ? (
                 <div className="space-y-4">
+
                     {aiData.error && (
-                        <Alert>
+                        <Alert variant="destructive">
                             <AlertTriangle className="h-4 w-4" />
                             <AlertTitle>Analysis Error</AlertTitle>
                             <AlertDescription>{aiData.error}</AlertDescription>
+                        </Alert>
+                    )}
+
+                    {/* Show warning if it's a fallback analysis with a specific note in the summary */}
+                    {aiData.summary && aiData.summary.includes('(Note:') && (
+                        <Alert className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+                            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
+                            <AlertTitle className="text-yellow-800 dark:text-yellow-500">Basic Analysis Mode</AlertTitle>
+                            <AlertDescription className="text-yellow-700 dark:text-yellow-400">
+                                {aiData.summary.split('(Note: ')[1].replace(')', '')}
+                            </AlertDescription>
                         </Alert>
                     )}
 

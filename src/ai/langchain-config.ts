@@ -1,38 +1,45 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+// import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGroq } from "@langchain/groq";
 import { z } from "zod";
 
 // Configuration schema for LangChain
 export const LangChainConfigSchema = z.object({
   apiKey: z.string().default(""),
-  modelName: z.string().default("gemini-2.0-flash"),
+  modelName: z.string().default("llama-3.3-70b-versatile"), // Updated default for Groq
   temperature: z.number().min(0).max(2).default(0.7),
-  maxOutputTokens: z.number().min(1).default(2048),
+  maxOutputTokens: z.number().min(1).default(8192), // Higher limit for Llama
 });
 
 export type LangChainConfig = z.infer<typeof LangChainConfigSchema>;
 
-// Default configuration
-const defaultConfig: LangChainConfig = {
-  apiKey: process.env.GEMINI_API_KEY || "",
-  modelName: "gemini-2.0-flash",
+// Default configuration settings (not including secrets)
+const defaultSettings = {
+  modelName: "llama-3.3-70b-versatile",
   temperature: 0.7,
-  maxOutputTokens: 2048,
+  maxOutputTokens: 8192,
 };
 
 // Validate and get configuration
 export function getLangChainConfig(): LangChainConfig {
   try {
-    const config = { ...defaultConfig };
+    const config = {
+      // Use GROQ_API_KEY if available, otherwise fall back to GEMINI (though we are switching provider completely)
+      apiKey: process.env.GROQ_API_KEY || "", 
+      ...defaultSettings
+    };
     
     if (!config.apiKey) {
-      console.warn("GEMINI_API_KEY not found in environment variables");
+      console.warn("GROQ_API_KEY not found in environment variables");
     }
     
     return LangChainConfigSchema.parse(config);
   } catch (error) {
     console.error("Invalid LangChain configuration:", error);
-    // Return default config instead of throwing error
-    return defaultConfig;
+    // Return default config with empty key instead of throwing error
+    return {
+      apiKey: "",
+      ...defaultSettings
+    };
   }
 }
 
@@ -42,14 +49,15 @@ export function createLangChainModel() {
   const config = getLangChainConfig();
   
   if (!config.apiKey) {
-    throw new Error("GEMINI_API_KEY is required but not configured");
+    throw new Error("GROQ_API_KEY is required but not configured");
   }
   
-  return new ChatGoogleGenerativeAI({
+  return new ChatGroq({
     apiKey: config.apiKey,
     model: config.modelName,
     temperature: config.temperature,
-    maxOutputTokens: config.maxOutputTokens,
+    maxTokens: config.maxOutputTokens, // Groq uses 'maxTokens'
+    maxRetries: 2,
   });
 }
 

@@ -41,10 +41,13 @@ const MERMAID_KEYWORDS = [
   'gitgraph'
 ];
 
-const MAX_FILE_TREE_LINES = 1500;
-const MAX_FILE_TREE_CHARS = 120000;
-const MAX_SUMMARY_ENTRIES = 25;
+const MAX_FILE_TREE_LINES = 300; // Reduced to ~300 lines (~3k tokens)
+const MAX_FILE_TREE_CHARS = 12000; // Reduced to ~12k chars to safely fit 3 steps in 12k TPM
+const MAX_SUMMARY_ENTRIES = 15;
 const AI_STEP_TIMEOUT_MS = 120000;
+
+// ... (existing code)
+
 
 type ComponentNode = {
   id: string;
@@ -885,7 +888,7 @@ export async function gitdiagramStyleAnalysis(input: GitdiagramStyleAnalysisInpu
     // Check if AI is configured
     if (!isAIConfigured()) {
       console.warn('❌ AI not configured, falling back to basic analysis');
-      return fallbackAnalysis(owner, repo, techStack);
+      return fallbackAnalysis(owner, repo, techStack, 'AI configuration missing');
     } else {
       console.log('✅ AI is configured, proceeding with analysis');
     }
@@ -906,7 +909,7 @@ export async function gitdiagramStyleAnalysis(input: GitdiagramStyleAnalysisInpu
     // If we couldn't get the complete file tree, fall back to basic analysis
     if (!completeFileTree) {
       console.warn('❌ Could not get complete file tree, falling back to basic analysis');
-      return fallbackAnalysis(owner, repo, techStack);
+      return fallbackAnalysis(owner, repo, techStack, 'Failed to fetch complete repository file tree');
     }
 
     // Create the LangChain model
@@ -934,6 +937,8 @@ export async function gitdiagramStyleAnalysis(input: GitdiagramStyleAnalysisInpu
 
     // Step 2: Generate detailed system explanation using AI
     console.log('Step 2: Generating system explanation with AI...');
+    // Add a small delay to prevent hitting TPM limits between steps
+    await new Promise(resolve => setTimeout(resolve, 2000));
     const firstPrompt = ChatPromptTemplate.fromMessages([
       ['system', SYSTEM_FIRST_PROMPT],
       ['user', `<file_tree>
@@ -955,6 +960,8 @@ ${readme.replace(/\{/g, '{{').replace(/\}/g, '}}')}
 
     // Step 3: Map components to files/directories using AI
     console.log('Step 3: Mapping components to files with AI...');
+    // Add a small delay to prevent hitting TPM limits between steps
+    await new Promise(resolve => setTimeout(resolve, 2000));
     const secondPrompt = ChatPromptTemplate.fromMessages([
       ['system', SYSTEM_SECOND_PROMPT],
       ['user', `<explanation>
@@ -974,6 +981,8 @@ ${promptFileTree.replace(/\{/g, '{{').replace(/\}/g, '}}')}
 
     // Step 4: Generate detailed Mermaid diagram using AI
     console.log('Step 4: Generating Mermaid diagram with AI...');
+    // Add a small delay to prevent hitting TPM limits between steps
+    await new Promise(resolve => setTimeout(resolve, 2000));
     const thirdPrompt = ChatPromptTemplate.fromMessages([
       ['system', SYSTEM_THIRD_PROMPT],
       ['user', `<explanation>
@@ -1029,8 +1038,6 @@ GitHub URL: https://github.com/${owner}/${repo}`]
       summary
     };
   } catch (error) {
-    console.error('Error in GitDiagram-style AI analysis:', error);
-    
     // Check if this was a timeout error
     if (error instanceof Error && error.message.includes('timed out')) {
       console.warn('AI analysis timed out, using fallback analysis');
@@ -1042,8 +1049,22 @@ GitHub URL: https://github.com/${owner}/${repo}`]
       };
     }
     
+    // Check for Quota Exceeded error (works for both Gemini and Groq)
+    if (error instanceof Error && (
+      error.message.includes('429') || 
+      error.message.includes('Quota exceeded') || 
+      error.message.includes('rate_limit_exceeded') ||
+      error.message.includes('Resource has been exhausted')
+    )) {
+      console.warn('⚠️ AI Provider Quota Exceeded, using fallback analysis');
+      // Pass the actual error message to the UI so we can see if it's TPM or RPM
+      return fallbackAnalysis(owner, repo, techStack, `AI Provider Quota Exceeded: ${error.message}`);
+    }
+
+    console.error('Error in GitDiagram-style AI analysis:', error);
+    
     // For other errors, use the fallback analysis
-    return fallbackAnalysis(owner, repo, techStack);
+    return fallbackAnalysis(owner, repo, techStack, error instanceof Error ? error.message : 'Unknown error occurred');
   }
 }
 
@@ -1067,7 +1088,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMes
 }
 
 // Fallback analysis when AI is not available or fails
-async function fallbackAnalysis(owner: string, repo: string, techStack: string[]): Promise<GitdiagramStyleAnalysisOutput> {
+async function fallbackAnalysis(owner: string, repo: string, techStack: string[], fallbackReason?: string): Promise<GitdiagramStyleAnalysisOutput> {
   console.log('Using fallback analysis...');
   
   try {
@@ -1134,7 +1155,7 @@ ${readme ? `Project purpose: ${readme.substring(0, 200)}...` : 'No README availa
     click J "https://github.com/${owner}/${repo}/blob/main/README.md" _blank
     click H "https://github.com/${owner}/${repo}/blob/main/package.json" _blank`;
 
-    const summary = `${repo} is a ${techStack[0] || 'Unknown'} repository with ${directories.length} directories and ${files.length} files. Basic analysis completed (AI not available).`;
+    const summary = `${repo} is a ${techStack[0] || 'Unknown'} repository with ${directories.length} directories and ${files.length} files. Basic analysis completed. ${fallbackReason ? `(Note: ${fallbackReason})` : '(AI not available)'}`;
 
     return {
       mermaidChart,
