@@ -95,6 +95,10 @@ function sanitizeMermaidDiagram(diagram: string): string {
   // This ensures that regexes relying on newlines (like subgraph sanitization) work correctly
   let sanitized = formatMermaidCode(diagram);
 
+  // CRITICAL FIX: Remove newlines within double quotes which break Mermaid parsing
+  // The AI sometimes generates text like "Some Text\n" inside a node label, which causes a parse error
+  sanitized = sanitized.replace(/"[^"]*"/g, (match) => match.replace(/\n/g, ' '));
+
   // Fix incorrect class syntax (:: instead of :::)
   // Matches pattern like: Node["Label"]::className or Node::className
   // We look for :: followed by a class name, ensuring it's not part of a URL (http://) or C++ style scope
