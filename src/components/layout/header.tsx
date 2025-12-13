@@ -57,15 +57,7 @@ export default function Header({ stars = 0 }: { stars?: number }) {
           >
             Discover
           </Link>
-          <Link
-            href="/contact"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${pathname === '/contact'
-              ? 'bg-primary/10 text-primary'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-          >
-            Contact
-          </Link>
+          {/* Contact link removed */}
         </nav>
 
         {/* Right: Actions */}
