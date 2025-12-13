@@ -11,16 +11,17 @@ interface RepositoryImageProps {
 
 export default function RepositoryImage({ repo, className = "rounded-lg object-cover aspect-[5/3]" }: RepositoryImageProps) {
   const [imageSrc, setImageSrc] = useState(() => {
-    // Start with our API endpoint which handles caching and fallbacks
-    return `/api/github-image?repo=${encodeURIComponent(repo.full_name)}`;
+    // Use GitHub's OpenGraph image service directly
+    // This avoids server-side scraping and eliminates the associated logs
+    return `https://opengraph.githubassets.com/1/${repo.full_name}`;
   });
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.target as HTMLImageElement;
-    
+
     // If API fails, fall back to owner avatar
     if (!hasError) {
       setHasError(true);
@@ -29,7 +30,7 @@ export default function RepositoryImage({ repo, className = "rounded-lg object-c
       target.src = ownerAvatar || `https://ui-avatars.com/api/?name=${ownerLogin || repo.name}&background=0d1117&color=ffffff&size=500x300`;
       return;
     }
-    
+
     // Final fallback - generated avatar
     const ownerLogin = typeof repo.owner === 'string' ? repo.owner : repo.owner?.login;
     target.src = `https://ui-avatars.com/api/?name=${ownerLogin || repo.name}&background=0d1117&color=ffffff&size=500x300`;

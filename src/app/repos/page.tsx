@@ -88,6 +88,9 @@ function ReposPageContent() {
     // Reset to first page when filters change
     setPage(1);
 
+    // Set loading state immediately to prevent glitch
+    setLoading(true);
+
     // Update URL
     const params = new URLSearchParams();
     if (newFilters.q) params.set('q', newFilters.q);

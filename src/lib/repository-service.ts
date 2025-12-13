@@ -27,18 +27,28 @@ export class RepositoryService {
     const { page = 1, perPage = 30, language, q } = options;
     
     // 1. Try Redis Cache
-    const cacheKey = CacheKeys.repositories.popular; 
+    // Create a unique cache key for the query options
+    // For simple popular pages (page 1, no filters), keep the standard key
+    // For filtered/paginated queries, use a specific key with shorter TTL
+    const isStandardQuery = !language && !q && page === 1;
+    const cacheKey = isStandardQuery 
+      ? CacheKeys.repositories.popular 
+      : `repos:query:${JSON.stringify(options)}`;
     
-    if (!language && !q && page === 1) {
-      try {
-        const cached = await redisCache.get<Repository[]>(cacheKey);
-        if (cached) {
-          console.log('RepositoryService: L1 Cache Hit (Redis)');
-          return { repositories: cached, totalCount: cached.length }; // Approx count
-        }
-      } catch (e) {
-        console.error('Redis error:', e);
+    // Attempt cache read
+    try {
+      const cached = await redisCache.get<{ repositories: Repository[], totalCount: number } | Repository[]>(cacheKey);
+      if (cached) {
+        // Handle legacy format (array only) vs new format (object with totalCount)
+        const result = Array.isArray(cached) 
+          ? { repositories: cached, totalCount: cached.length }
+          : cached;
+          
+        console.log(`RepositoryService: L1 Cache Hit (Redis) for ${isStandardQuery ? 'standard' : 'filtered'} query`);
+        return result;
       }
+    } catch (e) {
+      console.error('Redis error:', e);
     }
 
     // 2. Fetch from GitHub (Source of Truth for "Popular")
@@ -50,12 +60,15 @@ export class RepositoryService {
       console.error('Failed to save repos to DB:', err)
     );
 
-    // 4. Update Redis Cache (if no filters)
-    if (!language && !q && page === 1) {
-      redisCache.set(cacheKey, result.repositories, CacheTTL.popularRepos).catch(err =>
-        console.error('Failed to update Redis cache:', err)
-      );
-    }
+    // 4. Update Redis Cache
+    // Different TTL for standard vs filtered queries
+    // Standard: longer cache (CacheTTL.popularRepos)
+    // Filtered: shorter cache (e.g. 10 minutes) to allow for quicker updates
+    const ttl = isStandardQuery ? CacheTTL.popularRepos : 600; // 10 minutes
+    
+    redisCache.set(cacheKey, result, ttl).catch(err =>
+      console.error('Failed to update Redis cache:', err)
+    );
     
     return result;
   }

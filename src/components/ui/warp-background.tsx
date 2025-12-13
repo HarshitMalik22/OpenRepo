@@ -16,7 +16,7 @@ const WarpBackground = () => {
         let stars: { x: number; y: number; z: number; pz: number }[] = [];
 
         // Configuration matches the "blue/cyan" vibe of your image
-        const starCount = 1000;
+        const starCount = 600; // Reduced from 1000 for better performance
         const speed = 0.1;
         const spread = 800; // How wide the tunnel is
         const depth = 1000; // How deep the tunnel is
@@ -46,7 +46,10 @@ const WarpBackground = () => {
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
-            stars.forEach((star) => {
+            // Use for loop instead of forEach for better performance
+            for (let i = 0; i < stars.length; i++) {
+                const star = stars[i];
+
                 // Update Z position (move towards screen)
                 star.z -= speed * 25; // Speed multiplier
 
@@ -89,7 +92,7 @@ const WarpBackground = () => {
                     ctx.lineWidth = alpha * 1.5; // Closer stars are thicker
                     ctx.stroke();
                 }
-            });
+            }
 
             // Add a glowing center burst (optional, matches the bright center in your image)
             const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 300);

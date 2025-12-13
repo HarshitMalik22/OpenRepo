@@ -10,6 +10,12 @@ import { Icons } from '@/components/icons';
 
 
 import { usePathname } from 'next/navigation';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export default function Header({ stars = 0 }: { stars?: number }) {
   const pathname = usePathname();
@@ -18,15 +24,16 @@ export default function Header({ stars = 0 }: { stars?: number }) {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isHome
-          ? 'bg-background/5 backdrop-blur-md border-b border-white/5'
-          : 'bg-background/60 backdrop-blur-xl border-b border-border/40 supports-[backdrop-filter]:bg-background/60'
+        ? 'bg-background/5 backdrop-blur-md border-b border-white/5'
+        : 'bg-background/60 backdrop-blur-xl border-b border-border/40 supports-[backdrop-filter]:bg-background/60'
         }`}
+      suppressHydrationWarning
     >
-      <div className="container mx-auto px-6 h-16 flex items-center justify-between relative">
+      <div className="container mx-auto px-6 h-16 flex items-center justify-between relative" suppressHydrationWarning>
         {/* Left: Logo */}
-        <div className="flex items-center gap-2 z-20">
+        <div className="flex items-center gap-2 z-20" suppressHydrationWarning>
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative w-8 h-8 transition-transform duration-300 group-hover:scale-110">
+            <div className="relative w-8 h-8 transition-transform duration-300 group-hover:scale-110" suppressHydrationWarning>
               <Image
                 src="/logos/opensauce-logo.png"
                 alt="OpenRepo Logo"
@@ -44,8 +51,8 @@ export default function Header({ stars = 0 }: { stars?: number }) {
           <Link
             href="/repos"
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${pathname === '/repos'
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
           >
             Discover
@@ -53,8 +60,8 @@ export default function Header({ stars = 0 }: { stars?: number }) {
           <Link
             href="/contact"
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${pathname === '/contact'
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
           >
             Contact
@@ -62,25 +69,33 @@ export default function Header({ stars = 0 }: { stars?: number }) {
         </nav>
 
         {/* Right: Actions */}
-        <div className="hidden md:flex items-center gap-3 z-20">
-          <Link
-            href="https://github.com/HarshitMalik22/OpenRepo"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 hover:bg-secondary text-secondary-foreground transition-all duration-200 border border-border/50 hover:border-border text-sm font-medium group"
-          >
-            <Icons.star className="w-4 h-4 text-muted-foreground group-hover:text-yellow-400 transition-colors" />
-            <span>Star</span>
-            <span className="ml-1 px-2 py-0.5 rounded-full bg-background/50 text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
-              {stars}
-            </span>
-          </Link>
+        <div className="hidden md:flex items-center gap-3 z-20" suppressHydrationWarning>
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="https://github.com/HarshitMalik22/OpenRepo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 hover:bg-secondary text-secondary-foreground transition-all duration-200 border border-border/50 hover:border-border text-sm font-medium group"
+                >
+                  <Icons.github className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  <span className="ml-1 px-2 py-0.5 rounded-full bg-background/50 text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
+                    {stars}
+                  </span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View on GitHub</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <HeaderAuth />
         </div>
 
         {/* Mobile Menu Trigger */}
-        <div className="md:hidden z-20">
+        <div className="md:hidden z-20" suppressHydrationWarning>
           <MobileNav />
         </div>
       </div>

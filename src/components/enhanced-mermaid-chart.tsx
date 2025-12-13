@@ -161,22 +161,20 @@ export function EnhancedMermaidChart({
     if (!svgElement) return;
 
     try {
-      // Remove viewBox to allow natural rendering
-      svgElement.removeAttribute('viewBox');
+      // Ensure viewBox exists for proper scaling
+      if (!svgElement.hasAttribute('viewBox')) {
+        const bbox = svgElement.getBBox();
+        svgElement.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+      }
 
-      // Set preserveAspectRatio to allow scaling
-      svgElement.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      // Override styles to force full size
+      svgElement.style.width = '100%';
+      svgElement.style.height = '100%';
+      svgElement.style.maxWidth = '100%';
+      svgElement.style.maxHeight = '100%';
+      svgElement.setAttribute('width', '100%');
+      svgElement.setAttribute('height', '100%');
 
-      // Remove all size constraints to let diagram extend beyond container
-      svgElement.style.width = 'auto';
-      svgElement.style.height = 'auto';
-      svgElement.style.maxWidth = 'none';
-      svgElement.style.maxHeight = 'none';
-      svgElement.style.minWidth = 'auto';
-      svgElement.style.minHeight = 'auto';
-
-      // Force the SVG to render at its natural size
-      svgElement.style.overflow = 'visible';
     } catch (error) {
       console.error('Error normalizing SVG dimensions:', error);
     }
@@ -184,21 +182,22 @@ export function EnhancedMermaidChart({
 
   const fitDiagramToViewport = useCallback((instance: PanZoomInstance, attempt = 0) => {
     try {
-      const sizes = instance.getSizes();
-      if (!sizes) {
-        if (attempt < 3) {
-          setTimeout(() => fitDiagramToViewport(instance, attempt + 1), 200);
-        }
+      // Small delay to ensure rendering is complete
+      if (attempt === 0) {
+        setTimeout(() => fitDiagramToViewport(instance, 1), 100);
         return;
       }
 
-      // Fit and center the diagram
+      // Resize to ensure it picks up new container dimensions
+      instance.resize();
+
+      // Fit and center
       instance.fit();
       instance.center();
 
-      // Zoom in significantly to make it more readable (3x)
-      // This ensures it fills the container better, even if it requires minor panning
-      instance.zoomBy(3);
+      // Optional: Zoom out slightly to ensure padding
+      instance.zoomBy(0.9);
+
     } catch (error) {
       console.error('Error fitting diagram:', error);
     }
@@ -222,19 +221,32 @@ export function EnhancedMermaidChart({
       const instance = svgPanZoom(svgElement, {
         zoomEnabled: zoomingEnabled,
         panEnabled: true,
+        controlIconsEnabled: false, // We use custom controls
         mouseWheelZoomEnabled: true,
         dblClickZoomEnabled: true,
         preventMouseEventsDefault: true,
-        minZoom: 0.01,
+        minZoom: 0.1, // Allow zooming out further
         maxZoom: 10,
         fit: true,
         center: true,
-        zoomScaleSensitivity: 0.1,
+        contain: true, // IMPORTANT: Tries to keep content inside
+        zoomScaleSensitivity: 0.2,
       });
+
+      // Force a resize/fit cycle to ensure it catches the container size
+      instance.resize();
+      instance.fit();
+      instance.center();
 
       // Only fit diagram if zooming is enabled
       if (zoomingEnabled) {
-        fitDiagramToViewport(instance);
+        // Double check fit after small delay for layout shifts
+        setTimeout(() => {
+          instance.resize();
+          instance.fit();
+          instance.center();
+          instance.zoomBy(0.85); // Zoom out slightly to add padding
+        }, 100);
       }
 
       if (!zoomingEnabled) {
@@ -246,7 +258,7 @@ export function EnhancedMermaidChart({
     } catch (error) {
       console.error('Error initializing pan-zoom:', error);
     }
-  }, [destroyPanZoom, fitDiagramToViewport, zoomingEnabled]);
+  }, [destroyPanZoom, zoomingEnabled]);
 
   const handleZoomIn = () => {
     panZoomRef.current?.zoomBy(1.2);
@@ -284,7 +296,9 @@ export function EnhancedMermaidChart({
           containerRef.current.innerHTML = '';
 
           const chartShell = document.createElement('div');
-          chartShell.className = 'mermaid';
+          chartShell.className = 'mermaid w-full h-full flex items-center justify-center';
+          chartShell.style.width = '100%';
+          chartShell.style.height = '100%';
           chartShell.textContent = chart;
 
           // Ensure the chartShell is properly attached to DOM before rendering
@@ -367,7 +381,7 @@ export function EnhancedMermaidChart({
   }, [zoomingEnabled]);
 
   return (
-    <div className={cn('relative w-full min-h-[500px] overflow-hidden', className)}>
+    <div className={cn('relative w-full overflow-hidden', className)}>
       <div
         ref={containerRef}
         className="h-full w-full overflow-visible"

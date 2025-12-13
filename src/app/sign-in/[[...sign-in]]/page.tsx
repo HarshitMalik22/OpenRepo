@@ -4,7 +4,7 @@ export default function SignInPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-background to-muted p-4">
       <div className="w-full max-w-md">
-        <SignIn 
+        <SignIn
           appearance={{
             elements: {
               card: 'bg-card border border-border shadow-lg',
@@ -20,8 +20,7 @@ export default function SignInPage() {
               footerActionLink: 'text-primary hover:text-primary/80',
             },
           }}
-          afterSignInUrl="/"
-          afterSignUpUrl="/"
+          forceRedirectUrl="/"
         />
       </div>
     </div>

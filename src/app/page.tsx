@@ -56,7 +56,7 @@ export default async function Home() {
   };
 
   return (
-    <div className="mb-32 min-h-screen">
+    <div className="mb-32 min-h-screen" suppressHydrationWarning>
       {/* --- MODIFIED HERO SECTION --- */}
       {/* We ensure min-h-[600px] or similar so the starfield has room to show */}
       {/* Added extra top padding to account for fixed header */}
@@ -66,7 +66,7 @@ export default async function Home() {
         <WarpBackground />
 
         {/* 2. A gradient overlay to fade the bottom of the stars into the rest of the page */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background z-0 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background z-0 pointer-events-none" suppressHydrationWarning />
 
         {/* GitHub Status Indicator - Moved inside hero for immersive effect */}
         <div className="container mx-auto relative z-10 mb-8">

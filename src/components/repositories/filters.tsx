@@ -45,10 +45,15 @@ export function RepositoryFilters({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams?.get('q') || '');
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [goodFirstIssues, setGoodFirstIssues] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>('stars');
+  // Initialize from URL search params to ensure UI sync
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
+    searchParams?.get('languages')?.split(',').filter(Boolean) || []
+  );
+  const [selectedTopics, setSelectedTopics] = useState<string[]>(
+    searchParams?.get('topics')?.split(',').filter(Boolean) || []
+  );
+  const [goodFirstIssues, setGoodFirstIssues] = useState(searchParams?.get('goodFirstIssues') === 'true');
+  const [sortBy, setSortBy] = useState<SortOption>((searchParams?.get('sortBy') as SortOption) || 'stars');
 
   // Handle search input with debouncing
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,9 +90,10 @@ export function RepositoryFilters({
   }, [selectedLanguages, selectedTopics, goodFirstIssues, sortBy]);
 
   const toggleLanguage = (language: string) => {
+    // Single select mode to match API capabilities and prevent confusion
     const newLanguages = selectedLanguages.includes(language)
-      ? selectedLanguages.filter(l => l !== language)
-      : [...selectedLanguages, language];
+      ? [] // Deselect if clicked again
+      : [language]; // Select only the new one
     setSelectedLanguages(newLanguages);
   };
 
@@ -170,7 +176,7 @@ export function RepositoryFilters({
               <div className="space-y-2">
                 <h4 className="font-medium text-xs text-muted-foreground px-2 mb-2">Languages</h4>
                 {availableLanguages.map((language) => (
-                  <div key={language} className="flex items-center space-x-2 px-2 py-1 hover:bg-accent rounded-sm cursor-pointer" onClick={() => toggleLanguage(language)}>
+                  <div key={language} className="flex items-center space-x-2 px-2 py-1 hover:bg-accent rounded-sm">
                     <Checkbox
                       id={`lang-${language}`}
                       checked={selectedLanguages.includes(language)}

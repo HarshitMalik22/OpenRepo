@@ -86,23 +86,18 @@ export const metadata: Metadata = {
   },
 };
 
-import { getGitHubRepoDetails } from '@/lib/github';
+
 
 import { Analytics } from "@vercel/analytics/next"
 
-export default async function RootLayout({
+import { Suspense } from 'react';
+import HeaderWithStars from '@/components/layout/header-with-stars';
+
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  let stars = 0;
-  try {
-    const repo = await getGitHubRepoDetails('HarshitMalik22/OpenRepo');
-    stars = repo.stargazers_count;
-  } catch (error) {
-    console.error('Failed to fetch repo details:', error);
-  }
-
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
@@ -115,8 +110,11 @@ export default async function RootLayout({
           <Providers>
             <ReactQueryProvider>
               <SmoothScrollProvider>
-                <div className="font-body antialiased min-h-screen flex flex-col">
-                  <Header stars={stars} />
+                <div className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning>
+                  {/* Wrap Header in Suspense to prevent blocking the initial render */}
+                  <Suspense fallback={<Header />}>
+                    <HeaderWithStars />
+                  </Suspense>
                   <main>
                     {children}
                     <Analytics />

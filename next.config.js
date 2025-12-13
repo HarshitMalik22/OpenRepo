@@ -52,6 +52,16 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+    localPatterns: [
+      {
+        pathname: '/api/github-image',
+        search: '?repo=**',
+      },
+      {
+        pathname: '/**',
+        search: '',
+      },
+    ],
   },
 };
 

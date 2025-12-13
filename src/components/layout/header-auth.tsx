@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -20,11 +20,14 @@ export default function HeaderAuth() {
   const { user, isLoaded, isSignedIn } = useUser()
   const { signOut } = useClerk()
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
 
-  // Debug logging removed
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  if (!isLoaded) {
-    return <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+  if (!mounted || !isLoaded) {
+    return <div className="w-10 h-10 rounded-full bg-muted animate-pulse" suppressHydrationWarning />
   }
 
   if (!isSignedIn) {

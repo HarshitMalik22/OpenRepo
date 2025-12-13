@@ -10,7 +10,6 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks(.*)',
   '/repos',
   '/contact(.*)',
-  '/api/github-image(.*)',
   '/api/repositories/popular',
   '/api/repositories/good-first-issues',
   '/api/repositories/trending',

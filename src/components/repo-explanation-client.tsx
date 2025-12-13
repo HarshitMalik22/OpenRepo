@@ -507,8 +507,8 @@ export default function RepoExplanationClient({ repository, initialIsSaved = fal
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-0 flex-1" style={{ minHeight: '550px' }}>
-                            <div className="w-full h-full bg-white dark:bg-slate-950/20">
+                        <CardContent className="p-0 flex flex-col border-b">
+                            <div className="w-full bg-white dark:bg-slate-950/20 relative h-[600px]">
                                 <EnhancedMermaidChart
                                     chart={aiData.mermaidChart || `graph TD
     A[Repository Analysis] --> B[Architecture Overview]
@@ -519,7 +519,7 @@ export default function RepoExplanationClient({ repository, initialIsSaved = fal
     classDef default fill:#3b82f6,stroke:#1e40af,stroke-width:2px,color:#fff
     class A,B,C,D,E default`}
                                     zoomingEnabled={zoomingEnabled}
-                                    className="h-full"
+                                    className="w-full h-full block"
                                 />
                             </div>
                             {(hasExplanation || hasComponentMap) && (
