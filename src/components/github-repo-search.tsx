@@ -73,18 +73,6 @@ export default function GithubRepoSearch() {
         .pizza-cursor {
           cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23ff6b35'%3E%3Cpath d='M12 2C8.1 2 5 5.1 5 9c0 1.4.4 2.7 1 3.9l6 10.6 6-10.6c.6-1.2 1-2.5 1-3.9 0-3.9-3.1-7-7-7zm0 2c2.8 0 5 2.2 5 5 0 1.1-.4 2.1-1 2.9l-4-7.1c.6-.1 1.3-.2 2-.2z'/%3E%3Ccircle cx='9.5' cy='9.5' r='1.5' fill='white'/%3E%3Ccircle cx='12' cy='7' r='1.5' fill='white'/%3E%3Ccircle cx='14.5' cy='9.5' r='1.5' fill='white'/%3E%3C/svg%3E"), auto;
         }
-        .no-border-wrapper,
-        .no-border-wrapper * {
-          border: none !important;
-          outline: none !important;
-          box-shadow: none !important;
-        }
-        .relative.flex-grow {
-          border: 2px solid #3b82f6 !important;
-          outline: none !important;
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3) !important;
-          border-radius: 12px !important;
-        }
         input {
           border: 2px solid #3b82f6 !important;
           outline: none !important;
@@ -97,9 +85,6 @@ export default function GithubRepoSearch() {
           outline: none !important;
           box-shadow: 0 0 25px rgba(59, 130, 246, 0.7), 0 0 50px rgba(59, 130, 246, 0.4) !important;
           border-radius: 12px !important;
-        }
-        .border-\[\\#3b82f6\] {
-          border: none !important;
         }
       `}</style>
       <div className="relative min-h-[300px] flex items-end pb-10 overflow-hidden border-0 shadow-none bg-transparent w-full">

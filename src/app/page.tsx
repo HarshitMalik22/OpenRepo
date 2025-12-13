@@ -27,12 +27,13 @@ import type { Repository, CommunityStats } from '@/lib/types';
 import { FALLBACK_REPOS } from '@/lib/mock-data';
 
 // --- IMPORT THE NEW COMPONENT HERE ---
-import WarpBackground from '@/components/ui/warp-background';
+
 import FloatingRepoGrid from '@/components/ui/floating-repo-grid';
 import BlurFade from '@/components/ui/blur-fade';
 import BlurFadeText from '@/components/ui/blur-fade-text';
 import VideoDemo from '@/components/video-demo';
 import HowItWorks from '@/components/how-it-works';
+import WarpBackground from '@/components/ui/warp-background';
 
 export default async function Home() {
   // Skip database calls during build time to avoid connection errors
@@ -75,16 +76,16 @@ export default async function Home() {
 
         {/* 3. The Content (Z-Index 10 ensures it sits ON TOP of the canvas) */}
         <div className="container mx-auto text-center relative z-10">
-          <div className="flex flex-col items-center justify-center pb-6 drop-shadow-2xl">
+          <div className="flex flex-col items-center justify-center gap-2 pb-6 drop-shadow-2xl">
             <BlurFadeText
               delay={0.25}
-              className="text-4xl md:text-7xl font-bold font-headline tracking-tighter text-white"
+              className="text-4xl md:text-7xl font-bold font-headline tracking-tighter text-white leading-none"
               text="Learn Open Source."
             />
             <BlurFadeText
               delay={0.5}
-              className="text-4xl md:text-7xl font-bold font-headline tracking-tighter pb-1"
-              textClassName="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600"
+              className="text-4xl md:text-7xl font-bold font-headline tracking-tighter pb-1 leading-none"
+              textClassName="text-white"
               text="Smarter. Faster."
             />
           </div>
@@ -92,8 +93,7 @@ export default async function Home() {
           <BlurFade delay={0.5}>
             {/* Adjusted text color to be lighter/white for better contrast on dark background */}
             <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mt-6 leading-relaxed drop-shadow-md">
-              Discover and analyze open-source projects with AI-powered recommendations,
-              advanced filtering, and comprehensive insights. Your journey to exploring open source starts here.
+              Discover and analyze open-source projects with AI-powered recommendations
             </p>
           </BlurFade>
 
