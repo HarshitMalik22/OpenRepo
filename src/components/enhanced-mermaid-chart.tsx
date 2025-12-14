@@ -27,6 +27,8 @@ export function EnhancedMermaidChart({
   const panZoomRef = useRef<PanZoomInstance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [detailedError, setDetailedError] = useState<string | null>(null);
+  const [showDetailedError, setShowDetailedError] = useState(false);
 
   useEffect(() => {
     const initMermaid = async () => {
@@ -316,10 +318,22 @@ export function EnhancedMermaidChart({
             }
 
             chartShell.innerHTML = svg;
+            // Clear any previous errors on successful render
+            setDetailedError(null);
           } catch (renderError) {
             if (!isMounted) return;
             console.error('Mermaid render error:', renderError);
-            throw new Error(`Failed to render mermaid chart: ${renderError instanceof Error ? renderError.message : 'Unknown error'}`);
+            
+            // Capture detailed error message including parse details
+            const errorMessage = renderError instanceof Error 
+              ? renderError.message 
+              : String(renderError);
+            const errorString = JSON.stringify(renderError, Object.getOwnPropertyNames(renderError));
+            
+            // Store detailed error for debugging
+            setDetailedError(errorMessage || errorString);
+            
+            throw new Error(`Failed to render mermaid chart: ${errorMessage}`);
           }
 
           if (!isMounted) return;
@@ -352,6 +366,12 @@ export function EnhancedMermaidChart({
         if (!isMounted) return;
         console.error('Error rendering Mermaid chart:', err);
         setError('Failed to render the architecture diagram. The diagram syntax might be invalid.');
+        // Ensure detailed error is set if not already set from renderError catch
+        if (!detailedError && err instanceof Error) {
+          setDetailedError(err.message);
+        } else if (!detailedError) {
+          setDetailedError(String(err));
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -397,6 +417,25 @@ export function EnhancedMermaidChart({
         <div className="absolute inset-4 flex flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50/90 p-4 text-center text-red-700 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-100">
           <p className="text-sm font-semibold">Unable to render diagram</p>
           <p className="text-xs opacity-80">{error}</p>
+          {detailedError && (
+            <div className="mt-3 w-full">
+              {(process.env.NODE_ENV === 'development' || showDetailedError) && (
+                <div className="mt-2 rounded border border-red-300 bg-red-100/50 p-2 text-left text-xs font-mono dark:border-red-600 dark:bg-red-900/30">
+                  <p className="mb-1 font-semibold">Debug Details:</p>
+                  <p className="whitespace-pre-wrap break-words">{detailedError}</p>
+                </div>
+              )}
+              {process.env.NODE_ENV !== 'development' && (
+                <button
+                  type="button"
+                  onClick={() => setShowDetailedError(!showDetailedError)}
+                  className="mt-2 text-xs underline opacity-70 hover:opacity-100"
+                >
+                  {showDetailedError ? 'Hide' : 'Show'} debug details
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 

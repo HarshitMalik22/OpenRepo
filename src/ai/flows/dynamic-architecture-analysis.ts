@@ -19,6 +19,12 @@ import { REPOSITORY_ANALYSIS_SYSTEM_PROMPT, REPOSITORY_ANALYSIS_HUMAN_TEMPLATE, 
 import { diagramCache } from '@/lib/diagram-cache';
 import { getGitHubHeaders } from '@/lib/github-headers';
 import { validateCachedDiagram } from '@/lib/cache-invalidation';
+import {
+  cleanMermaidCode,
+  ensureGraphDeclaration,
+  repairMermaidCode,
+  validateMermaidSyntax,
+} from '@/lib/mermaid-utils';
 
 const DynamicArchitectureAnalysisInputSchema = z.object({
   repoUrl: z.string().describe('The URL of the repository to analyze.'),
@@ -542,7 +548,7 @@ function generateMermaidChart(flowchartData: any): string {
     layers[layer].push(node);
   });
   
-  let mermaid = 'graph TD\n';
+  let mermaid = 'flowchart TD\n';
   
   // Add nodes with layer-based styling
   Object.keys(layers).forEach(layerKey => {
@@ -551,7 +557,8 @@ function generateMermaidChart(flowchartData: any): string {
     
     layerNodes.forEach((node: any) => {
       const nodeId = node.id.replace(/[^a-zA-Z0-9]/g, '_');
-      const nodeLabel = node.label.replace(/"/g, '\\"');
+      // Escape quotes in labels properly
+      const nodeLabel = node.label.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       const nodeType = node.type || 'component';
       
       // Add node with type-specific styling
@@ -565,20 +572,21 @@ function generateMermaidChart(flowchartData: any): string {
     const toId = connection.to.replace(/[^a-zA-Z0-9]/g, '_');
     const connectionType = connection.type || 'dependency';
     
-    mermaid += `    ${fromId} -->|${connectionType}| ${toId}\n`;
+    // Ensure connection labels are properly quoted
+    mermaid += `    ${fromId} -->|"${connectionType}"| ${toId}\n`;
   });
   
   // Add style definitions
-  mermaid += '\n    classDef entry fill:#e1f5fe,stroke:#01579b,stroke-width:2px\n';
-  mermaid += '    classDef component fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px\n';
-  mermaid += '    classDef service fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px\n';
-  mermaid += '    classDef database fill:#ffebee,stroke:#c62828,stroke-width:2px\n';
-  mermaid += '    classDef external fill:#fff3e0,stroke:#e65100,stroke-width:2px\n';
-  mermaid += '    classDef config fill:#fafafa,stroke:#424242,stroke-width:2px\n';
-  mermaid += '    classDef api fill:#e0f2f1,stroke:#00695c,stroke-width:2px\n';
-  mermaid += '    classDef hook fill:#fce4ec,stroke:#880e4f,stroke-width:2px\n';
-  mermaid += '    classDef util fill:#f1f8e9,stroke:#33691e,stroke-width:2px\n';
-  mermaid += '    classDef test fill:#fff8e1,stroke:#f57f17,stroke-width:2px\n';
+  mermaid += '\n    classDef entry fill:#e1f5fe,stroke:#01579b,stroke-width:2px;\n';
+  mermaid += '    classDef component fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px;\n';
+  mermaid += '    classDef service fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px;\n';
+  mermaid += '    classDef database fill:#ffebee,stroke:#c62828,stroke-width:2px;\n';
+  mermaid += '    classDef external fill:#fff3e0,stroke:#e65100,stroke-width:2px;\n';
+  mermaid += '    classDef config fill:#fafafa,stroke:#424242,stroke-width:2px;\n';
+  mermaid += '    classDef api fill:#e0f2f1,stroke:#00695c,stroke-width:2px;\n';
+  mermaid += '    classDef hook fill:#fce4ec,stroke:#880e4f,stroke-width:2px;\n';
+  mermaid += '    classDef util fill:#f1f8e9,stroke:#33691e,stroke-width:2px;\n';
+  mermaid += '    classDef test fill:#fff8e1,stroke:#f57f17,stroke-width:2px;\n';
   
   // Apply classes to nodes
   Object.keys(layers).forEach(layerKey => {
@@ -590,7 +598,19 @@ function generateMermaidChart(flowchartData: any): string {
     });
   });
   
-  return mermaid;
+  // Process the generated Mermaid code through utilities for consistency
+  let processedMermaid = cleanMermaidCode(mermaid);
+  processedMermaid = ensureGraphDeclaration(processedMermaid);
+  processedMermaid = repairMermaidCode(processedMermaid);
+  
+  // Validate the result
+  const validation = validateMermaidSyntax(processedMermaid);
+  if (!validation.valid) {
+    console.warn('Generated Mermaid chart has validation issues:', validation.errors.join(', '));
+    // Return the processed version anyway (utilities should have fixed most issues)
+  }
+  
+  return processedMermaid;
 }
 
 /**

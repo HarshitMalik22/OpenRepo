@@ -12,6 +12,13 @@ import { isAIConfigured, createLangChainModel } from '@/ai/langchain-config';
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StructuredOutputParser, StringOutputParser } from "@langchain/core/output_parsers";
 import { getGitHubHeaders } from "@/lib/github-headers";
+import {
+  cleanMermaidCode,
+  ensureGraphDeclaration,
+  repairMermaidCode,
+  validateMermaidSyntax,
+  processClickEvents,
+} from '@/lib/mermaid-utils';
 
 const GitdiagramStyleAnalysisInputSchema = z.object({
   repoUrl: z.string().describe('The URL of the repository to analyze.'),
@@ -113,6 +120,12 @@ Create the Mermaid.js code to represent the design, ensuring that:
 - **Quotes**: You must use quotes for labels: \`Node["Label"]\`.
 - **Spaces**: No spaces in arrow labels (e.g. \`A -->|"label"| B\`).
 - **Subgraphs**: No classes on subgraphs directly. Apply to nodes inside.
+- **Comments**: 
+  - ONLY Mermaid-style comments using \`%%\` at the beginning of a line are allowed.
+  - Comments must be on their own line, never on the same line as other Mermaid statements.
+  - DO NOT use single-percent \`%\` comments.
+  - DO NOT append comments after class definitions, node definitions, or other instructions on the same line.
+  - If you need to add comments, use \`%% Comment text\` on a separate line.
 - **Output**: Return ONLY valid Mermaid code. No markdown fences.
 
 Example Structure:
@@ -214,13 +227,19 @@ export async function gitdiagramStyleAnalysis(input: GitdiagramStyleAnalysisInpu
 
     console.log('✅ Diagram generated.');
 
-    // Post-Processing
-    mermaidCode = sanitizeMermaidDiagram(mermaidCode);
-    if (mermaidCode.length < 10 || (!mermaidCode.includes('graph') && !mermaidCode.includes('flowchart'))) {
-       console.warn('⚠️ Mermaid output did not look valid');
-       mermaidCode = getFallbackMermaidChart(repo);
-    }
+    // Post-Processing: Simple, clear pipeline using modular utilities
+    mermaidCode = cleanMermaidCode(mermaidCode);
+    mermaidCode = ensureGraphDeclaration(mermaidCode);
+    mermaidCode = repairMermaidCode(mermaidCode);
     mermaidCode = processClickEvents(mermaidCode, owner, repo);
+    
+    // Validate (but don't over-validate)
+    const validation = validateMermaidSyntax(mermaidCode);
+    if (!validation.valid && validation.errors.length > 0) {
+      console.warn('⚠️ Mermaid validation issues found:', validation.errors.join(', '));
+      // Use fallback only if truly broken
+      mermaidCode = getFallbackMermaidChart(repo);
+    }
 
     const directories = structure.filter((item: any) => item.type === 'dir');
     const summary = `${repo} is a ${techStack[0] || 'Unknown'} repository with ${directories.length} directories. AI-generated analysis (Hybrid 2-Step).`;
@@ -367,21 +386,6 @@ function estimateTokenCount(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-function processClickEvents(diagram: string, owner: string, repo: string): string {
-  const clickPattern = /click (\S+)\s+["']([^"']+)['"]/g;
-  
-  return diagram.replace(clickPattern, (match: string, component: string, path: string) => {
-    const fileName = path.split("/").pop() || "";
-    const isFile = fileName.includes(".");
-    
-    const baseUrl = `https://github.com/${owner}/${repo}`;
-    const pathType = isFile ? "blob" : "tree";
-    const fullUrl = `${baseUrl}/${pathType}/main/${path}`;
-    
-    return `click ${component} "${fullUrl}"`;
-  });
-}
-
 const getFallbackMermaidChart = (repoName: string = 'Repository') => {
   const timestamp = new Date().toLocaleString();
   
@@ -492,92 +496,7 @@ flowchart TD
     style "Architecture Overview" fill:none,stroke:#888,stroke-dasharray: 2 2`;
 };
 
-// --- Helper Functions Restored ---
-
-function sanitizeMermaidDiagram(diagram: string): string {
-  if (!diagram) return '';
-  
-  // 1. Basic cleanup: Remove markdown syntax
-  let clean = diagram.replace(/```mermaid/gi, '').replace(/```/g, '').trim();
-
-  // 2. Unescape Literal Newlines and standard escapes
-  // The AI often outputs literal "\n" characters instead of real newlines.
-  clean = clean.split('\\n').join('\n');
-
-  // 3. Normalize Line Endings
-  clean = clean.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-  // 4. Force keywords to their own lines (Tokenization)
-  // This solves "jammed" lines like: node1[A]direction TDnode2[B]
-  // We use specific lookaheads/lookbehinds or known structure to be safe.
-  
-  // 4a. Handle 'direction' (e.g., direction TB, direction LR)
-  clean = clean.replace(/(direction\s+(?:TB|TD|BT|RL|LR))/g, '\n$1\n');
-
-  // 4b. Handle 'subgraph' (space required after)
-  clean = clean.replace(/(\S)(subgraph\s+)/g, '$1\n$2');
-  
-  // 4c. Handle 'end' (must be its own word)
-  clean = clean.replace(/(\s|;)\b(end)\b(\s|;|$)/g, '\n$2\n');
-
-  // 4d. Handle 'classDef', 'style', 'click' (usually start of line, but force it)
-  clean = clean.replace(/(\S)(classDef\s+)/g, '$1\n$2');
-  clean = clean.replace(/(\S)(style\s+)/g, '$1\n$2');
-  clean = clean.replace(/(\S)(click\s+)/g, '$1\n$2');
-
-  // 4e. Ensure graph header is clean
-  clean = clean.replace(/^(graph|flowchart)\s+([A-Z]+)(.*)/, '$1 $2\n$3');
-
-  // 5. Line-by-Line Processing (Robust)
-  const lines = clean.split('\n');
-  const processedLines: string[] = [];
-
-  for (let line of lines) {
-    line = line.trim();
-    if (!line) continue;
-
-    // A. Pass through known directives/keywords immediately
-    // Expanded list to be safe
-    if (/^(classDef|style|click|linkStyle|direction|%%|subgraph|end)/.test(line)) {
-        processedLines.push(line);
-        continue;
-    }
-    
-    // B. Pass through graph declaration
-    if (/^(graph|flowchart)\s/.test(line)) {
-        processedLines.push(line);
-        continue;
-    }
-
-    // C. Handle Node Definitions: ID[Label] or ID("Label") etc.
-    // Goal: Enforce quotes around labels to prevent syntax errors.
-    // Matches: ID + (Open) + Content + (Close) at START of line.
-    // We strictly ignore if it looks like a relationship (-->)
-    if (!line.includes('-->') && !line.includes('-.->') && !line.includes('==>')) {
-        const nodeMatch = line.match(/^([a-zA-Z0-9_]+)(\[|\(|\{)(.*)(\]|\)|\})$/);
-        if (nodeMatch) {
-            const [, id, open, content, close] = nodeMatch;
-            let safeContent = content;
-            
-            // Remove existing outer quotes if present
-            if (safeContent.startsWith('"') && safeContent.endsWith('"')) {
-                safeContent = safeContent.slice(1, -1);
-            }
-            
-            // Escape quotes inside
-            safeContent = safeContent.replace(/"/g, "'");
-            
-            processedLines.push(`${id}${open}"${safeContent}"${close}`);
-            continue;
-        }
-    }
-    
-    // D. Default: Pass through everything else check for broken lines or just push
-    processedLines.push(line);
-  }
-
-  return processedLines.join('\n');
-}
+// --- Helper Functions ---
 
 function inferMermaidClass(name: string, path?: string): string {
   const haystack = `${name} ${path || ''}`.toLowerCase();
