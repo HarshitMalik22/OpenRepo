@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { RepositoryWithActivity } from '@/types/repositories';
 import { formatDistanceToNow } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ReadinessScoreBadge } from '@/components/readiness-score-badge';
+
 
 interface RepositoryCardProps {
   repo: RepositoryWithActivity;
@@ -22,8 +24,8 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-const RepositoryCard = ({ 
-  repo, 
+const RepositoryCard = ({
+  repo,
   isSaved,
   onSaveToggle,
   variant = 'grid',
@@ -31,7 +33,7 @@ const RepositoryCard = ({
   const slug = repo.full_name?.replace('/', '--') || '';
   // Check if the repository is archived
   const isArchived = 'archived' in repo ? Boolean(repo.archived) : false;
-  const lastUpdated = repo.updated_at 
+  const lastUpdated = repo.updated_at
     ? formatDistanceToNow(new Date(repo.updated_at as string), { addSuffix: true })
     : 'Unknown';
 
@@ -40,7 +42,7 @@ const RepositoryCard = ({
     e.stopPropagation();
     onSaveToggle(repo.id);
   };
-  
+
   // Ensure we have valid repository data
   if (!repo) return null;
 
@@ -65,11 +67,11 @@ const RepositoryCard = ({
                     </Badge>
                   )}
                 </div>
-                
+
                 <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                   {repo.description}
                 </p>
-                
+
                 <div className="flex flex-wrap gap-2 mb-4">
                   {repo.topics.slice(0, 3).map(tag => (
                     <Badge key={tag} variant="secondary" className="text-xs">
@@ -77,7 +79,7 @@ const RepositoryCard = ({
                     </Badge>
                   ))}
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   {repo.language && (
                     <div className="flex items-center gap-1">
@@ -85,27 +87,27 @@ const RepositoryCard = ({
                       <span>{repo.language}</span>
                     </div>
                   )}
-                  
+
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4" />
                     <span>{formatNumber(repo.stargazers_count)}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-1">
                     <GitBranch className="w-4 h-4" />
                     <span>{formatNumber(repo.forks_count)}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
                     <span>{formatNumber(repo.open_issues_count)}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     <span>Updated {lastUpdated}</span>
                   </div>
-                  
+
                   {repo.activity?.maintainerResponseTime && (
                     <TooltipProvider>
                       <Tooltip>
@@ -123,20 +125,20 @@ const RepositoryCard = ({
                   )}
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2 ml-4">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={handleSave}
                 >
                   <Save className={cn("w-4 h-4", isSaved && "fill-current")} />
                 </Button>
                 <Button variant="outline" size="sm" asChild>
-                  <a 
-                    href={repo.html_url} 
-                    target="_blank" 
+                  <a
+                    href={repo.html_url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}
                   >
@@ -168,8 +170,8 @@ const RepositoryCard = ({
               {repo.name}
             </CardTitle>
             <Button
-              variant="ghost" 
-              size="icon" 
+              variant="ghost"
+              size="icon"
               className="h-8 w-8 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={handleSave}
             >
@@ -180,16 +182,24 @@ const RepositoryCard = ({
             {repo.description}
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="flex-grow">
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-3">
             {repo.topics.slice(0, 4).map(tag => (
               <Badge key={tag} variant="secondary" className="text-xs">
                 {tag}
               </Badge>
             ))}
           </div>
-          
+
+          {/* Contribution Readiness Score */}
+          <div className="mb-3">
+            <ReadinessScoreBadge
+              repositoryFullName={repo.full_name}
+              variant="minimal"
+            />
+          </div>
+
           {repo.activity && (
             <div className="space-y-2 text-sm mb-4">
               <div className="flex items-center justify-between">
@@ -212,7 +222,7 @@ const RepositoryCard = ({
             </div>
           )}
         </CardContent>
-        
+
         <CardFooter className="flex justify-between items-center pt-0">
           <div className="flex items-center gap-4 text-muted-foreground text-sm">
             <div className="flex items-center gap-1">
@@ -230,7 +240,7 @@ const RepositoryCard = ({
               </div>
             )}
           </div>
-          
+
           <Button size="sm" variant="outline" className="shrink-0">
             Analyze
           </Button>

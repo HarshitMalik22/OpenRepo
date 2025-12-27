@@ -9,13 +9,16 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/api/webhooks(.*)',
   '/repos',
+  '/repos(.*)',
   '/contact(.*)',
   '/api/repositories/popular',
   '/api/repositories/good-first-issues',
   '/api/repositories/trending',
   '/api/repositories/recommended',
+  '/api/repositories/recommended-issues',
   '/api/repositories/enhanced-recommended',
   '/api/repositories/filter',
+  '/api/repositories/(.*)/readiness',
   '/api/github/config-status(.*)',
 ]);
 
