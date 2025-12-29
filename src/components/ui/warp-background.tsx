@@ -6,6 +6,10 @@ const WarpBackground = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
+        // Respect reduced motion preference
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion) return;
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -13,13 +17,14 @@ const WarpBackground = () => {
         if (!ctx) return;
 
         let animationFrameId: number;
+        let isVisible = true;
         let stars: { x: number; y: number; z: number; pz: number }[] = [];
 
-        // Configuration matches the "blue/cyan" vibe of your image
-        const starCount = 600; // Reduced from 1000 for better performance
+        // OPTIMIZED: Reduced star count (was 600, now 400)
+        const starCount = 270;
         const speed = 0.1;
-        const spread = 800; // How wide the tunnel is
-        const depth = 1000; // How deep the tunnel is
+        const spread = 800;
+        const depth = 1000;
 
         // Initialize stars
         for (let i = 0; i < starCount; i++) {
@@ -27,7 +32,7 @@ const WarpBackground = () => {
                 x: Math.random() * spread - spread / 2,
                 y: Math.random() * spread - spread / 2,
                 z: Math.random() * depth,
-                pz: 0, // Previous Z (for trail calculation)
+                pz: 0,
             });
         }
 
@@ -36,24 +41,44 @@ const WarpBackground = () => {
             canvas.height = window.innerHeight;
         };
 
+        // OPTIMIZED: Cache gradient - create once, not every frame
+        let cachedGradient: CanvasGradient | null = null;
+        let lastCx = 0;
+        let lastCy = 0;
+
+        const getGradient = (cx: number, cy: number) => {
+            if (cachedGradient && lastCx === cx && lastCy === cy) {
+                return cachedGradient;
+            }
+            cachedGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 300);
+            cachedGradient.addColorStop(0, "rgba(56, 189, 248, 0.2)");
+            cachedGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+            lastCx = cx;
+            lastCy = cy;
+            return cachedGradient;
+        };
+
         const draw = () => {
-            // Clear canvas with a slight fade for trail effect, or solid for crisp lines
-            // Using solid dark blue/black background to match your image
-            ctx.fillStyle = "#020617"; // Dark Slate/Black
+            // Don't animate if tab is not visible
+            if (!isVisible) {
+                animationFrameId = requestAnimationFrame(draw);
+                return;
+            }
+
+            ctx.fillStyle = "#020617";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Center of screen
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
-            // Use for loop instead of forEach for better performance
+            // OPTIMIZED: Batch path operations
+            ctx.beginPath();
+
             for (let i = 0; i < stars.length; i++) {
                 const star = stars[i];
 
-                // Update Z position (move towards screen)
-                star.z -= speed * 25; // Speed multiplier
+                star.z -= speed * 25;
 
-                // Reset star if it passes the screen
                 if (star.z <= 0) {
                     star.z = depth;
                     star.x = Math.random() * spread - spread / 2;
@@ -61,13 +86,10 @@ const WarpBackground = () => {
                     star.pz = depth;
                 }
 
-                // Project 3D coordinates to 2D screen space
                 const k = 128.0 / star.z;
                 const px = star.x * k + cx;
                 const py = star.y * k + cy;
 
-                // Calculate previous position for "streak" effect (Warp lines)
-                // We use a slightly larger Z for the tail of the streak
                 const k_prev = 128.0 / (star.z + 20);
                 const px_prev = star.x * k_prev + cx;
                 const py_prev = star.y * k_prev + cy;
@@ -77,38 +99,39 @@ const WarpBackground = () => {
                     px <= canvas.width &&
                     py >= 0 &&
                     py <= canvas.height &&
-                    star.z < depth - 50 // Don't draw brand new stars immediately to avoid popping
+                    star.z < depth - 50
                 ) {
-                    // Calculate brightness based on depth (closer = brighter)
                     const alpha = (1 - star.z / depth) * 1.5;
 
-                    // Draw the streak
+                    // Draw individual streaks (need separate strokes for varying alpha)
                     ctx.beginPath();
                     ctx.moveTo(px, py);
                     ctx.lineTo(px_prev, py_prev);
-
-                    // Color: Cyan/Blue mix to match your reference image
                     ctx.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
-                    ctx.lineWidth = alpha * 1.5; // Closer stars are thicker
+                    ctx.lineWidth = alpha * 1.5;
                     ctx.stroke();
                 }
             }
 
-            // Add a glowing center burst (optional, matches the bright center in your image)
-            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 300);
-            gradient.addColorStop(0, "rgba(56, 189, 248, 0.2)"); // Light Blue center
-            gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-            ctx.fillStyle = gradient;
+            // OPTIMIZED: Use cached gradient
+            ctx.fillStyle = getGradient(cx, cy);
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             animationFrameId = requestAnimationFrame(draw);
         };
 
+        // OPTIMIZED: Pause when tab is hidden
+        const handleVisibilityChange = () => {
+            isVisible = !document.hidden;
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
         draw();
 
         return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("resize", resizeCanvas);
             cancelAnimationFrame(animationFrameId);
         };
