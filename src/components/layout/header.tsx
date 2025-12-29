@@ -23,13 +23,13 @@ export default function Header({ stars = 0 }: { stars?: number }) {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isHome
-        ? 'bg-background/5 backdrop-blur-md border-b border-white/5'
-        : 'bg-background/60 backdrop-blur-xl border-b border-border/40 supports-[backdrop-filter]:bg-background/60'
-        }`}
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 rounded-full border-[0.5px] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] ${isHome
+        ? 'bg-white/10 backdrop-blur-3xl backdrop-saturate-200 border-white/20 supports-[backdrop-filter]:bg-white/10'
+        : 'bg-white/10 backdrop-blur-3xl backdrop-saturate-200 border-white/20 supports-[backdrop-filter]:bg-white/10 shadow-2xl'
+        } w-[90%] md:w-auto mx-auto`}
       suppressHydrationWarning
     >
-      <div className="container mx-auto px-6 h-16 flex items-center justify-between relative" suppressHydrationWarning>
+      <div className="px-6 h-14 flex items-center justify-between gap-4 md:gap-12" suppressHydrationWarning>
         {/* Left: Logo */}
         <div className="flex items-center gap-2 z-20" suppressHydrationWarning>
           <Link href="/" className="flex items-center gap-2 group">
@@ -42,17 +42,17 @@ export default function Header({ stars = 0 }: { stars?: number }) {
                 className="object-contain"
               />
             </div>
-            <h1 className="text-xl font-bold font-headline text-foreground tracking-tight">OpenRepo</h1>
+            <h1 className="text-xl font-bold font-headline text-foreground tracking-tight hidden sm:block">OpenRepo</h1>
           </Link>
         </div>
 
-        {/* Center: Navigation - Absolutely positioned to ensure true centering */}
-        <nav className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+        {/* Center: Navigation */}
+        <nav className="hidden md:flex items-center gap-1 z-10">
           <Link
             href="/repos"
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${pathname === '/repos'
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${pathname === '/repos'
               ? 'bg-primary/10 text-primary'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
               }`}
           >
             Discover
@@ -69,10 +69,10 @@ export default function Header({ stars = 0 }: { stars?: number }) {
                   href="https://github.com/HarshitMalik22/OpenRepo"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 hover:bg-secondary text-secondary-foreground transition-all duration-200 border border-border/50 hover:border-border text-sm font-medium group"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-secondary-foreground transition-all duration-200 border border-border/50 hover:border-border text-xs font-medium group"
                 >
                   <Icons.github className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                  <span className="ml-1 px-2 py-0.5 rounded-full bg-background/50 text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-background/50 text-[10px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
                     {stars}
                   </span>
                 </Link>

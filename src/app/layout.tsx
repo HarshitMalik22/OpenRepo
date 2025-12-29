@@ -3,6 +3,7 @@ import './globals.css'
 import { Toaster } from "@/components/ui/toaster"
 import Header from '@/components/layout/header'
 import Footer from '@/components/layout/footer'
+import ContentSpacer from '@/components/layout/content-spacer'
 import { ReactQueryProvider } from '@/components/providers/react-query-provider'
 import { SmoothScrollProvider } from '@/components/providers/smooth-scroll-provider'
 import { Providers } from './providers'
@@ -115,6 +116,7 @@ export default function RootLayout({
                   <Suspense fallback={<Header />}>
                     <HeaderWithStars />
                   </Suspense>
+                  <ContentSpacer />
                   <main>
                     {children}
                     <Analytics />
@@ -127,6 +129,6 @@ export default function RootLayout({
           </Providers>
         </div>
       </body>
-    </html>
+    </html >
   );
 }
