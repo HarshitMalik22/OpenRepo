@@ -16,10 +16,10 @@ export default function VideoDemo() {
         <section className="container mx-auto pb-16 md:pb-24 pt-0 relative z-20">
 
 
-            <div className="relative w-full max-w-7xl mx-auto aspect-video rounded-2xl shadow-[0_0_40px_-10px_rgba(59,130,246,0.3)] border border-blue-500/30 bg-black/50 backdrop-blur-sm group">
-                {/* Smoke/Glow Effects */}
+            <div className="relative w-full max-w-7xl mx-auto aspect-video rounded-2xl shadow-[0_0_40px_-10px_rgba(59,130,246,0.3)] border border-blue-500/30 bg-black/50 group">
+                {/* Smoke/Glow Effects - Removed animate-pulse for performance */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-                <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-3xl blur-xl opacity-10 group-hover:opacity-30 transition duration-1000 animate-pulse"></div>
+                <div className="absolute -inset-4 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-3xl blur-xl opacity-10 group-hover:opacity-30 transition duration-1000"></div>
 
                 <div className="relative h-full w-full rounded-xl overflow-hidden bg-slate-900">
                     {/* Video */}

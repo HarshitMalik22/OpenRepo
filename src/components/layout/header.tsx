@@ -23,9 +23,10 @@ export default function Header({ stars = 0 }: { stars?: number }) {
 
   return (
     <header
-      className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 rounded-full border-[0.5px] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] ${isHome
-        ? 'bg-white/10 backdrop-blur-3xl backdrop-saturate-200 border-white/20 supports-[backdrop-filter]:bg-white/10'
-        : 'bg-white/10 backdrop-blur-3xl backdrop-saturate-200 border-white/20 supports-[backdrop-filter]:bg-white/10 shadow-2xl'
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 rounded-full border-[0.5px] shadow-lg ${isHome
+        // PERFORMANCE: Reduced from backdrop-blur-3xl to backdrop-blur-md, removed saturate filter
+        ? 'bg-white/20 backdrop-blur-md border-white/20'
+        : 'bg-white/20 backdrop-blur-md border-white/20'
         } w-[90%] md:w-auto mx-auto`}
       suppressHydrationWarning
     >

@@ -58,6 +58,14 @@ const WarpBackground = () => {
             return cachedGradient;
         };
 
+        // Pre-compute alpha buckets for batching
+        const alphaBuckets: { stars: typeof stars; alpha: number; lineWidth: number }[] = [
+            { stars: [], alpha: 0.3, lineWidth: 0.45 },
+            { stars: [], alpha: 0.6, lineWidth: 0.9 },
+            { stars: [], alpha: 0.9, lineWidth: 1.35 },
+            { stars: [], alpha: 1.2, lineWidth: 1.8 },
+        ];
+
         const draw = () => {
             // Don't animate if tab is not visible
             if (!isVisible) {
@@ -71,9 +79,12 @@ const WarpBackground = () => {
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
-            // OPTIMIZED: Batch path operations
-            ctx.beginPath();
+            // Clear buckets
+            for (const bucket of alphaBuckets) {
+                bucket.stars = [];
+            }
 
+            // Update stars and sort into alpha buckets
             for (let i = 0; i < stars.length; i++) {
                 const star = stars[i];
 
@@ -86,31 +97,37 @@ const WarpBackground = () => {
                     star.pz = depth;
                 }
 
-                const k = 128.0 / star.z;
-                const px = star.x * k + cx;
-                const py = star.y * k + cy;
-
-                const k_prev = 128.0 / (star.z + 20);
-                const px_prev = star.x * k_prev + cx;
-                const py_prev = star.y * k_prev + cy;
-
-                if (
-                    px >= 0 &&
-                    px <= canvas.width &&
-                    py >= 0 &&
-                    py <= canvas.height &&
-                    star.z < depth - 50
-                ) {
+                if (star.z < depth - 50) {
                     const alpha = (1 - star.z / depth) * 1.5;
-
-                    // Draw individual streaks (need separate strokes for varying alpha)
-                    ctx.beginPath();
-                    ctx.moveTo(px, py);
-                    ctx.lineTo(px_prev, py_prev);
-                    ctx.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
-                    ctx.lineWidth = alpha * 1.5;
-                    ctx.stroke();
+                    // Sort into bucket based on alpha
+                    const bucketIndex = Math.min(3, Math.floor(alpha / 0.4));
+                    alphaBuckets[bucketIndex].stars.push(star);
                 }
+            }
+
+            // OPTIMIZED: Draw stars in batches by alpha level (fewer state changes)
+            for (const bucket of alphaBuckets) {
+                if (bucket.stars.length === 0) continue;
+
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(100, 200, 255, ${bucket.alpha})`;
+                ctx.lineWidth = bucket.lineWidth;
+
+                for (const star of bucket.stars) {
+                    const k = 128.0 / star.z;
+                    const px = star.x * k + cx;
+                    const py = star.y * k + cy;
+
+                    const k_prev = 128.0 / (star.z + 20);
+                    const px_prev = star.x * k_prev + cx;
+                    const py_prev = star.y * k_prev + cy;
+
+                    if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
+                        ctx.moveTo(px, py);
+                        ctx.lineTo(px_prev, py_prev);
+                    }
+                }
+                ctx.stroke();
             }
 
             // OPTIMIZED: Use cached gradient

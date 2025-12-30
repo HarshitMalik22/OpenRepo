@@ -119,7 +119,7 @@ export default function HowItWorks() {
 
                 {/* Right Side: The Glass Console */}
                 <div className="lg:col-span-8">
-                    <div className="relative aspect-video rounded-xl border border-white/[0.08] bg-black/40 backdrop-blur-sm shadow-2xl overflow-hidden group">
+                    <div className="relative aspect-video rounded-xl border border-white/[0.08] bg-black/60 shadow-xl overflow-hidden group">
 
                         {/* Console Header */}
                         <div className="absolute top-0 left-0 w-full h-10 border-b border-white/[0.05] bg-white/[0.02] flex items-center px-4 justify-between z-20">
@@ -264,7 +264,7 @@ function ConsoleAnalyze() {
             exit={{ opacity: 0, scale: 0.95, filter: 'blur(4px)' }}
             transition={{ duration: 0.4 }}
         >
-            <div className="w-full max-w-sm bg-zinc-900/50 border border-white/10 rounded-xl overflow-hidden backdrop-blur-md relative font-mono text-xs shadow-2xl">
+            <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-xl overflow-hidden relative font-mono text-xs shadow-xl">
                 {/* Header */}
                 <div className="bg-zinc-900 border-b border-white/5 p-3 flex items-center justify-between">
                     <span className="text-zinc-400 flex items-center gap-2">

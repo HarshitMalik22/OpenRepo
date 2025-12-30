@@ -7,7 +7,9 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     <div
       ref={ref}
       className={cn(
-        "rounded-2xl border bg-card/80 backdrop-blur-md text-card-foreground shadow-glass transition-all duration-300 hover:shadow-glass-lg hover:-translate-y-1 hover:scale-[1.01] relative overflow-hidden",
+        // PERFORMANCE: Removed backdrop-blur-md (expensive GPU effect) and hover transforms
+        // backdrop-blur causes significant GPU overhead, especially with many cards on screen
+        "rounded-2xl border bg-card text-card-foreground shadow-sm transition-shadow duration-200 hover:shadow-lg relative overflow-hidden",
         className
       )}
       {...props}

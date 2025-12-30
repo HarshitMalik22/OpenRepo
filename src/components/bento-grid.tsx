@@ -119,37 +119,32 @@ export default function BentoGrid({ stats, topRepos = [] }: BentoGridProps) {
           viewport={{ once: true }}
           transition={{ delay: 0.1 }}
         >
-          {/* Central Network Visualization */}
+          {/* Central Network Visualization - Using CSS animations for GPU acceleration */}
           <div className="relative w-40 h-40 mb-6 flex items-center justify-center">
             {/* Center Node */}
             <div className="relative z-20 w-12 h-12 bg-[#0A0A0B] rounded-xl border border-cyan-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.15)]">
               <Database className="w-5 h-5 text-cyan-400" />
             </div>
 
-            {/* Satellite Nodes */}
-            {[0, 60, 120, 180, 240, 300].map((deg, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-8 h-8 bg-[#111] rounded-lg border border-white/5 flex items-center justify-center z-10"
-                style={{
-                  top: '50%',
-                  left: '50%',
-                  transform: `translate(-50%, -50%) rotate(${deg}deg) translate(60px) rotate(-${deg}deg)`
-                }}
-                animate={{
-                  transform: [
-                    `translate(-50%, -50%) rotate(${deg}deg) translate(60px) rotate(-${deg}deg)`,
-                    `translate(-50%, -50%) rotate(${deg + 360}deg) translate(60px) rotate(-${deg + 360}deg)`
-                  ]
-                }}
-                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/30" />
-              </motion.div>
-            ))}
+            {/* Satellite Nodes - Static positioned, orbit container rotates */}
+            <div className="absolute inset-0 animate-[spin_40s_linear_infinite] will-change-transform">
+              {[0, 60, 120, 180, 240, 300].map((deg, i) => (
+                <div
+                  key={i}
+                  className="absolute w-8 h-8 bg-[#111] rounded-lg border border-white/5 flex items-center justify-center z-10"
+                  style={{
+                    top: '50%',
+                    left: '50%',
+                    transform: `translate(-50%, -50%) rotate(${deg}deg) translate(60px) rotate(-${deg}deg)`
+                  }}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-500/30" />
+                </div>
+              ))}
+            </div>
 
-            {/* Connecting Lines (svg) */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 animate-[spin_60s_linear_infinite]">
+            {/* Connecting Lines (svg) - CSS rotation */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 animate-[spin_60s_linear_infinite] will-change-transform">
               <circle cx="50%" cy="50%" r="60" stroke="rgba(6,182,212,0.1)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
               <path d="M80 80 L80 20" stroke="rgba(6,182,212,0.05)" strokeWidth="1" />
               <path d="M80 80 L20 80" stroke="rgba(6,182,212,0.05)" strokeWidth="1" />

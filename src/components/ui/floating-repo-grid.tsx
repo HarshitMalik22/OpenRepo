@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
-import RepositoryImage from '@/components/repository-image';
 import type { Repository } from '@/lib/types';
 
 interface FloatingRepoGridProps {
@@ -154,8 +154,16 @@ function FloatingCard({ repo, index, top, left }: { repo: Repository; index: num
                     <CardHeader className="p-4 pb-2">
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="w-8 h-8 shrink-0 rounded-lg overflow-hidden bg-white/10">
-                                    <RepositoryImage repo={repo} />
+                                <div className="w-8 h-8 shrink-0 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center">
+                                    <Image
+                                        src={typeof repo.owner === 'object' && repo.owner?.avatar_url
+                                            ? repo.owner.avatar_url
+                                            : `https://ui-avatars.com/api/?name=${repo.name}&background=0d1117&color=ffffff&size=64`}
+                                        alt={repo.name}
+                                        width={32}
+                                        height={32}
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
                                 <CardTitle className="text-base font-semibold truncate group-hover:text-primary transition-colors">
                                     {repo.name}
