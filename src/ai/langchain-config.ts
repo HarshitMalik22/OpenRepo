@@ -58,7 +58,7 @@ export function getLangChainConfig(): LangChainConfig {
 }
 
 
-// Create LangChain model instance
+// Create LangChain model instance (uses default model from config)
 export function createLangChainModel() {
   const config = getLangChainConfig();
   
@@ -84,6 +84,36 @@ export function createLangChainModel() {
     maxRetries: 2,
   });
 }
+
+// Create LangChain model with a SPECIFIC model name
+// Use this for hybrid approach: Step 1 = flash, Step 2 = flash-lite
+export function createLangChainModelWithName(modelName: string) {
+  const config = getLangChainConfig();
+  
+  if (!config.apiKey) {
+    throw new Error("AI API key is required but not configured");
+  }
+
+  if (config.provider === "gemini") {
+    return new ChatGoogleGenerativeAI({
+      apiKey: config.apiKey,
+      model: modelName, // Use the specified model name
+      temperature: config.temperature,
+      maxOutputTokens: config.maxOutputTokens,
+      maxRetries: 2,
+    });
+  }
+  
+  // For non-Gemini providers, fall back to default
+  return new ChatGroq({
+    apiKey: config.apiKey,
+    model: config.modelName,
+    temperature: config.temperature,
+    maxTokens: config.maxOutputTokens,
+    maxRetries: 2,
+  });
+}
+
 
 // Check if AI is configured without throwing errors
 export function isAIConfigured(): boolean {

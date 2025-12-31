@@ -189,10 +189,10 @@ export async function gitdiagramStyleAnalysis(input: GitdiagramStyleAnalysisInpu
     }
 
     const { promptTree: promptFileTree } = prepareFileTreeForPrompt(completeFileTree);
-    const model = createLangChainModel();
+    const model = createLangChainModel(); // Uses default model (flash) for Step 1
 
-    // --- STEP 1: ANALYSIS & MAPPING ---
-    console.log('Phase 2 [Step 1/2]: Generating Analysis & Mapping...');
+    // --- STEP 1: ANALYSIS & MAPPING (uses gemini-flash for better reasoning) ---
+    console.log('Phase 2 [Step 1/2]: Generating Analysis & Mapping (using flash)...');
     const step1Parser = StructuredOutputParser.fromZodSchema(AnalysisAndMappingSchema);
     const step1Prompt = ChatPromptTemplate.fromMessages([
       ['system', ANALYSIS_AND_MAPPING_PROMPT],
@@ -210,8 +210,13 @@ export async function gitdiagramStyleAnalysis(input: GitdiagramStyleAnalysisInpu
     const { explanation, componentMapping } = step1Result as { explanation: string; componentMapping: string };
     console.log('✅ Analysis complete.');
 
-    // --- STEP 2: MERMAID VISUALIZATION ---
-    console.log('Phase 2 [Step 2/2]: Generating Mermaid Diagram...');
+    // --- STEP 2: MERMAID VISUALIZATION (uses gemini-flash-lite for efficiency) ---
+    console.log('Phase 2 [Step 2/2]: Generating Mermaid Diagram (using flash-lite)...');
+    
+    // Import the model factory for specific model selection
+    const { createLangChainModelWithName } = await import('@/ai/langchain-config');
+    const step2Model = createLangChainModelWithName('gemini-2.5-flash-lite');
+    
     // We use StringOutputParser for Step 2 to get RAW text (robustness)
     const step2Parser = new StringOutputParser();
     const step2Prompt = ChatPromptTemplate.fromMessages([
@@ -219,7 +224,7 @@ export async function gitdiagramStyleAnalysis(input: GitdiagramStyleAnalysisInpu
       ['user', `<explanation>\n{explanation}\n</explanation>\n\n<component_mapping>\n{componentMapping}\n</component_mapping>`]
     ]);
 
-    const step2Chain = step2Prompt.pipe(model).pipe(step2Parser);
+    const step2Chain = step2Prompt.pipe(step2Model).pipe(step2Parser);
     let mermaidCode = await withTimeout(step2Chain.invoke({
       explanation: explanation,
       componentMapping: componentMapping
