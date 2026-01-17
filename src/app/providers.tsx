@@ -18,7 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }}
     >
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem={false} disableTransitionOnChange>
+      <ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange>
         {children}
       </ThemeProvider>
     </ClerkProvider>
