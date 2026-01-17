@@ -95,7 +95,7 @@ uniform float uFade;
 #define W_BOTTOM_EXP 10.0
 
 // Volumetric fog controls
-#define FOG_ON 1
+#define FOG_ON 0
 #define FOG_CONTRAST 1.2
 #define FOG_SPEED_U 0.1
 #define FOG_SPEED_V -0.1
@@ -241,17 +241,12 @@ void mainImage(out vec4 fc,in vec2 frag){
     float safariFog = n * browserFogIntensity * bBias * bm * hW * radialFade;
     fog = safariFog;
 #endif
-    float LF=L+fog;
-    float dith=(h21(frag)-0.5)*(DITHER_STRENGTH/255.0);
-    float tone=g(LF+w);
-    vec3 col=tone*uColor+dith;
-    float alpha=clamp(g(L+w*0.6)+dith*0.6,0.0,1.0);
-    float nxE=abs((frag.x-C.x)*invW),xF=pow(clamp(1.0-smoothstep(EDGE_X0,EDGE_X1,nxE),0.0,1.0),EDGE_X_GAMMA);
-    float scene=LF+max(0.0,w)*0.5,hi=smoothstep(EDGE_LUMA_T0,EDGE_LUMA_T1,scene);
-    float eM=mix(xF,1.0,hi);
-    col*=eM; alpha*=eM;
-    col*=uFade; alpha*=uFade;
-    fc=vec4(col,alpha);
+    float LF = L;
+    float tone = g(LF + w);
+    // Cube the alpha for very aggressive transparency falloff
+    float alpha = tone * tone * tone * uFade;
+    vec3 col = tone * uColor * uFade;
+    fc = vec4(col, alpha);
 }
 
 void main(){
@@ -313,11 +308,11 @@ export const LaserFlow: React.FC<Props> = ({
     const mount = mountRef.current!;
     const renderer = new THREE.WebGLRenderer({
       antialias: false,
-      alpha: false,
+      alpha: true,
       depth: false,
       stencil: false,
       powerPreference: 'high-performance',
-      premultipliedAlpha: false,
+      premultipliedAlpha: true,
       preserveDrawingBuffer: false,
       failIfMajorPerformanceCaveat: false,
       logarithmicDepthBuffer: false
@@ -330,7 +325,7 @@ export const LaserFlow: React.FC<Props> = ({
     renderer.setPixelRatio(currentDprRef.current);
     renderer.shadowMap.enabled = false;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.setClearColor(0x000000, 1);
+    renderer.setClearColor(0x000000, 0);
     const canvas = renderer.domElement;
     canvas.style.width = '100%';
     canvas.style.height = '100%';
@@ -374,7 +369,7 @@ export const LaserFlow: React.FC<Props> = ({
       vertexShader: VERT,
       fragmentShader: FRAG,
       uniforms,
-      transparent: false,
+      transparent: true,
       depthTest: false,
       depthWrite: false,
       blending: THREE.NormalBlending

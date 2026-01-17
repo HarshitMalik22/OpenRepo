@@ -79,20 +79,20 @@ export default async function Home() {
           <div className="flex flex-col items-center justify-center gap-2 pb-6 drop-shadow-2xl">
             <BlurFadeText
               delay={0.25}
-              className="text-4xl md:text-7xl font-bold font-headline tracking-tighter text-white leading-none"
+              className="text-4xl md:text-7xl font-bold font-headline tracking-tighter dark:text-white text-foreground leading-none"
               text="Learn Open Source."
             />
             <BlurFadeText
               delay={0.5}
               className="text-4xl md:text-7xl font-bold font-headline tracking-tighter pb-1 leading-none"
-              textClassName="text-white"
+              textClassName="dark:text-white text-foreground"
               text="Smarter. Faster."
             />
           </div>
 
           <BlurFade delay={0.5}>
             {/* Adjusted text color to be lighter/white for better contrast on dark background */}
-            <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mt-6 leading-relaxed drop-shadow-md">
+            <p className="text-lg md:text-xl text-muted-foreground dark:text-slate-300 max-w-3xl mx-auto mt-6 leading-relaxed drop-shadow-md">
               Discover and analyze open-source projects with AI-powered recommendations
             </p>
           </BlurFade>

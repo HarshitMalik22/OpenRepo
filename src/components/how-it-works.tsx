@@ -57,10 +57,10 @@ export default function HowItWorks() {
         <section className="container mx-auto py-8 relative z-20">
             {/* Header - Strictly Typography */}
             <div className="mb-24 px-4 md:px-0">
-                <h2 className="text-4xl md:text-5xl font-bold font-headline mb-6 text-white tracking-tight">
-                    From Code to <span className="text-white/50">Concept.</span>
+                <h2 className="text-4xl md:text-5xl font-bold font-headline mb-6 text-foreground tracking-tight">
+                    From Code to <span className="text-muted-foreground">Concept.</span>
                 </h2>
-                <p className="text-zinc-400 text-lg max-w-xl leading-relaxed">
+                <p className="text-muted-foreground text-lg max-w-xl leading-relaxed">
                     A machine-precision pipeline that turns raw Git repositories into navigable mental maps.
                 </p>
             </div>
@@ -69,7 +69,7 @@ export default function HowItWorks() {
                 {/* Left Side: The Pipeline (Steps) */}
                 <div className="lg:col-span-4 space-y-0 relative">
                     {/* Continuous Line Track */}
-                    <div className="absolute left-[27px] top-4 bottom-4 w-[1px] bg-zinc-800" />
+                    <div className="absolute left-[27px] top-4 bottom-4 w-[1px] bg-border" />
 
                     {steps.map((step, index) => {
                         const isActive = activeStep === index;
@@ -88,27 +88,27 @@ export default function HowItWorks() {
                                 <div className={cn(
                                     "absolute left-[21px] top-9 w-3 h-3 rounded-full border-2 transition-all duration-300 z-10",
                                     isActive
-                                        ? "bg-white border-white scale-125 shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                                        ? "bg-primary border-primary scale-125 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
                                         : isPast
-                                            ? "bg-zinc-800 border-zinc-600"
-                                            : "bg-black border-zinc-800"
+                                            ? "bg-zinc-500 border-zinc-500"
+                                            : "bg-background border-border"
                                 )} />
 
                                 {/* Step Content */}
                                 <div>
                                     <h3 className={cn(
                                         "text-sm font-mono uppercase tracking-widest mb-2 transition-colors",
-                                        isActive ? "text-indigo-400" : "text-zinc-500"
+                                        isActive ? "text-primary" : "text-muted-foreground"
                                     )}>
                                         Step 0{index + 1}
                                     </h3>
                                     <h4 className={cn(
                                         "text-xl font-semibold mb-2 transition-colors tracking-tight",
-                                        isActive ? "text-white" : "text-zinc-300"
+                                        isActive ? "text-foreground" : "text-muted-foreground"
                                     )}>
                                         {step.title}
                                     </h4>
-                                    <p className="text-zinc-500 text-sm leading-relaxed max-w-sm font-medium">
+                                    <p className="text-muted-foreground text-sm leading-relaxed max-w-sm font-medium">
                                         {step.description}
                                     </p>
                                 </div>
@@ -119,7 +119,7 @@ export default function HowItWorks() {
 
                 {/* Right Side: The Glass Console */}
                 <div className="lg:col-span-8">
-                    <div className="relative aspect-video rounded-xl border border-white/[0.08] bg-black/60 shadow-xl overflow-hidden group">
+                    <div className="relative aspect-video rounded-xl border border-border bg-zinc-950 shadow-xl overflow-hidden group">
 
                         {/* Console Header */}
                         <div className="absolute top-0 left-0 w-full h-10 border-b border-white/[0.05] bg-white/[0.02] flex items-center px-4 justify-between z-20">

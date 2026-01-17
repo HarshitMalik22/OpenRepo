@@ -44,7 +44,7 @@ export default function FloatingRepoGrid({ repos }: FloatingRepoGridProps) {
                 <div className="relative w-full h-full max-w-7xl mx-auto p-4 flex flex-wrap justify-center gap-4 pt-20">
                     {/* Static fallback for SSR/Loading */}
                     {displayRepos.map((repo) => (
-                        <div key={repo.id} className="w-[300px] h-[180px] rounded-2xl border border-white/10 bg-white/5" />
+                        <div key={repo.id} className="w-[300px] h-[180px] rounded-2xl border border-border bg-card/50" />
                     ))}
                 </div>
             </div>
@@ -150,11 +150,11 @@ function FloatingCard({ repo, index, top, left }: { repo: Repository; index: num
             }}
         >
             <Link href={`/repos/${slug}`} className="block group">
-                <Card className="h-full bg-background/60 backdrop-blur-md border-primary/10 hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10">
+                <Card className="h-full bg-card/60 backdrop-blur-md border-border hover:border-primary/40 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10">
                     <CardHeader className="p-4 pb-2">
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="w-8 h-8 shrink-0 rounded-lg overflow-hidden bg-white/10 flex items-center justify-center">
+                                <div className="w-8 h-8 shrink-0 rounded-lg overflow-hidden bg-primary/10 flex items-center justify-center">
                                     <Image
                                         src={typeof repo.owner === 'object' && repo.owner?.avatar_url
                                             ? repo.owner.avatar_url
@@ -171,6 +171,7 @@ function FloatingCard({ repo, index, top, left }: { repo: Repository; index: num
                             </div>
                         </div>
                     </CardHeader>
+
                     <CardContent className="p-4 pt-2">
                         <p className="text-xs text-muted-foreground line-clamp-2 mb-3 h-8">
                             {repo.description || "No description available"}

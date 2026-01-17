@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
 
 const WarpBackground = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const { resolvedTheme } = useTheme();
 
     useEffect(() => {
         // Respect reduced motion preference
@@ -46,12 +48,18 @@ const WarpBackground = () => {
         let lastCx = 0;
         let lastCy = 0;
 
+        // Colors based on theme
+        const isDark = resolvedTheme === 'dark';
+        const bgColor = isDark ? "#020617" : "#ffffff";
+        const starColor = isDark ? "100, 200, 255" : "30, 41, 59"; // Light blue vs slate-800
+        const gradientColor = isDark ? "rgba(56, 189, 248, 0.2)" : "rgba(14, 165, 233, 0.1)";
+
         const getGradient = (cx: number, cy: number) => {
             if (cachedGradient && lastCx === cx && lastCy === cy) {
                 return cachedGradient;
             }
             cachedGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 300);
-            cachedGradient.addColorStop(0, "rgba(56, 189, 248, 0.2)");
+            cachedGradient.addColorStop(0, gradientColor);
             cachedGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
             lastCx = cx;
             lastCy = cy;
@@ -73,7 +81,7 @@ const WarpBackground = () => {
                 return;
             }
 
-            ctx.fillStyle = "#020617";
+            ctx.fillStyle = bgColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const cx = canvas.width / 2;
@@ -110,7 +118,7 @@ const WarpBackground = () => {
                 if (bucket.stars.length === 0) continue;
 
                 ctx.beginPath();
-                ctx.strokeStyle = `rgba(100, 200, 255, ${bucket.alpha})`;
+                ctx.strokeStyle = `rgba(${starColor}, ${bucket.alpha})`;
                 ctx.lineWidth = bucket.lineWidth;
 
                 for (const star of bucket.stars) {
@@ -152,7 +160,7 @@ const WarpBackground = () => {
             window.removeEventListener("resize", resizeCanvas);
             cancelAnimationFrame(animationFrameId);
         };
-    }, []);
+    }, [resolvedTheme]); // Re-run when theme changes
 
     return (
         <canvas

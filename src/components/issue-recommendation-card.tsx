@@ -100,7 +100,7 @@ export function IssueRecommendationCard({
 
     return (
         <div
-            className={`group relative flex flex-col h-full overflow-hidden rounded-xl bg-white/5 dark:bg-black/40 backdrop-blur-xl border border-white/10 dark:border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${className}`}
+            className={`group relative flex flex-col h-full overflow-hidden rounded-xl bg-card dark:bg-zinc-900 border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${className}`}
         >
             {/* Top Accent Gradient */}
             <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${gradient} opacity-70`} />
@@ -112,25 +112,25 @@ export function IssueRecommendationCard({
                         <img
                             src={`https://github.com/${owner}.png`}
                             alt={owner}
-                            className="w-10 h-10 rounded-lg shadow-inner bg-black/20"
+                            className="w-10 h-10 rounded-lg shadow-inner bg-muted"
                         />
                         <div>
                             <a
                                 href={issue.repository.html_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm font-medium text-slate-200 hover:text-white transition-colors flex items-center gap-1"
+                                className="text-sm font-medium text-foreground hover:text-primary transition-colors flex items-center gap-1"
                             >
                                 {owner} / {repo}
                             </a>
-                            <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                                 <span className="flex items-center gap-1">
                                     <Star className="w-3 h-3" />
                                     {formatNumber(issue.repository.stargazers_count)}
                                 </span>
                                 {issue.repository.language && (
                                     <span className="flex items-center gap-1">
-                                        <div className="w-2 h-2 rounded-full bg-slate-600" />
+                                        <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />
                                         {issue.repository.language}
                                     </span>
                                 )}
@@ -138,27 +138,27 @@ export function IssueRecommendationCard({
                         </div>
                     </div>
 
-                    <div className={`text-xs px-3 py-1 font-medium rounded-full border ${matchColor} shadow-inner`}>
+                    <div className={`text-xs px-3 py-1 font-medium rounded-full border ${matchColor} shadow-sm`}>
                         {matchLabel}
                     </div>
                 </div>
 
                 {/* Issue Title */}
-                <h3 className="font-bold text-lg text-slate-100 leading-tight mb-2 line-clamp-2 group-hover:text-blue-400 transition-colors">
+                <h3 className="font-bold text-lg text-foreground leading-tight mb-2 line-clamp-2 group-hover:text-primary transition-colors">
                     <a href={issue.issue.html_url} target="_blank" rel="noopener noreferrer">
                         {issue.issue.title}
                     </a>
                 </h3>
 
-                <div className="text-xs text-slate-500 font-mono mb-4">
+                <div className="text-xs text-muted-foreground font-mono mb-4">
                     #{issue.issue.number} • opened {formatDistanceToNow(new Date(issue.issue.created_at))} ago
                 </div>
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mb-6">
                     {/* Effort Tag */}
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-xs font-medium text-slate-300 border border-white/10">
-                        <EffortIcon className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/50 text-xs font-medium text-secondary-foreground border border-border">
+                        <EffortIcon className="w-3.5 h-3.5 text-muted-foreground" />
                         {effort.label}
                     </div>
 
@@ -166,7 +166,7 @@ export function IssueRecommendationCard({
                     {issue.issue.labels.slice(0, 3).map((label) => (
                         <span
                             key={label.name}
-                            className="px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider opacity-80"
+                            className="px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider opacity-90"
                             style={{
                                 backgroundColor: `#${label.color}15`,
                                 color: `#${label.color}`,
@@ -179,17 +179,17 @@ export function IssueRecommendationCard({
                 </div>
 
                 {/* Footer action */}
-                <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
                     <div className="flex -space-x-2 overflow-hidden">
                         {/* Fake contributors for 'activity' feel if real ones aren't available, or just empty */}
                         {issue.issue.assignee ? (
                             <img
                                 src={issue.issue.assignee.login ? `https://github.com/${issue.issue.assignee.login}.png` : ''}
-                                className="inline-block h-6 w-6 rounded-full ring-2 ring-black"
+                                className="inline-block h-6 w-6 rounded-full ring-2 ring-background"
                                 title={`Assigned to ${issue.issue.assignee.login}`}
                             />
                         ) : (
-                            <span className="text-xs text-emerald-500 font-medium flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                            <span className="text-xs text-emerald-600 dark:text-emerald-500 font-medium flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 Open for contribution
                             </span>
@@ -200,7 +200,7 @@ export function IssueRecommendationCard({
                         href={issue.issue.html_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm font-semibold text-white hover:text-blue-400 transition-colors group/btn"
+                        className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors group/btn"
                     >
                         View Issue
                         <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />

@@ -69,48 +69,30 @@ export default function GithubRepoSearch() {
 
   return (
     <div className="w-full relative border-0 shadow-none">
-      <style jsx global>{`
-        .pizza-cursor {
-          cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23ff6b35'%3E%3Cpath d='M12 2C8.1 2 5 5.1 5 9c0 1.4.4 2.7 1 3.9l6 10.6 6-10.6c.6-1.2 1-2.5 1-3.9 0-3.9-3.1-7-7-7zm0 2c2.8 0 5 2.2 5 5 0 1.1-.4 2.1-1 2.9l-4-7.1c.6-.1 1.3-.2 2-.2z'/%3E%3Ccircle cx='9.5' cy='9.5' r='1.5' fill='white'/%3E%3Ccircle cx='12' cy='7' r='1.5' fill='white'/%3E%3Ccircle cx='14.5' cy='9.5' r='1.5' fill='white'/%3E%3C/svg%3E"), auto;
-        }
-        input {
-          border: 2px solid #3b82f6 !important;
-          outline: none !important;
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3) !important;
-          border-radius: 12px !important;
-        }
-        input:focus,
-        input:focus-visible {
-          border: 2px solid #3b82f6 !important;
-          outline: none !important;
-          box-shadow: 0 0 25px rgba(59, 130, 246, 0.7), 0 0 50px rgba(59, 130, 246, 0.4) !important;
-          border-radius: 12px !important;
-        }
-      `}</style>
-      <div className="relative min-h-[300px] flex items-end pb-10 overflow-hidden border-0 shadow-none bg-transparent w-full">
+      <div className="relative min-h-[300px] flex items-end pb-10 w-full overflow-hidden">
         <div className="absolute inset-x-0 -top-[20%] bottom-0 z-0 pointer-events-none flex justify-center">
           <div className="w-full max-w-2xl relative h-full">
             <LaserFlow
+              color="#3b82f6"
               horizontalBeamOffset={0}
               verticalBeamOffset={-0.15}
               verticalSizing={2}
               horizontalSizing={0.49}
               fogIntensity={0.02}
-              fogScale={0.05}
-              color="#3b82f6"
             />
           </div>
         </div>
+
         <div className="relative z-10 w-full max-w-2xl mx-auto px-4 flex flex-col items-center">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mt-0 w-full">
-            <div className="relative flex-grow no-border-wrapper w-full">
+            <div className="relative flex-grow w-full">
               <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
               <Input
                 type="text"
                 placeholder="Enter GitHub repository URL..."
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
-                className="pl-10 bg-background/95 backdrop-blur-md border-0 w-full"
+                className="pl-10 bg-background/95 backdrop-blur-md w-full rounded-xl border-2 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5),0_0_40px_rgba(59,130,246,0.3)] focus-visible:shadow-[0_0_25px_rgba(59,130,246,0.7),0_0_50px_rgba(59,130,246,0.4)] focus-visible:border-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
             <Button type="submit" size="lg" className="w-full sm:w-auto gap-2 whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90">
