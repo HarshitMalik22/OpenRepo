@@ -63,7 +63,7 @@ Before you begin, ensure you have the following installed:
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-username/OpenRepo.git
+   git clone https://github.com/HarshitMalik22/OpenRepo.git
    cd Openrepo
    ```
 
@@ -423,4 +423,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Made with ❤️ by the Openrepo team
 
-[⭐ Star us on GitHub](https://github.com/your-username/Openrepo) | [🐛 Report Issues](https://github.com/your-username/Openrepo/issues) | [💬 Join Discussions](https://github.com/your-username/Openrepo/discussions)
+[⭐ Star us on GitHub](https://github.com/HarshitMalik22/OpenRepo) | [🐛 Report Issues](https://github.com/HarshitMalik22/OpenRepo/issues) | [💬 Join Discussions](https://github.com/HarshitMalik22/OpenRepo/discussions)
