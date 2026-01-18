@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     siteName: "OpenRepo",
     images: [
       {
-        url: "/logos/opensauce-logo.png",
+        url: "/og-homepage.png",
         width: 1200,
         height: 630,
         alt: "OpenRepo - AI-Powered Open Source Discovery",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "OpenRepo - AI-Powered Open Source Discovery",
     description: "Discover and analyze open-source projects with AI-powered recommendations, architecture visualization, and comprehensive insights.",
-    images: ["/logos/opensauce-logo.png"],
+    images: ["/og-homepage.png"],
     creator: "@HarshitMalik22",
   },
   robots: {
