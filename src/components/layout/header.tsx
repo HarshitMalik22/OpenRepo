@@ -7,6 +7,7 @@ import MobileNav from './mobile-nav';
 import HeaderAuth from './header-auth';
 import { Icons } from '@/components/icons';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
+import RequestFeature from '@/components/request-feature';
 
 
 
@@ -47,6 +48,9 @@ export default function Header({ stars = 0 }: { stars?: number }) {
             </div>
             <h1 className="text-xl font-bold font-headline text-foreground tracking-tight hidden sm:block">OpenRepo</h1>
           </Link>
+        </div>
+        <div className='flex items-center gap-2 z-20'>
+          <RequestFeature />
         </div>
 
         {/* Center: Navigation */}
