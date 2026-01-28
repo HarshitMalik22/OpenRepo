@@ -6,6 +6,7 @@ import Footer from '@/components/layout/footer'
 import ContentSpacer from '@/components/layout/content-spacer'
 import { ReactQueryProvider } from '@/components/providers/react-query-provider'
 import { SmoothScrollProvider } from '@/components/providers/smooth-scroll-provider'
+import { PostHogProvider } from '@/components/providers/posthog-provider'
 import { Providers } from './providers'
 
 export function generateViewport() {
@@ -107,27 +108,29 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&family=Source+Code+Pro:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased" suppressHydrationWarning>
-        <div id="root" suppressHydrationWarning>
-          <Providers>
-            <ReactQueryProvider>
-              <SmoothScrollProvider>
-                <div className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning>
-                  {/* Wrap Header in Suspense to prevent blocking the initial render */}
-                  <Suspense fallback={<Header />}>
-                    <HeaderWithStars />
-                  </Suspense>
-                  <ContentSpacer />
-                  <main>
-                    {children}
-                    <Analytics />
-                  </main>
-                  <Footer />
-                  <Toaster />
-                </div>
-              </SmoothScrollProvider>
-            </ReactQueryProvider>
-          </Providers>
-        </div>
+        <PostHogProvider>
+          <div id="root" suppressHydrationWarning>
+            <Providers>
+              <ReactQueryProvider>
+                <SmoothScrollProvider>
+                  <div className="font-body antialiased min-h-screen flex flex-col" suppressHydrationWarning>
+                    {/* Wrap Header in Suspense to prevent blocking the initial render */}
+                    <Suspense fallback={<Header />}>
+                      <HeaderWithStars />
+                    </Suspense>
+                    <ContentSpacer />
+                    <main>
+                      {children}
+                      <Analytics />
+                    </main>
+                    <Footer />
+                    <Toaster />
+                  </div>
+                </SmoothScrollProvider>
+              </ReactQueryProvider>
+            </Providers>
+          </div>
+        </PostHogProvider>
       </body>
     </html >
   );

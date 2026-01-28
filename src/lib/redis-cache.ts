@@ -5,8 +5,14 @@ if (typeof window !== 'undefined') {
   throw new Error('Redis cache can only be used on the server side');
 }
 
-let redisClient: Redis | null = null;
-let redisConnectionFailed = false;
+// Use globalThis to persist Redis client across hot reloads in development
+const globalForRedis = globalThis as typeof globalThis & {
+  redisClient?: Redis | null;
+  redisConnectionFailed?: boolean;
+};
+
+let redisClient: Redis | null = globalForRedis.redisClient ?? null;
+let redisConnectionFailed = globalForRedis.redisConnectionFailed ?? false;
 
 // Initialize Redis connection
 function getRedisClient(): Redis {
@@ -90,11 +96,14 @@ function getRedisClient(): Redis {
     
     try {
       redisClient = new Redis(redisOptions);
+      // Store in globalThis for dev mode persistence
+      globalForRedis.redisClient = redisClient;
 
       // Handle Redis connection events
       redisClient.on('connect', () => {
         console.log('✅ Redis connected successfully');
         redisConnectionFailed = false;
+        globalForRedis.redisConnectionFailed = false;
       });
 
       redisClient.on('error', (error) => {
@@ -105,6 +114,7 @@ function getRedisClient(): Redis {
           // Mark as failed on persistent errors
           if (error.message && (error.message.includes('ENOTFOUND') || error.message.includes('ETIMEDOUT') || error.message.includes('ECONNREFUSED'))) {
             redisConnectionFailed = true;
+            globalForRedis.redisConnectionFailed = true;
             console.warn('⚠️  Redis caching disabled - app will continue without caching');
           }
         }
@@ -118,6 +128,7 @@ function getRedisClient(): Redis {
     } catch (error) {
       console.error('❌ Failed to create Redis client:', error);
       redisConnectionFailed = true;
+      globalForRedis.redisConnectionFailed = true;
       return {
         get: async () => null,
         set: async () => true,

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { ThemeProvider, useTheme } from 'next-themes'
+import PostHogUserIdentity from '@/components/providers/posthog-user-identity'
 
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -19,6 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }}
     >
       <ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange>
+        <PostHogUserIdentity />
         {children}
       </ThemeProvider>
     </ClerkProvider>
