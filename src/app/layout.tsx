@@ -94,6 +94,7 @@ import { Analytics } from "@vercel/analytics/next"
 
 import { Suspense } from 'react';
 import HeaderWithStars from '@/components/layout/header-with-stars';
+import OpenSourceLaunchModal from '@/components/open-source-launch-modal';
 
 export default function RootLayout({
   children,
@@ -118,6 +119,7 @@ export default function RootLayout({
                     <Suspense fallback={<Header />}>
                       <HeaderWithStars />
                     </Suspense>
+                    <OpenSourceLaunchModal />
                     <ContentSpacer />
                     <main>
                       {children}
