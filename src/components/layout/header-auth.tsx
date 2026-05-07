@@ -36,9 +36,6 @@ export default function HeaderAuth() {
         <Button variant="ghost" className="rounded-full" asChild>
           <Link href="/sign-in">Sign In</Link>
         </Button>
-        <Button className="rounded-full" asChild>
-          <Link href="/sign-up">Sign Up</Link>
-        </Button>
       </div>
     )
   }
